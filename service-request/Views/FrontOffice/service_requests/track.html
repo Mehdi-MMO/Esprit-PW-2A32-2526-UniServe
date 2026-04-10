@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UniServe — Track Request #SR-1048</title>
+    <link rel="stylesheet" href="../../assets/css/uniserve.css" />
+    <style>
+      .status-track {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        margin: 30px 0;
+      }
+      .status-track::before {
+        content: "";
+        position: absolute;
+        top: 18px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--border);
+        z-index: 0;
+      }
+      .status-track-fill {
+        position: absolute;
+        top: 18px;
+        left: 0;
+        height: 3px;
+        background: var(--teal);
+        z-index: 1;
+        transition: width 0.5s;
+      }
+      .track-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        z-index: 2;
+        flex: 1;
+      }
+      .track-dot {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: var(--white);
+        border: 3px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
+      }
+      .track-dot.done {
+        background: var(--teal);
+        border-color: var(--teal);
+        color: #fff;
+      }
+      .track-dot.active {
+        background: var(--navy);
+        border-color: var(--navy);
+        color: #fff;
+      }
+      .track-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-align: center;
+      }
+      .track-label.done,
+      .track-label.active {
+        color: var(--navy);
+      }
+      .track-date {
+        font-size: 10px;
+        color: var(--text-muted);
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="public-page">
+      <nav class="public-topbar">
+        <div class="public-logo">
+          <div class="logo-icon" style="background: var(--navy)">
+            <img
+              src="../../assets/images/logo.png"
+              alt="UniServe"
+              style="width: 100%; height: 100%; object-fit: contain"
+            />
+          </div>
+          <span>UniServe</span>
+        </div>
+        <div class="public-nav">
+          <a href="#">Home</a>
+          <a href="create.html">Services</a>
+          <a href="#">Appointments</a>
+          <a href="#">Documents</a>
+          <a href="#">AI Assistant</a>
+        </div>
+        <div class="public-topbar-actions">
+          <a href="my_requests.html" class="btn btn-outline btn-sm"
+            >My Requests</a
+          >
+          <div class="topbar-avatar">MR</div>
+        </div>
+      </nav>
+
+      <div class="public-body">
+        <!-- Back -->
+        <div style="margin-bottom: 20px">
+          <a
+            href="my_requests.html"
+            style="font-size: 13px; color: var(--text-muted); font-weight: 600"
+            >← Back to my requests</a
+          >
+        </div>
+
+        <!-- Header -->
+        <div
+          style="
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 28px;
+          "
+        >
+          <div>
+            <div
+              style="
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                margin-bottom: 8px;
+              "
+            >
+              <span class="badge badge-review">Under Review</span>
+              <span
+                style="
+                  font-size: 13px;
+                  color: var(--text-muted);
+                  font-weight: 600;
+                "
+                >#SR-1048</span
+              >
+            </div>
+            <h1 style="font-size: 24px">Official transcript — 3 copies</h1>
+            <p style="color: var(--text-muted); margin-top: 4px">
+              Submitted 04/09/2025 at 10:32 · Academic Office
+            </p>
+          </div>
+        </div>
+
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+            align-items: start;
+          "
+        >
+          <!-- Left -->
+          <div style="display: flex; flex-direction: column; gap: 20px">
+            <!-- Status Tracker -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📍 Request Status</div>
+              </div>
+              <div class="card-body" style="padding-top: 0">
+                <div style="position: relative">
+                  <div class="status-track">
+                    <div class="status-track-fill" style="width: 40%"></div>
+                    <div class="track-step">
+                      <div class="track-dot done">✓</div>
+                      <div class="track-label done">Submitted</div>
+                      <div class="track-date">04/09 10:32</div>
+                    </div>
+                    <div class="track-step">
+                      <div class="track-dot done">✓</div>
+                      <div class="track-label done">Received</div>
+                      <div class="track-date">04/09 11:05</div>
+                    </div>
+                    <div class="track-step">
+                      <div class="track-dot active">⟳</div>
+                      <div class="track-label active">Under Review</div>
+                      <div class="track-date">04/09 14:20</div>
+                    </div>
+                    <div class="track-step">
+                      <div class="track-dot">📦</div>
+                      <div class="track-label">Processing</div>
+                      <div class="track-date">—</div>
+                    </div>
+                    <div class="track-step">
+                      <div class="track-dot">✅</div>
+                      <div class="track-label">Resolved</div>
+                      <div class="track-date">—</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="alert alert-info" style="margin-bottom: 0">
+                  🕐 Your request is currently under review by the Academic
+                  Office. Estimated time remaining:
+                  <strong>2 business days</strong>.
+                </div>
+              </div>
+            </div>
+
+            <!-- Request Details -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📋 Request Details</div>
+              </div>
+              <div class="card-body" style="padding-top: 0">
+                <div class="detail-section">
+                  <div class="detail-section-title">General Information</div>
+                  <div class="info-grid">
+                    <div class="info-item">
+                      <div class="info-label">Category</div>
+                      <div class="info-value">📄 Administrative Documents</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Type</div>
+                      <div class="info-value">Official transcript</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Copies requested</div>
+                      <div class="info-value">3</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Assigned Office</div>
+                      <div class="info-value">Academic Office</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Submission date</div>
+                      <div class="info-value">04/09/2025 — 10:32</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Desired deadline</div>
+                      <div class="info-value">04/15/2025</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="detail-section" style="margin-bottom: 0">
+                  <div class="detail-section-title">Description</div>
+                  <p
+                    style="
+                      font-size: 14px;
+                      line-height: 1.7;
+                      padding: 14px;
+                      background: var(--bg);
+                      border-radius: var(--radius-sm);
+                      border: 1px solid var(--border);
+                    "
+                  >
+                    Transcript for master's application, 3 copies, signed and
+                    stamped by academic officer.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Attachments -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📎 Attachments</div>
+              </div>
+              <div class="card-body" style="padding-top: 0">
+                <div class="upload-file-list">
+                  <div class="upload-file-item">
+                    <span class="file-icon">🖼️</span>
+                    <span class="file-name">Student_Card.jpg</span>
+                    <span class="file-size">95 KB</span>
+                    <a
+                      href="#"
+                      style="
+                        color: var(--navy);
+                        font-size: 13px;
+                        font-weight: 600;
+                      "
+                      >⬇</a
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Message to Agent -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">💬 Send Message to Office</div>
+              </div>
+              <div class="card-body" style="padding-top: 0">
+                <div class="form-group" style="margin-bottom: 12px">
+                  <textarea
+                    class="form-control"
+                    rows="3"
+                    placeholder="Add clarification, request update…"
+                  ></textarea>
+                </div>
+                <button class="btn btn-primary btn-sm">Send</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right -->
+          <div style="display: flex; flex-direction: column; gap: 16px">
+            <!-- Timeline -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">🕐 History</div>
+              </div>
+              <div class="card-body" style="padding-top: 0">
+                <div class="timeline">
+                  <div class="timeline-item">
+                    <div class="timeline-dot-wrap">
+                      <div class="timeline-dot teal"></div>
+                      <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                      <div class="tl-date">04/09 — 10:32</div>
+                      <div class="tl-action">Request submitted</div>
+                      <div class="tl-detail">By you</div>
+                    </div>
+                  </div>
+                  <div class="timeline-item">
+                    <div class="timeline-dot-wrap">
+                      <div class="timeline-dot"></div>
+                      <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                      <div class="tl-date">04/09 — 11:05</div>
+                      <div class="tl-action">Received by Academic Office</div>
+                      <div class="tl-detail">Auto-assigned</div>
+                    </div>
+                  </div>
+                  <div class="timeline-item">
+                    <div class="timeline-dot-wrap">
+                      <div class="timeline-dot"></div>
+                      <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                      <div class="tl-date">04/09 — 14:20</div>
+                      <div class="tl-action">Status → Under Review</div>
+                      <div class="tl-detail">Agent: Fatma Jouini</div>
+                    </div>
+                  </div>
+                  <div class="timeline-item">
+                    <div class="timeline-dot-wrap">
+                      <div class="timeline-dot muted"></div>
+                    </div>
+                    <div class="timeline-content">
+                      <div class="tl-date">Pending…</div>
+                      <div class="tl-action">Next step</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">⚡ Quick Actions</div>
+              </div>
+              <div
+                class="card-body"
+                style="
+                  padding-top: 8px;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 8px;
+                "
+              >
+                <button
+                  class="btn btn-ghost"
+                  style="width: 100%; justify-content: flex-start"
+                >
+                  📎 Add attachment
+                </button>
+                <button
+                  class="btn btn-ghost"
+                  style="width: 100%; justify-content: flex-start"
+                >
+                  🔔 Enable notifications
+                </button>
+                <button
+                  class="btn btn-danger"
+                  style="width: 100%; justify-content: flex-start"
+                >
+                  ✕ Cancel request
+                </button>
+              </div>
+            </div>
+
+            <!-- Help -->
+            <div
+              class="card"
+              style="background: var(--navy); border-color: var(--navy)"
+            >
+              <div class="card-body">
+                <div style="font-size: 22px; margin-bottom: 8px">🤖</div>
+                <div
+                  style="
+                    font-family: var(--font-head);
+                    font-weight: 700;
+                    font-size: 15px;
+                    color: #fff;
+                    margin-bottom: 6px;
+                  "
+                >
+                  Need help?
+                </div>
+                <p
+                  style="
+                    font-size: 13px;
+                    color: rgba(255, 255, 255, 0.7);
+                    margin-bottom: 14px;
+                  "
+                >
+                  Our AI assistant can answer questions about status and
+                  processing times.
+                </p>
+                <button class="btn btn-teal" style="width: 100%">
+                  Talk to AI →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UniServe — Service Requests (Admin)</title>
+    <link rel="stylesheet" href="../../assets/css/uniserve.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <img
+              src="../../assets/images/logo.png"
+              alt="UniServe"
+              style="width: 100%; height: 100%; object-fit: contain"
+            />
+          </div>
+          <span>UniServe</span>
+        </div>
+        <div class="sidebar-section-label">Administration</div>
+        <nav class="sidebar-nav">
+          <a href="#"><span class="nav-icon">⊞</span> Dashboard</a>
+          <a href="index.html" class="active"
+            ><span class="nav-icon">📋</span> Service Requests</a
+          >
+          <a href="#"><span class="nav-icon">📅</span> Appointments</a>
+          <a href="#"><span class="nav-icon">📄</span> Document Validation</a>
+          <a href="#"><span class="nav-icon">👥</span> Users & Roles</a>
+          <a href="#"><span class="nav-icon">🤖</span> AI Logs</a>
+          <a href="#"><span class="nav-icon">📊</span> Analytics</a>
+        </nav>
+      </aside>
+      <div class="main-content">
+        <header class="topbar">
+          <div class="topbar-left">
+            <div class="topbar-breadcrumb">
+              Administration → <span>Service Requests</span>
+            </div>
+          </div>
+          <div class="topbar-right">
+            <button class="btn btn-outline btn-sm">⬇ Export</button>
+            <div class="topbar-avatar">AD</div>
+          </div>
+        </header>
+        <main class="page-body">
+          <div class="page-header">
+            <div class="page-header-meta">
+              <h1>Service Requests</h1>
+              <p>Manage, assign and close all administrative requests.</p>
+            </div>
+            <div class="page-header-actions">
+              <button class="btn btn-outline">⚙ Settings</button>
+              <a href="create.html" class="btn btn-primary">＋ New Request</a>
+            </div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Total Requests</div>
+              <div class="stat-value">128</div>
+              <div class="stat-meta up">+12% this week</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Pending</div>
+              <div class="stat-value">47</div>
+              <div class="stat-meta warn">⚠ Action required</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">In Progress</div>
+              <div class="stat-value">38</div>
+              <div class="stat-meta info">→ Processing</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Resolved (month)</div>
+              <div class="stat-value">214</div>
+              <div class="stat-meta up">✓ High rate</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Request List</div>
+                <div class="card-subtitle">
+                  Main back-office management table.
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm">⟳ Refresh</button>
+            </div>
+            <div class="card-body" style="padding-top: 0">
+              <div class="filters-bar">
+                <div class="search-input-wrap">
+                  <span class="search-icon">🔍</span>
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Search by name, ID…"
+                    style="max-width: 240px"
+                  />
+                </div>
+                <select class="form-control">
+                  <option value="">All statuses</option>
+                  <option>Pending</option>
+                  <option>Under Review</option>
+                  <option>Assigned</option>
+                  <option>Resolved</option>
+                  <option>Closed</option>
+                </select>
+                <select class="form-control">
+                  <option value="">All categories</option>
+                  <option>Document</option>
+                  <option>Schedule</option>
+                  <option>Internship</option>
+                  <option>Complaint</option>
+                  <option>Scholarship</option>
+                </select>
+                <select class="form-control">
+                  <option value="">All departments</option>
+                  <option>Academic Office</option>
+                  <option>Student Affairs</option>
+                  <option>Career Office</option>
+                  <option>Administration</option>
+                </select>
+                <button class="btn btn-ghost btn-sm">✕ Reset</button>
+              </div>
+              <div class="table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Student</th>
+                      <th>Category</th>
+                      <th>Assigned to</th>
+                      <th>Date</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="td-id">#SR-1042</td>
+                      <td class="td-student">Med Rayen</td>
+                      <td>📄 Document</td>
+                      <td>Academic Office</td>
+                      <td>09/04/2025</td>
+                      <td><span class="badge badge-review">High</span></td>
+                      <td>
+                        <span class="badge badge-review">Under Review</span>
+                      </td>
+                      <td>
+                        <div class="flex gap-8">
+                          <a
+                            href="detail.html"
+                            class="btn btn-ghost btn-sm btn-icon"
+                            >👁</a
+                          ><a
+                            href="edit.html"
+                            class="btn btn-ghost btn-sm btn-icon"
+                            >✏️</a
+                          ><button class="btn btn-danger btn-sm btn-icon">
+                            🗑
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="td-id">#SR-1043</td>
+                      <td class="td-student">Ayoub Azayez</td>
+                      <td>🗓 Schedule</td>
+                      <td>Student Affairs</td>
+                      <td>09/04/2025</td>
+                      <td><span class="badge badge-pending">Normal</span></td>
+                      <td>
+                        <span class="badge badge-pending">Pending</span>
+                      </td>
+                      <td>
+                        <div class="flex gap-8">
+                          <a
+                            href="detail.html"
+                            class="btn btn-ghost btn-sm btn-icon"
+                            >👁</a
+                          ><a
+                            href="edit.html"
+                            class="btn btn-ghost btn-sm btn-icon"
+                            >✏️</a
+                          ><button class="btn btn-danger btn-sm btn-icon">
+                            🗑
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="td-id">#SR-1044</td>
+                      <td class="td-student">Amen Allah</td>
+                      <td>🏢 Internship</td>
+                      <td>Career Office</td>
+                      <td>08/04/2025</td>
+                      <td><span class="badge badge-pending">Normal</span></td>
+                      <td>
+                        <span class="badge badge-resolved">Resolved</span>
+                      </td>
+                      <td>
+                        <div class="flex gap-8">
+                          <a
+                            href="detail.html"
+                            class="btn btn-ghost btn-sm btn-icon"
+                            >👁</a
+                          ><a
+                            href="edit.html"
+                            class="btn btn-ghost btn-sm btn-icon"
+                            >✏️</a
+                          ><button class="btn btn-danger btn-sm btn-icon">
+                            🗑
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="td-id">#SR-1045</td>
+                      <td class="td-student">Med Aziz</td>
+                      <td>📢 Complaint</td>
+                      <td>Administration</td>
+                      <td>08/04/2025</td>
+                      <td><span class="badge badge-review">High</span></td>
+                      <td>
+                        <span class="badge badge-review">Under Review</span>
+                      </td>
+                      <td>
+                        <div class="flex gap-8">
+                          <a
+                            href="detail.html"
+                            class="btn btn-ghost btn-sm btn-icon"
+                            >👁</a
+                          ><a
+                            href="edit.html"
+                            class="btn btn-ghost btn-sm btn-icon"
+                            >✏️</a
+                          ><button class="btn btn-danger btn-sm btn-icon">
+                            🗑
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="td-id">#SR-1046</td>
+                      <td class="td-student">Sarra Mansouri</td>
+                      <td>🎓 Scholarship</td>
+                      <td>Student Affairs</td>
+                      <td>07/04/2025</td>
+                      <td><span class="badge badge-closed">Low</span></td>
+                      <td>
+                        <span class="badge badge-assigned">Assigned</span>
+                      </td>
+                      <td>
+                        <div class="flex gap-8">
+                          <a
+                            href="detail.html"
+                            class="btn btn-ghost btn-sm btn-icon"
+                            >👁</a
+                          ><a
+                            href="edit.html"
+                            class="btn btn-ghost btn-sm btn-icon"
+                            >✏️</a
+                          ><button class="btn btn-danger btn-sm btn-icon">
+                            🗑
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="td-id">#SR-1047</td>
+                      <td class="td-student">Rim Trabelsi</td>
+                      <td>📄 Document</td>
+                      <td>Academic Office</td>
+                      <td>07/04/2025</td>
+                      <td><span class="badge badge-resolved">Low</span></td>
+                      <td><span class="badge badge-closed">Closed</span></td>
+                      <td>
+                        <div class="flex gap-8">
+                          <a
+                            href="detail.html"
+                            class="btn btn-ghost btn-sm btn-icon"
+                            >👁</a
+                          ><a
+                            href="edit.html"
+                            class="btn btn-ghost btn-sm btn-icon"
+                            >✏️</a
+                          ><button class="btn btn-danger btn-sm btn-icon">
+                            🗑
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="pagination">
+                <div class="text-muted" style="flex: 1; font-size: 12px">
+                  Showing 1–6 of 128 requests
+                </div>
+                <button class="page-btn">‹</button
+                ><button class="page-btn active">1</button
+                ><button class="page-btn">2</button
+                ><button class="page-btn">3</button
+                ><span style="color: var(--text-muted)">…</span
+                ><button class="page-btn">22</button
+                ><button class="page-btn">›</button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>
