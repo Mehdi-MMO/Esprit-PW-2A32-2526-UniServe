@@ -1,90 +1,75 @@
 <?php
 require_once "config/database.php";
 require_once "models/RendezVous.php";
+require_once "models/Bureau.php";
 
 class RendezVousController {
     private $db;
-    private $model;
 
     public function __construct() {
         $database = new Database();
         $this->db = $database->getConnection();
-        $this->model = new RendezVous($this->db);
     }
 
-    public function listAll() {
-        $stmt = $this->model->getAll();
-        require_once "views/back/list.php";
-    }
-
+    // Affiche la page d'accueil (Front-office)
     public function showFront() {
-        $stmt = $this->model->getAll();
-        require_once "views/front/index.php";
+        $bureauModel = new Bureau($this->db);
+        $stmtBureaux = $bureauModel->getAll();
+
+        // Récupération des rendez-vous récents pour le front
+        $query = "SELECT r.*, b.nom AS bureau_nom FROM rendez_vous r 
+                  LEFT JOIN bureau b ON r.bureau_id = b.id 
+                  ORDER BY r.date_rdv DESC LIMIT 6";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+
+        // CORRECTION : Utilise votre fichier views/front/index.php
+        require_once "views/front/index.php"; 
     }
 
-    public function createForm() {
-        $errors = [];
-        require_once "views/back/create.php";
+    // Affiche le formulaire de réservation
+    public function bookForm() {
+        $bureauModel = new Bureau($this->db);
+        $stmtBureaux = $bureauModel->getAll();
+        require_once "views/front/book.php";
     }
 
-    public function store() {
-        $errors = $this->validate($_POST);
-        if (empty($errors)) {
-            $this->model->titre = $_POST['titre'];
-            $this->model->date_rdv = $_POST['date_rdv'];
-            $this->model->heure_rdv = $_POST['heure_rdv'];
-            $this->model->description = $_POST['description'];
-            $this->model->create();
-            header("Location: index.php?page=back");
-            exit();
+    // Enregistre la réservation
+    public function storeBooking() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $model = new RendezVous($this->db);
+            $model->nom_etudiant = htmlspecialchars(strip_tags($_POST['nom_etudiant']));
+            $model->id_bureau    = $_POST['id_bureau'];
+            $model->objet         = htmlspecialchars(strip_tags($_POST['objet']));
+            $model->date_rdv      = $_POST['date_rdv'];
+            $model->heure_rdv     = $_POST['heure_rdv'];
+
+            if ($model->create()) {
+                header("Location: index.php?success=1");
+                exit();
+            }
         }
-        require_once "views/back/create.php";
     }
 
-    public function editForm() {
-        $errors = [];
-        $this->model->id = $_GET['id'];
-        $this->model->getOne();
-        require_once "views/back/edit.php";
+    // Liste pour l'administration (Back-office)
+    public function listAll() {
+        // CORRECTION : "AS student_name" pour que list.php affiche le nom
+        $query = "SELECT r.*, r.nom_etudiant AS student_name, b.nom as bureau_nom 
+                  FROM rendez_vous r 
+                  LEFT JOIN bureau b ON r.bureau_id = b.id 
+                  ORDER BY r.date_rdv DESC";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+        require_once "views/back/rendez-vous/list.php";
     }
 
-    public function update() {
-        $errors = $this->validate($_POST);
-        if (empty($errors)) {
-            $this->model->id = $_POST['id'];
-            $this->model->titre = $_POST['titre'];
-            $this->model->date_rdv = $_POST['date_rdv'];
-            $this->model->heure_rdv = $_POST['heure_rdv'];
-            $this->model->description = $_POST['description'];
-            $this->model->update();
-            header("Location: index.php?page=back");
-            exit();
+    public function updateStatus() {
+        if (isset($_GET['id']) && isset($_GET['status'])) {
+            $query = "UPDATE rendez_vous SET statut = ? WHERE id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$_GET['status'], $_GET['id']]);
         }
-        $this->model->id = $_POST['id'];
-        require_once "views/back/edit.php";
-    }
-
-    public function delete() {
-        $this->model->id = $_GET['id'];
-        $this->model->delete();
-        header("Location: index.php?page=back");
+        header("Location: index.php?page=back&module=appointments");
         exit();
     }
-
-    private function validate($data) {
-        $errors = [];
-        if (empty(trim($data['titre']))) {
-            $errors['titre'] = "Le titre est obligatoire.";
-        } elseif (strlen($data['titre']) < 3) {
-            $errors['titre'] = "Le titre doit contenir au moins 3 caractères.";
-        }
-        if (empty($data['date_rdv'])) {
-            $errors['date_rdv'] = "La date est obligatoire.";
-        }
-        if (empty($data['heure_rdv'])) {
-            $errors['heure_rdv'] = "L'heure est obligatoire.";
-        }
-        return $errors;
-    }
 }
-?>
