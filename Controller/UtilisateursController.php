@@ -9,12 +9,8 @@ class UtilisateursController extends Controller
         $this->index();
     }
 
-    public function index(): void
+    private function resolveListState(User $userModel): array
     {
-        $this->requireLogin();
-        $this->requireRole(['staff', 'admin']);
-
-        $userModel = new User();
         $singleAdminId = $userModel->findSingleAdminId();
 
         $q = trim((string) ($_GET['q'] ?? ''));
@@ -45,8 +41,7 @@ class UtilisateursController extends Controller
         $offset = ($page - 1) * $perPage;
         $users = $userModel->findFiltered($filters, $perPage, $offset, $sort, $dir);
 
-        $this->render('utilisateurs/index', [
-            'title' => 'Utilisateurs',
+        return [
             'users' => $users,
             'singleAdminId' => $singleAdminId,
             'filters' => $filters,
@@ -56,6 +51,23 @@ class UtilisateursController extends Controller
                 'total' => $total,
                 'per_page' => $perPage,
             ],
+        ];
+    }
+
+    public function index(): void
+    {
+        $this->requireLogin();
+        $this->requireRole(['staff', 'admin']);
+
+        $userModel = new User();
+        $state = $this->resolveListState($userModel);
+
+        $this->render('backoffice/utilisateurs/index', [
+            'title' => 'Utilisateurs',
+            'users' => $state['users'],
+            'singleAdminId' => $state['singleAdminId'],
+            'filters' => $state['filters'],
+            'pagination' => $state['pagination'],
         ]);
     }
 
@@ -67,77 +79,64 @@ class UtilisateursController extends Controller
         header('Content-Type: application/json; charset=utf-8');
 
         $userModel = new User();
-        $singleAdminId = $userModel->findSingleAdminId();
-
-        $q = trim((string) ($_GET['q'] ?? ''));
-        $role = trim((string) ($_GET['role'] ?? ''));
-        $statutCompte = trim((string) ($_GET['statut_compte'] ?? ''));
-
-        $page = (int) ($_GET['page'] ?? 1);
-        $page = $page > 0 ? $page : 1;
-
-        $perPage = (int) ($_GET['per_page'] ?? 10);
-        $perPage = in_array($perPage, [10, 25], true) ? $perPage : 10;
-
-        $filters = [
-            'q' => $q,
-            'role' => $role,
-            'statut_compte' => $statutCompte,
-        ];
-
-        $sort = 'id';
-        $dir = 'DESC';
-
-        $total = $userModel->countFiltered($filters);
-        $pages = $perPage > 0 ? (int) max(1, ceil($total / $perPage)) : 1;
-        if ($page > $pages) {
-            $page = $pages;
-        }
-
-        $offset = ($page - 1) * $perPage;
-        $users = $userModel->findFiltered($filters, $perPage, $offset, $sort, $dir);
+        $state = $this->resolveListState($userModel);
+        $users = $state['users'];
+        $singleAdminId = $state['singleAdminId'];
+        $filters = $state['filters'];
+        $pagination = $state['pagination'];
+        $q = (string) ($filters['q'] ?? '');
+        $role = (string) ($filters['role'] ?? '');
+        $statutCompte = (string) ($filters['statut_compte'] ?? '');
+        $page = (int) ($pagination['page'] ?? 1);
+        $pages = (int) ($pagination['pages'] ?? 1);
+        $total = (int) ($pagination['total'] ?? 0);
+        $perPage = (int) ($pagination['per_page'] ?? 10);
 
         // Build rows HTML (for direct injection into tbody).
         $rowsHtml = '';
-        foreach ($users as $u) {
-            $id = (int) ($u['id'] ?? 0);
-            $isSingleAdmin = $singleAdminId !== null && $id === $singleAdminId;
+        if (empty($users)) {
+            $rowsHtml = '<tr><td colspan="8" class="text-center text-muted py-4">Aucun utilisateur trouvé.</td></tr>';
+        } else {
+            foreach ($users as $u) {
+                $id = (int) ($u['id'] ?? 0);
+                $isSingleAdmin = $singleAdminId !== null && $id === $singleAdminId;
 
-            $statut = (string) ($u['statut_compte'] ?? '');
-            $badgeClass = $statut === 'actif' ? 'bg-success' : 'bg-secondary';
+                $statut = (string) ($u['statut_compte'] ?? '');
+                $badgeClass = $statut === 'actif' ? 'bg-success' : 'bg-secondary';
 
-            $editUrl = $this->url('/utilisateurs/edit/' . $id);
-            $deleteUrl = $this->url('/utilisateurs/delete/' . $id);
+                $editUrl = $this->url('/utilisateurs/edit/' . $id);
+                $deleteUrl = $this->url('/utilisateurs/delete/' . $id);
 
-            if ($isSingleAdmin) {
-                $deleteHtml = '<button class="btn btn-outline-danger btn-sm ms-2" type="button" disabled title="Suppression bloquée (admin unique)"> <i class="bi bi-trash me-1"></i>Supprimer</button>';
-            } else {
-                $deleteHtml = '<form method="post" action="' . $deleteUrl . '" class="d-inline">
-                                    <button class="btn btn-outline-danger btn-sm ms-2" type="submit" onclick="return confirm(\'Supprimer cet utilisateur ?\');">
-                                        <i class="bi bi-trash me-1"></i>Supprimer
-                                    </button>
-                                </form>';
+                if ($isSingleAdmin) {
+                    $deleteHtml = '<button class="btn btn-outline-danger btn-sm ms-2" type="button" disabled title="Suppression bloquée (admin unique)"> <i class="bi bi-trash me-1"></i>Supprimer</button>';
+                } else {
+                    $deleteHtml = '<form method="post" action="' . $deleteUrl . '" class="d-inline">
+                                        <button class="btn btn-outline-danger btn-sm ms-2" type="submit" onclick="return confirm(\'Supprimer cet utilisateur ?\');">
+                                            <i class="bi bi-trash me-1"></i>Supprimer
+                                        </button>
+                                    </form>';
+                }
+
+                $rowsHtml .= '<tr>';
+                $rowsHtml .= '<td class="text-muted">' . htmlspecialchars((string) $id, ENT_QUOTES, 'UTF-8') . '</td>';
+                $rowsHtml .= '<td>';
+                $rowsHtml .= '<div class="fw-semibold">' .
+                    htmlspecialchars((string) ($u['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') . ' ' .
+                    htmlspecialchars((string) ($u['nom'] ?? ''), ENT_QUOTES, 'UTF-8') .
+                    '</div>';
+                $rowsHtml .= '<div class="text-muted small">' . htmlspecialchars((string) ($u['departement'] ?? ''), ENT_QUOTES, 'UTF-8') . '</div>';
+                $rowsHtml .= '</td>';
+                $rowsHtml .= '<td>' . htmlspecialchars((string) ($u['email'] ?? ''), ENT_QUOTES, 'UTF-8') . '</td>';
+                $rowsHtml .= '<td><span class="badge bg-light text-muted border">' . htmlspecialchars(ucfirst((string) ($u['role'] ?? '')), ENT_QUOTES, 'UTF-8') . '</span></td>';
+                $rowsHtml .= '<td>' . htmlspecialchars((string) ($u['matricule'] ?? ''), ENT_QUOTES, 'UTF-8') . '</td>';
+                $rowsHtml .= '<td>' . htmlspecialchars((string) ($u['telephone'] ?? ''), ENT_QUOTES, 'UTF-8') . '</td>';
+                $rowsHtml .= '<td><span class="badge ' . $badgeClass . '">' . htmlspecialchars(ucfirst($statut), ENT_QUOTES, 'UTF-8') . '</span></td>';
+                $rowsHtml .= '<td class="text-end">';
+                $rowsHtml .= '<a class="btn btn-outline-primary btn-sm" href="' . $editUrl . '"><i class="bi bi-pencil me-1"></i>Modifier</a>';
+                $rowsHtml .= $deleteHtml;
+                $rowsHtml .= '</td>';
+                $rowsHtml .= '</tr>';
             }
-
-            $rowsHtml .= '<tr>';
-            $rowsHtml .= '<td class="text-muted">' . htmlspecialchars((string) $id, ENT_QUOTES, 'UTF-8') . '</td>';
-            $rowsHtml .= '<td>';
-            $rowsHtml .= '<div class="fw-semibold">' .
-                htmlspecialchars((string) ($u['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') .
-                htmlspecialchars((string) ($u['nom'] ?? ''), ENT_QUOTES, 'UTF-8') .
-                '</div>';
-            $rowsHtml .= '<div class="text-muted small">' . htmlspecialchars((string) ($u['departement'] ?? ''), ENT_QUOTES, 'UTF-8') . '</div>';
-            $rowsHtml .= '</td>';
-            $rowsHtml .= '<td>' . htmlspecialchars((string) ($u['email'] ?? ''), ENT_QUOTES, 'UTF-8') . '</td>';
-            $rowsHtml .= '<td><span class="badge bg-light text-muted border">' . htmlspecialchars((string) ($u['role'] ?? ''), ENT_QUOTES, 'UTF-8') . '</span></td>';
-            $rowsHtml .= '<td>' . htmlspecialchars((string) ($u['matricule'] ?? ''), ENT_QUOTES, 'UTF-8') . '</td>';
-            $rowsHtml .= '<td>' . htmlspecialchars((string) ($u['telephone'] ?? ''), ENT_QUOTES, 'UTF-8') . '</td>';
-            $rowsHtml .= '<td><span class="badge ' . $badgeClass . '">' . htmlspecialchars($statut, ENT_QUOTES, 'UTF-8') . '</span></td>';
-            $rowsHtml .= '<td class="text-end">';
-            $rowsHtml .= '<a class="btn btn-outline-primary btn-sm" href="' . $editUrl . '"><i class="bi bi-pencil me-1"></i>Modifier</a>';
-            $rowsHtml .= $deleteHtml;
-            $rowsHtml .= '</td>';
-            $rowsHtml .= '</tr>';
         }
 
         // Build pagination HTML.
@@ -151,7 +150,7 @@ class UtilisateursController extends Controller
         if ($statutCompte !== '') {
             $baseParams['statut_compte'] = $statutCompte;
         }
-        if (!in_array($perPage, [10], true)) {
+        if ($perPage !== 10) {
             // Keep same behavior as the view: only include per_page when not default (10).
             $baseParams['per_page'] = $perPage;
         }
@@ -165,34 +164,37 @@ class UtilisateursController extends Controller
             return $utilisateursUrl . ($baseQuery !== '' ? '?' . $baseQuery . '&' : '?') . 'page=' . $targetPage;
         };
 
-        $paginationHtml = '<nav aria-label="Pagination"><ul class="pagination mb-0">';
-        $prev = $page - 1;
-        $next = $page + 1;
+        $paginationHtml = '';
+        if ($pages > 1) {
+            $paginationHtml = '<nav aria-label="Pagination"><ul class="pagination mb-0">';
+            $prev = $page - 1;
+            $next = $page + 1;
 
-        $paginationHtml .= '<li class="page-item ' . ($page <= 1 ? 'disabled' : '') . '">';
-        if ($page <= 1) {
-            $paginationHtml .= '<a class="page-link" href="#" aria-disabled="true">Précédent</a>';
-        } else {
-            $paginationHtml .= '<a class="page-link" href="' . $makePageHref($prev) . '">Précédent</a>';
+            $paginationHtml .= '<li class="page-item ' . ($page <= 1 ? 'disabled' : '') . '">';
+            if ($page <= 1) {
+                $paginationHtml .= '<a class="page-link" href="#" aria-disabled="true">Précédent</a>';
+            } else {
+                $paginationHtml .= '<a class="page-link" href="' . $makePageHref($prev) . '">Précédent</a>';
+            }
+            $paginationHtml .= '</li>';
+
+            $start = max(1, $page - 2);
+            $end = min($pages, $page + 2);
+            for ($p = $start; $p <= $end; $p++) {
+                $active = $p === $page ? 'active' : '';
+                $paginationHtml .= '<li class="page-item ' . $active . '"><a class="page-link" href="' . $makePageHref($p) . '">' . (int) $p . '</a></li>';
+            }
+
+            $paginationHtml .= '<li class="page-item ' . ($page >= $pages ? 'disabled' : '') . '">';
+            if ($page >= $pages) {
+                $paginationHtml .= '<a class="page-link" href="#" aria-disabled="true">Suivant</a>';
+            } else {
+                $paginationHtml .= '<a class="page-link" href="' . $makePageHref($next) . '">Suivant</a>';
+            }
+            $paginationHtml .= '</li>';
+
+            $paginationHtml .= '</ul></nav>';
         }
-        $paginationHtml .= '</li>';
-
-        $start = max(1, $page - 2);
-        $end = min($pages, $page + 2);
-        for ($p = $start; $p <= $end; $p++) {
-            $active = $p === $page ? 'active' : '';
-            $paginationHtml .= '<li class="page-item ' . $active . '"><a class="page-link" href="' . $makePageHref($p) . '">' . (int) $p . '</a></li>';
-        }
-
-        $paginationHtml .= '<li class="page-item ' . ($page >= $pages ? 'disabled' : '') . '">';
-        if ($page >= $pages) {
-            $paginationHtml .= '<a class="page-link" href="#" aria-disabled="true">Suivant</a>';
-        } else {
-            $paginationHtml .= '<a class="page-link" href="' . $makePageHref($next) . '">Suivant</a>';
-        }
-        $paginationHtml .= '</li>';
-
-        $paginationHtml .= '</ul></nav>';
 
         echo json_encode([
             'rowsHtml' => $rowsHtml,
@@ -254,6 +256,12 @@ class UtilisateursController extends Controller
 
             if ($nom === '' || $prenom === '' || $email === '' || $password === '') {
                 $error = 'Nom, prénom, email et mot de passe sont obligatoires.';
+            } elseif (strlen($password) < User::MIN_PASSWORD_LENGTH) {
+                $error = 'Le mot de passe doit contenir au moins ' . User::MIN_PASSWORD_LENGTH . ' caractères.';
+            } elseif (!in_array($role, User::allowedRoles(), true)) {
+                $error = 'Rôle invalide.';
+            } elseif (!in_array($statutCompte, User::allowedStatuses(), true)) {
+                $error = 'Statut du compte invalide.';
             } elseif ($role === 'admin' && $singleAdminId !== null) {
                 $error = 'Un seul compte admin est autorisé.';
                 $old['role'] = 'etudiant';
@@ -282,7 +290,7 @@ class UtilisateursController extends Controller
             }
         }
 
-        $this->render('utilisateurs/create', [
+        $this->render('backoffice/utilisateurs/create', [
             'title' => 'Créer un utilisateur',
             'error' => $error,
             'old' => $old,
@@ -326,6 +334,12 @@ class UtilisateursController extends Controller
 
             if ($nom === '' || $prenom === '' || $email === '') {
                 $error = 'Nom, prénom et email sont obligatoires.';
+            } elseif ($newPassword !== '' && strlen($newPassword) < User::MIN_PASSWORD_LENGTH) {
+                $error = 'Le nouveau mot de passe doit contenir au moins ' . User::MIN_PASSWORD_LENGTH . ' caractères.';
+            } elseif (!in_array($role, User::allowedRoles(), true)) {
+                $error = 'Rôle invalide.';
+            } elseif (!in_array($statutCompte, User::allowedStatuses(), true)) {
+                $error = 'Statut du compte invalide.';
             } elseif ($isSingleAdminEditing && $role !== 'admin') {
                 $error = 'Vous ne pouvez pas changer le rôle du compte admin unique.';
             } elseif (!$isSingleAdminEditing && $role === 'admin' && $singleAdminId !== null) {
@@ -359,7 +373,7 @@ class UtilisateursController extends Controller
             }
         }
 
-        $this->render('utilisateurs/edit', [
+        $this->render('backoffice/utilisateurs/edit', [
             'title' => 'Modifier un utilisateur',
             'error' => $error,
             'user' => $user,
@@ -382,6 +396,12 @@ class UtilisateursController extends Controller
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $userModel = new User();
             $singleAdminId = $userModel->findSingleAdminId();
+            $currentUserId = (int) ($_SESSION['user']['id'] ?? 0);
+
+            if ($currentUserId > 0 && $userId === $currentUserId) {
+                $this->redirect('/utilisateurs?error=' . urlencode('Vous ne pouvez pas supprimer votre propre compte.'));
+                return;
+            }
 
             if ($singleAdminId !== null && $userId === $singleAdminId) {
                 $this->redirect('/utilisateurs?error=' . urlencode('Suppression bloquée : seul compte admin.'));

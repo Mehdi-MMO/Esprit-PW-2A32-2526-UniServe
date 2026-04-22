@@ -6,13 +6,23 @@ class AuthController extends Controller
 {
     public function landing(): void
     {
-        $this->render('auth/landing', [
+        if ($this->isLoggedIn()) {
+            $this->redirectByUserRole((string) ($_SESSION['user']['role'] ?? ''));
+            return;
+        }
+
+        $this->render('auth_landing', [
             'title' => 'Bienvenue sur UniServe',
-        ]);
+        ], 'landing');
     }
 
     public function login(): void
     {
+        if ($this->isLoggedIn()) {
+            $this->redirectByUserRole((string) ($_SESSION['user']['role'] ?? ''));
+            return;
+        }
+
         $error = null;
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
@@ -21,7 +31,7 @@ class AuthController extends Controller
 
             if ($email === '' || $password === '') {
                 $error = 'Veuillez renseigner votre email et votre mot de passe.';
-                $this->render('auth/login', ['error' => $error]);
+                $this->render('auth_login', ['error' => $error], 'landing');
                 return;
             }
 
@@ -32,11 +42,28 @@ class AuthController extends Controller
             $ok = !empty($user) && $hash !== '' && password_verify($password, $hash);
 
             if (!$ok) {
-                $this->render('auth/login', [
+                $this->render('auth_login', [
                     'error' => 'Identifiants invalides. Veuillez réessayer.',
-                ]);
+                ], 'landing');
                 return;
             }
+
+            if ((string) ($user['statut_compte'] ?? 'actif') !== 'actif') {
+                $this->render('auth_login', [
+                    'error' => 'Ce compte est inactif. Contactez l’administration.',
+                ], 'landing');
+                return;
+            }
+
+            $role = (string) ($user['role'] ?? '');
+            if (!in_array($role, User::allowedRoles(), true)) {
+                $this->render('auth_login', [
+                    'error' => 'Rôle utilisateur non reconnu.',
+                ], 'landing');
+                return;
+            }
+
+            session_regenerate_id(true);
 
             // Store only the required fields in session.
             $_SESSION['user'] = [
@@ -44,24 +71,17 @@ class AuthController extends Controller
                 'nom' => (string) ($user['nom'] ?? ''),
                 'prenom' => (string) ($user['prenom'] ?? ''),
                 'email' => (string) ($user['email'] ?? ''),
-                'role' => (string) ($user['role'] ?? ''),
+                'role' => $role,
                 'matricule' => (string) ($user['matricule'] ?? ''),
             ];
 
-            $role = (string) ($_SESSION['user']['role'] ?? '');
-
-            if (in_array($role, ['etudiant', 'enseignant'], true)) {
-                $this->redirect('/frontoffice/dashboard');
-                return;
-            }
-
-            $this->redirect('/backoffice/dashboard');
+            $this->redirectByUserRole($role);
             return;
         }
 
-        $this->render('auth/login', [
+        $this->render('auth_login', [
             'error' => $error,
-        ]);
+        ], 'landing');
     }
 
     public function logout(): void

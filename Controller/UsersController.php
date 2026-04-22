@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 class UsersController extends Controller
 {
+    public function landing(): void
+    {
+        $this->profile();
+    }
+
     public function profile(): void
     {
         $this->requireLogin();
@@ -79,6 +84,8 @@ class UsersController extends Controller
 
                 if ($currentPassword === '' || $newPassword === '' || $confirmPassword === '') {
                     $error = 'Veuillez remplir tous les champs du changement de mot de passe.';
+                } elseif (strlen($newPassword) < User::MIN_PASSWORD_LENGTH) {
+                    $error = 'Le nouveau mot de passe doit contenir au moins ' . User::MIN_PASSWORD_LENGTH . ' caractères.';
                 } elseif ($newPassword !== $confirmPassword) {
                     $error = 'Le nouveau mot de passe et sa confirmation ne correspondent pas.';
                 } elseif (!$userModel->verifyPasswordById($userId, $currentPassword)) {
@@ -99,7 +106,7 @@ class UsersController extends Controller
             }
         }
 
-        $this->render('users/profile', [
+        $this->render('frontoffice/users/profile', [
             'user' => $user,
             'error' => $error,
             'success' => $success,

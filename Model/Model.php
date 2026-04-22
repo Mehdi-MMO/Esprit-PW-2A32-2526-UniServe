@@ -20,16 +20,8 @@ class Model
         return $statement;
     }
 
-    public function findAll(string $table): array
+    public function lastInsertId(): string
     {
-        $statement = $this->query("SELECT * FROM `{$table}`");
-        return $statement->fetchAll();
-    }
-
-    public function findById(string $table, int|string $id): ?array
-    {
-        $statement = $this->query("SELECT * FROM `{$table}` WHERE id = ? LIMIT 1", [$id]);
-        $record = $statement->fetch();
-        return $record ?: null;
+        return self::$db->lastInsertId();
     }
 }

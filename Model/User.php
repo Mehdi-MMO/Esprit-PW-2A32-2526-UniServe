@@ -4,11 +4,25 @@ declare(strict_types=1);
 
 class User
 {
+    public const MIN_PASSWORD_LENGTH = 8;
+    public const ALLOWED_ROLES = ['etudiant', 'enseignant', 'staff', 'admin'];
+    public const ALLOWED_STATUSES = ['actif', 'inactif'];
+
     private Model $model;
 
     public function __construct()
     {
         $this->model = new Model();
+    }
+
+    public static function allowedRoles(): array
+    {
+        return self::ALLOWED_ROLES;
+    }
+
+    public static function allowedStatuses(): array
+    {
+        return self::ALLOWED_STATUSES;
     }
 
     private function normalizeNullableString(?string $value): ?string
@@ -110,11 +124,11 @@ class User
             return false;
         }
 
-        if (!in_array($role, ['etudiant', 'enseignant', 'staff', 'admin'], true)) {
+        if (!in_array($role, self::ALLOWED_ROLES, true)) {
             $role = 'etudiant';
         }
 
-        if (!in_array($statutCompte, ['actif', 'inactif'], true)) {
+        if (!in_array($statutCompte, self::ALLOWED_STATUSES, true)) {
             $statutCompte = 'actif';
         }
 
@@ -128,7 +142,7 @@ class User
             [$nom, $prenom, $email, $hash, $role, $matricule, $departement, $niveau, $telephone, $statutCompte]
         );
 
-        return (int) Database::connect()->lastInsertId();
+        return (int) $this->model->lastInsertId();
     }
 
     public function updateById(int|string $id, array $data): bool
@@ -288,12 +302,12 @@ class User
             $params[] = $like;
         }
 
-        if ($role !== '' && in_array($role, ['etudiant', 'enseignant', 'staff', 'admin'], true)) {
+        if ($role !== '' && in_array($role, self::ALLOWED_ROLES, true)) {
             $where[] = 'role = ?';
             $params[] = $role;
         }
 
-        if ($statutCompte !== '' && in_array($statutCompte, ['actif', 'inactif'], true)) {
+        if ($statutCompte !== '' && in_array($statutCompte, self::ALLOWED_STATUSES, true)) {
             $where[] = 'statut_compte = ?';
             $params[] = $statutCompte;
         }
