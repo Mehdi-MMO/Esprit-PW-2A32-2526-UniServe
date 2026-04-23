@@ -17,7 +17,7 @@
     };
     $dashboardActive = $pathStartsWith('backoffice') || $pathStartsWith('dashboard');
     ?>
-    <aside class="sidebar d-flex flex-column">
+    <aside class="sidebar d-flex flex-column shadow-sm">
         <div class="p-4 border-bottom border-secondary-subtle d-flex align-items-center gap-2">
             <span class="us-brand-mark" aria-hidden="true">U</span>
             <div class="lh-sm">
@@ -35,15 +35,18 @@
         </nav>
     </aside>
 
-    <header class="top-header ms-sidebar d-flex justify-content-between align-items-center px-4 py-3 border-bottom bg-white">
-        <span class="fw-semibold">
-            <?= htmlspecialchars((string) ($_SESSION['user']['prenom'] ?? 'Utilisateur'), ENT_QUOTES, 'UTF-8') ?>
-            <?= htmlspecialchars((string) ($_SESSION['user']['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-        </span>
+    <header class="top-header ms-sidebar d-flex justify-content-between align-items-center px-3 px-md-4 py-3 border-bottom bg-white">
+        <div>
+            <div class="us-kicker mb-1">Back office</div>
+            <span class="fw-semibold">
+                <?= htmlspecialchars((string) ($_SESSION['user']['prenom'] ?? 'Utilisateur'), ENT_QUOTES, 'UTF-8') ?>
+                <?= htmlspecialchars((string) ($_SESSION['user']['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+            </span>
+        </div>
         <a href="<?= $this->url('/auth/logout') ?>" class="btn btn-outline-danger btn-sm">Déconnexion</a>
     </header>
 
-    <main class="ms-sidebar p-4">
+    <main class="ms-sidebar p-3 p-md-4">
         <?= $content ?>
     </main>
 

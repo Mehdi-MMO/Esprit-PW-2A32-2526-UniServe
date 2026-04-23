@@ -2,19 +2,20 @@
     <div class="row align-items-center g-4">
         <div class="col-lg-7">
             <span class="us-badge mb-3">Plateforme officielle</span>
+            <div class="us-kicker mb-2">Université connectée</div>
             <h1 class="display-5 fw-bold mb-3">UniServe</h1>
-            <p class="lead text-muted mb-4">La plateforme intelligente des services universitaires</p>
-            <a href="<?= $this->url('/auth/login') ?>" class="btn btn-primary btn-lg px-4">Se connecter</a>
+            <p class="lead text-muted mb-4">La plateforme institutionnelle pour centraliser les services academiques et administratifs.</p>
+            <a href="<?= $this->url('/auth/login') ?>" class="btn btn-primary btn-lg px-4">Acceder au portail</a>
         </div>
 
         <div class="col-lg-5">
-            <div class="us-card p-4">
+            <div class="us-card p-4 h-100">
                 <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="fw-semibold">Accès sécurisé</div>
+                    <div class="fw-semibold">Acces securise</div>
                     <span class="us-badge">UniServe</span>
                 </div>
                 <div class="text-muted">
-                    Portail institutionnel pour les étudiants, enseignants et personnels.
+                    Portail institutionnel pour les etudiants, enseignants et personnels.
                 </div>
                 <div class="us-divider my-3"></div>
                 <div class="d-flex flex-wrap gap-2">
@@ -28,13 +29,13 @@
 
     <div class="mt-5">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
-            <h2 class="h4 mb-0">Fonctionnalités</h2>
-            <span class="text-muted small">Aperçu des modules</span>
+            <h2 class="h4 mb-0">Fonctionnalites</h2>
+            <span class="text-muted small">Apercu des modules</span>
         </div>
 
         <div class="row g-3">
             <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="us-section-card h-100">
                     <div class="card-body">
                         <div class="fw-semibold mb-1">Utilisateurs</div>
                         <div class="text-muted small">Comptes et gestion des profils (bientôt).</div>
@@ -43,7 +44,7 @@
             </div>
 
             <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="us-section-card h-100">
                     <div class="card-body">
                         <div class="fw-semibold mb-1">Demandes de service</div>
                         <div class="text-muted small">Suivi et traitement des demandes (bientôt).</div>
@@ -52,7 +53,7 @@
             </div>
 
             <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="us-section-card h-100">
                     <div class="card-body">
                         <div class="fw-semibold mb-1">Rendez-vous</div>
                         <div class="text-muted small">Réserver et gérer les rendez-vous (bientôt).</div>
@@ -61,7 +62,7 @@
             </div>
 
             <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="us-section-card h-100">
                     <div class="card-body">
                         <div class="fw-semibold mb-1">Documents académiques</div>
                         <div class="text-muted small">Demandes et documents officiels (bientôt).</div>
@@ -70,7 +71,7 @@
             </div>
 
             <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="us-section-card h-100">
                     <div class="card-body">
                         <div class="fw-semibold mb-1">Événements</div>
                         <div class="text-muted small">Inscription et gestion des événements (bientôt).</div>

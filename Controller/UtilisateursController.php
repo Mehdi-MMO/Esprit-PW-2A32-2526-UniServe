@@ -40,11 +40,19 @@ class UtilisateursController extends Controller
 
         $offset = ($page - 1) * $perPage;
         $users = $userModel->findFiltered($filters, $perPage, $offset, $sort, $dir);
+        $stats = [
+            'total' => $userModel->countFiltered([]),
+            'actif' => $userModel->countFiltered(['statut_compte' => 'actif']),
+            'inactif' => $userModel->countFiltered(['statut_compte' => 'inactif']),
+            'admin' => $userModel->countByRole('admin'),
+            'staff' => $userModel->countByRole('staff'),
+        ];
 
         return [
             'users' => $users,
             'singleAdminId' => $singleAdminId,
             'filters' => $filters,
+            'stats' => $stats,
             'pagination' => [
                 'page' => $page,
                 'pages' => $pages,
@@ -67,6 +75,7 @@ class UtilisateursController extends Controller
             'users' => $state['users'],
             'singleAdminId' => $state['singleAdminId'],
             'filters' => $state['filters'],
+            'stats' => $state['stats'],
             'pagination' => $state['pagination'],
         ]);
     }
@@ -95,45 +104,47 @@ class UtilisateursController extends Controller
         // Build rows HTML (for direct injection into tbody).
         $rowsHtml = '';
         if (empty($users)) {
-            $rowsHtml = '<tr><td colspan="8" class="text-center text-muted py-4">Aucun utilisateur trouvé.</td></tr>';
+            $rowsHtml = '<tr><td colspan="7" class="text-center text-muted py-4 us-empty-state">Aucun utilisateur trouvé.</td></tr>';
         } else {
             foreach ($users as $u) {
                 $id = (int) ($u['id'] ?? 0);
                 $isSingleAdmin = $singleAdminId !== null && $id === $singleAdminId;
 
                 $statut = (string) ($u['statut_compte'] ?? '');
-                $badgeClass = $statut === 'actif' ? 'bg-success' : 'bg-secondary';
+                $badgeClass = $statut === 'actif' ? 'actif' : 'inactif';
+                $roleValue = strtolower((string) ($u['role'] ?? ''));
 
                 $editUrl = $this->url('/utilisateurs/edit/' . $id);
                 $deleteUrl = $this->url('/utilisateurs/delete/' . $id);
 
                 if ($isSingleAdmin) {
-                    $deleteHtml = '<button class="btn btn-outline-danger btn-sm ms-2" type="button" disabled title="Suppression bloquée (admin unique)"> <i class="bi bi-trash me-1"></i>Supprimer</button>';
+                    $deleteHtml = '<button class="btn btn-outline-danger btn-sm" type="button" disabled title="Suppression bloquée (admin unique)"> <i class="bi bi-trash me-1"></i>Supprimer</button>';
                 } else {
                     $deleteHtml = '<form method="post" action="' . $deleteUrl . '" class="d-inline">
-                                        <button class="btn btn-outline-danger btn-sm ms-2" type="submit" onclick="return confirm(\'Supprimer cet utilisateur ?\');">
+                                        <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm(\'Supprimer cet utilisateur ?\');">
                                             <i class="bi bi-trash me-1"></i>Supprimer
                                         </button>
                                     </form>';
                 }
 
                 $rowsHtml .= '<tr>';
-                $rowsHtml .= '<td class="text-muted">' . htmlspecialchars((string) $id, ENT_QUOTES, 'UTF-8') . '</td>';
                 $rowsHtml .= '<td>';
-                $rowsHtml .= '<div class="fw-semibold">' .
+                $rowsHtml .= '<div class="fw-semibold us-user-name">' .
                     htmlspecialchars((string) ($u['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') . ' ' .
                     htmlspecialchars((string) ($u['nom'] ?? ''), ENT_QUOTES, 'UTF-8') .
                     '</div>';
-                $rowsHtml .= '<div class="text-muted small">' . htmlspecialchars((string) ($u['departement'] ?? ''), ENT_QUOTES, 'UTF-8') . '</div>';
+                $rowsHtml .= '<div class="text-muted small us-user-meta">' . htmlspecialchars((string) ($u['departement'] ?? ''), ENT_QUOTES, 'UTF-8') . '</div>';
                 $rowsHtml .= '</td>';
                 $rowsHtml .= '<td>' . htmlspecialchars((string) ($u['email'] ?? ''), ENT_QUOTES, 'UTF-8') . '</td>';
-                $rowsHtml .= '<td><span class="badge bg-light text-muted border">' . htmlspecialchars(ucfirst((string) ($u['role'] ?? '')), ENT_QUOTES, 'UTF-8') . '</span></td>';
+                $rowsHtml .= '<td><span class="us-role-chip ' . htmlspecialchars($roleValue, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(ucfirst($roleValue), ENT_QUOTES, 'UTF-8') . '</span></td>';
                 $rowsHtml .= '<td>' . htmlspecialchars((string) ($u['matricule'] ?? ''), ENT_QUOTES, 'UTF-8') . '</td>';
                 $rowsHtml .= '<td>' . htmlspecialchars((string) ($u['telephone'] ?? ''), ENT_QUOTES, 'UTF-8') . '</td>';
-                $rowsHtml .= '<td><span class="badge ' . $badgeClass . '">' . htmlspecialchars(ucfirst($statut), ENT_QUOTES, 'UTF-8') . '</span></td>';
+                $rowsHtml .= '<td><span class="us-status-chip ' . $badgeClass . '">' . htmlspecialchars(ucfirst($statut), ENT_QUOTES, 'UTF-8') . '</span></td>';
                 $rowsHtml .= '<td class="text-end">';
+                $rowsHtml .= '<div class="us-action-group">';
                 $rowsHtml .= '<a class="btn btn-outline-primary btn-sm" href="' . $editUrl . '"><i class="bi bi-pencil me-1"></i>Modifier</a>';
                 $rowsHtml .= $deleteHtml;
+                $rowsHtml .= '</div>';
                 $rowsHtml .= '</td>';
                 $rowsHtml .= '</tr>';
             }

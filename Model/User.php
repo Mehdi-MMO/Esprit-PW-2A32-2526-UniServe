@@ -38,7 +38,7 @@ class User
     public function findByEmail(string $email): ?array
     {
         $statement = $this->model->query(
-            'SELECT id, nom, prenom, email, mot_de_passe_hash, role, matricule, departement, niveau, telephone, statut_compte
+            'SELECT id, nom, prenom, email, mot_de_passe_hash, role, matricule, departement, niveau, telephone, photo_profil, statut_compte
              FROM utilisateurs
              WHERE email = ?
              LIMIT 1',
@@ -52,7 +52,7 @@ class User
     public function findById(int|string $id): ?array
     {
         $statement = $this->model->query(
-            'SELECT id, nom, prenom, email, mot_de_passe_hash, role, matricule, departement, niveau, telephone, statut_compte
+            'SELECT id, nom, prenom, email, mot_de_passe_hash, role, matricule, departement, niveau, telephone, photo_profil, statut_compte
              FROM utilisateurs
              WHERE id = ?
              LIMIT 1',
@@ -156,6 +156,7 @@ class User
             'departement' => 'departement',
             'niveau' => 'niveau',
             'telephone' => 'telephone',
+            'photo_profil' => 'photo_profil',
             'statut_compte' => 'statut_compte',
         ];
 

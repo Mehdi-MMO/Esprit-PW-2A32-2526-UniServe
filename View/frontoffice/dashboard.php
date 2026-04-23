@@ -1,47 +1,48 @@
-<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header">
     <div>
+        <div class="us-kicker mb-1">Front office</div>
         <h1 class="h3 mb-1">Bienvenue dans le Front Office UniServe</h1>
-        <p class="text-muted mb-0">Demandes, rendez-vous et documents pour vos activités académiques (modules bientôt disponibles).</p>
+        <p class="text-muted mb-0">Vos services académiques depuis un espace unique et clair.</p>
     </div>
 </div>
 
 <div class="row g-3">
     <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="us-module-card h-100">
             <div class="card-body d-flex flex-column">
-                <div class="fw-semibold mb-1">Demandes</div>
-                <div class="text-muted small mb-3">Accédez à vos demandes de service (module en préparation).</div>
-                <a href="<?= $this->url('/demandes') ?>" class="btn btn-outline-primary btn-sm mt-auto">Ouvrir</a>
+                <div class="us-module-title">Demandes</div>
+                <div class="us-module-copy">Soumettre et suivre vos demandes de service.</div>
+                <a href="<?= $this->url('/demandes') ?>" class="btn btn-outline-primary btn-sm us-dashboard-action">Ouvrir</a>
             </div>
         </div>
     </div>
 
     <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="us-module-card h-100">
             <div class="card-body d-flex flex-column">
-                <div class="fw-semibold mb-1">Rendez-vous</div>
-                <div class="text-muted small mb-3">Gérez vos rendez-vous (module en préparation).</div>
-                <a href="<?= $this->url('/rendezvous') ?>" class="btn btn-outline-primary btn-sm mt-auto">Ouvrir</a>
+                <div class="us-module-title">Rendez-vous</div>
+                <div class="us-module-copy">Consulter, réserver et suivre vos rendez-vous.</div>
+                <a href="<?= $this->url('/rendezvous') ?>" class="btn btn-outline-primary btn-sm us-dashboard-action">Ouvrir</a>
             </div>
         </div>
     </div>
 
     <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="us-module-card h-100">
             <div class="card-body d-flex flex-column">
-                <div class="fw-semibold mb-1">Documents</div>
-                <div class="text-muted small mb-3">Demandez et suivez vos documents (module en préparation).</div>
-                <a href="<?= $this->url('/documents') ?>" class="btn btn-outline-primary btn-sm mt-auto">Ouvrir</a>
+                <div class="us-module-title">Documents</div>
+                <div class="us-module-copy">Demander vos documents et suivre leur traitement.</div>
+                <a href="<?= $this->url('/documents') ?>" class="btn btn-outline-primary btn-sm us-dashboard-action">Ouvrir</a>
             </div>
         </div>
     </div>
 
     <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="us-module-card h-100">
             <div class="card-body d-flex flex-column">
-                <div class="fw-semibold mb-1">Événements</div>
-                <div class="text-muted small mb-3">Inscription et suivi des événements (module en préparation).</div>
-                <a href="<?= $this->url('/evenements') ?>" class="btn btn-outline-primary btn-sm mt-auto">Ouvrir</a>
+                <div class="us-module-title">Événements</div>
+                <div class="us-module-copy">Voir les événements universitaires et vos inscriptions.</div>
+                <a href="<?= $this->url('/evenements') ?>" class="btn btn-outline-primary btn-sm us-dashboard-action">Ouvrir</a>
             </div>
         </div>
     </div>

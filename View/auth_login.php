@@ -10,7 +10,7 @@
                                     <span class="us-brand-mark" aria-hidden="true">U</span>
                                     <div class="lh-sm">
                                         <div class="fw-bold">Portail UniServe</div>
-                                        <div class="text-muted small">Connexion sécurisée</div>
+                                        <div class="text-muted small">Connexion securisee</div>
                                     </div>
                                 </div>
                                 <span class="us-badge">Université</span>
@@ -22,7 +22,7 @@
                                 </div>
                             <?php else: ?>
                                 <div class="text-muted small mb-3">
-                                    Utilisez votre adresse institutionnelle pour accéder à votre espace.
+                                    Utilisez votre adresse institutionnelle pour acceder a votre espace.
                                 </div>
                             <?php endif; ?>
 
@@ -38,9 +38,9 @@
                                     <input type="password" id="password" class="form-control" name="password" placeholder="Votre mot de passe" autocomplete="current-password" required>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary w-100 py-2">Se connecter</button>
+                                <button type="submit" class="btn btn-primary w-100 py-2 mt-2">Se connecter</button>
                                 <div class="text-muted small mt-3">
-                                    Besoin d’aide ? Contactez le service scolarité.
+                                    Besoin d'aide ? Contactez le service scolarite.
                                 </div>
                             </form>
                         </div>
@@ -49,7 +49,7 @@
 
                 <div class="col-md-6">
                     <div class="us-card h-100 p-4 p-md-4">
-                        <div class="mb-2 fw-bold">Accès officiel</div>
+                        <div class="mb-2 fw-bold">Acces officiel</div>
                         <div class="text-muted mb-3">
                             UniServe centralise les services universitaires (demandes, rendez-vous, documents) dans un espace clair et institutionnel.
                         </div>
@@ -67,7 +67,7 @@
                             <div class="d-flex align-items-start gap-2">
                                 <span class="us-badge">2</span>
                                 <div>
-                                    <div class="fw-semibold">Accès aux modules</div>
+                                    <div class="fw-semibold">Acces aux modules</div>
                                     <div class="text-muted small">Selon votre rôle (étudiant, enseignant, staff).</div>
                                 </div>
                             </div>
@@ -82,7 +82,7 @@
 
                         <div class="us-divider my-3"></div>
 
-                        <a class="btn btn-outline-secondary w-100 py-2" href="<?= $this->url('/') ?>">Retour à l’accueil</a>
+                        <a class="btn btn-outline-secondary w-100 py-2" href="<?= $this->url('/') ?>">Retour a l'accueil</a>
                     </div>
                 </div>
             </div>

@@ -5,17 +5,23 @@ function e(string $v): string
 }
 ?>
 
-<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header">
     <div>
+        <div class="us-kicker mb-1">Gestion des comptes</div>
         <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Modifier un utilisateur'), ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="text-muted mb-0">Mettre à jour les informations et, si besoin, le mot de passe.</p>
+        <p class="us-page-subtitle">Mettre à jour les informations et, si besoin, le mot de passe.</p>
     </div>
 
     <a href="<?= $this->url('/utilisateurs') ?>" class="btn btn-outline-secondary btn-sm">Retour</a>
 </div>
 
-<div class="card border-0 shadow-sm">
+<div class="us-section-card">
     <div class="card-body p-3 p-md-4">
+        <div class="us-surface-muted px-3 py-2 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="small text-muted">Champs marqués * : obligatoires</div>
+            <div class="small text-muted">Laisser le mot de passe vide pour conserver l’actuel</div>
+        </div>
+
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger py-2 small" role="alert">
                 <?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?>
@@ -23,6 +29,7 @@ function e(string $v): string
         <?php endif; ?>
 
         <form method="post" action="<?= $this->url('/utilisateurs/edit/' . (int) ($user['id'] ?? 0)) ?>">
+            <h2 class="h6 mb-3">Compte utilisateur</h2>
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="nom">Nom *</label>
@@ -65,6 +72,7 @@ function e(string $v): string
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="new_password">Nouveau mot de passe</label>
                     <input class="form-control" id="new_password" name="new_password" type="password" placeholder="Laisser vide pour conserver le mot de passe actuel">
+                    <div class="form-text">Optionnel</div>
                 </div>
 
                 <div class="col-md-6">
@@ -75,30 +83,41 @@ function e(string $v): string
                         <option value="inactif" <?= $statut === 'inactif' ? 'selected' : '' ?>>Inactif</option>
                     </select>
                 </div>
+            </div>
+
+            <div class="us-divider my-4"></div>
+
+            <h2 class="h6 mb-3">Informations complémentaires</h2>
+            <div class="row g-3">
 
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="matricule">Matricule</label>
                     <input class="form-control" id="matricule" name="matricule" value="<?= e((string) ($user['matricule'] ?? '')) ?>">
+                    <div class="form-text">Optionnel</div>
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="telephone">Téléphone</label>
                     <input class="form-control" id="telephone" name="telephone" value="<?= e((string) ($user['telephone'] ?? '')) ?>">
+                    <div class="form-text">Optionnel</div>
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="departement">Département</label>
                     <input class="form-control" id="departement" name="departement" value="<?= e((string) ($user['departement'] ?? '')) ?>">
+                    <div class="form-text">Optionnel</div>
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="niveau">Niveau</label>
                     <input class="form-control" id="niveau" name="niveau" value="<?= e((string) ($user['niveau'] ?? '')) ?>">
+                    <div class="form-text">Optionnel</div>
                 </div>
             </div>
 
-            <div class="d-flex justify-content-end mt-4">
-                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-4 pt-2 border-top">
+                <a href="<?= $this->url('/utilisateurs') ?>" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary px-4">Enregistrer</button>
             </div>
         </form>
     </div>

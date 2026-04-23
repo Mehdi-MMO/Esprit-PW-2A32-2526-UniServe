@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="<?= $this->url('/View/shared/css/main.css') ?>">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg us-topbar navbar-dark">
+    <nav class="navbar navbar-expand-lg us-topbar navbar-dark shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= $this->url('/') ?>">
                 <span class="us-brand-mark" aria-hidden="true">U</span>

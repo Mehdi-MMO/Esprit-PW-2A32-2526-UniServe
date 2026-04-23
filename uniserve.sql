@@ -27,6 +27,7 @@ CREATE TABLE utilisateurs (
   departement VARCHAR(120),
   niveau VARCHAR(50),
   telephone VARCHAR(30),
+  photo_profil VARCHAR(255) NULL,
   statut_compte ENUM('actif','inactif') NOT NULL DEFAULT 'actif',
   cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
