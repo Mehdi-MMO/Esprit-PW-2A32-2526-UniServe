@@ -47,7 +47,9 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4 no-print">
     <div>
-        <button class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer me-2"></i>Imprimer le rapport</button>
+        <button class="btn btn-primary shadow-sm" onclick="printReleve()">
+            <i class="bi bi-file-earmark-pdf me-2"></i>Exporter le rapport global
+        </button>
     </div>
 </div>
 
@@ -88,8 +90,8 @@
                             </td>
                             <td class="text-end no-print">
                                 <a href="<?= $this->url('/services/edit/' . $service['id']) ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                                <form action="<?= $this->url('/services/delete/' . $service['id']) ?>" method="POST" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce service ?');">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                <form action="<?= $this->url('/services/delete/' . $service['id']) ?>" method="POST" class="d-inline" id="deleteService_<?= $service['id'] ?>">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete('deleteService_<?= $service['id'] ?>')"><i class="bi bi-trash"></i></button>
                                 </form>
                             </td>
                         </tr>
@@ -107,6 +109,10 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3">Toutes les demandes</h1>
     <div class="d-flex gap-2 no-print">
+        <select id="sortDate" class="form-select form-select-sm" style="width: 150px;">
+            <option value="desc">Plus récent</option>
+            <option value="asc">Plus ancien</option>
+        </select>
         <select id="filterStatus" class="form-select form-select-sm" style="width: 150px;">
             <option value="all">Tous les statuts</option>
             <option value="en_attente">En attente</option>
@@ -144,7 +150,7 @@
                             if ($demande['statut'] === 'traite') $rowClass = 'table-success';
                             if ($demande['statut'] === 'en_attente') $rowClass = 'table-warning';
                         ?>
-                        <tr class="demande-row <?= $rowClass ?>" data-statut="<?= $demande['statut'] ?>">
+                        <tr class="demande-row <?= $rowClass ?>" data-statut="<?= $demande['statut'] ?>" data-date="<?= strtotime($demande['date_creation']) ?>">
                             <td class="fw-medium search-target"><?= htmlspecialchars($demande['titre']) ?></td>
                             <td><?= htmlspecialchars($demande['service_nom']) ?></td>
                             <td class="search-target"><?= htmlspecialchars($demande['user_prenom'] . ' ' . $demande['user_nom']) ?></td>
@@ -169,8 +175,8 @@
                                 <button type="button" class="btn btn-sm btn-outline-info" onclick="showDetails('<?= htmlspecialchars(addslashes($demande['titre'])) ?>', '<?= htmlspecialchars(addslashes(nl2br($demande['description']))) ?>')">
                                     <i class="bi bi-eye"></i>
                                 </button>
-                                <form action="<?= $this->url('/demandes/delete_back/' . $demande['id']) ?>" method="POST" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette demande ?');">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                <form action="<?= $this->url('/demandes/delete_back/' . $demande['id']) ?>" method="POST" class="d-inline" id="deleteDemande_<?= $demande['id'] ?>">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete('deleteDemande_<?= $demande['id'] ?>')"><i class="bi bi-trash"></i></button>
                                 </form>
                             </td>
                         </tr>
@@ -199,7 +205,42 @@
   </div>
 </div>
 
+<!-- Modal de Confirmation de Suppression -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white border-0 py-2">
+        <h5 class="modal-title fs-6"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmation</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center p-4">
+        <i class="bi bi-trash text-danger display-4 d-block mb-3"></i>
+        <p class="mb-1 fw-bold fs-5">Êtes-vous sûr ?</p>
+        <p class="text-muted small mb-0">Cette action est irréversible.</p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center bg-light">
+        <button type="button" class="btn btn-light px-4 border" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-danger px-4" id="confirmDeleteBtn">Oui, supprimer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+let formToSubmitId = null;
+function confirmDelete(formId) {
+    formToSubmitId = formId;
+    new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (formToSubmitId) {
+            document.getElementById(formToSubmitId).submit();
+        }
+    });
+});
+
 function showDetails(title, desc) {
     document.getElementById('modalTitle').innerText = title;
     document.getElementById('modalDesc').innerHTML = desc;
@@ -208,6 +249,21 @@ function showDetails(title, desc) {
 
 document.getElementById('searchDemande').addEventListener('input', filterTable);
 document.getElementById('filterStatus').addEventListener('change', filterTable);
+document.getElementById('sortDate').addEventListener('change', sortTable);
+
+function sortTable() {
+    const tbody = document.querySelector('#demandesTable tbody');
+    const rows = Array.from(tbody.querySelectorAll('.demande-row'));
+    const sortOrder = document.getElementById('sortDate').value;
+
+    rows.sort((a, b) => {
+        const dateA = parseInt(a.getAttribute('data-date'));
+        const dateB = parseInt(b.getAttribute('data-date'));
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+}
 
 function filterTable() {
     const term = document.getElementById('searchDemande').value.toLowerCase();
@@ -226,5 +282,161 @@ function filterTable() {
             row.style.display = 'none';
         }
     });
+}
+
+const allDemandes = <?= json_encode($demandes) ?>;
+
+function escHtml(str) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(str));
+    return d.innerHTML;
+}
+
+// --- Impression / Export PDF ---
+function printReleve() {
+    const now = new Date().toLocaleDateString('fr-FR', {day:'2-digit',month:'long',year:'numeric'});
+
+    const palettes = [
+        { bg:'#1e3a8a', light:'#eff6ff', border:'#bfdbfe', text:'#1e3a8a' },
+        { bg:'#5b21b6', light:'#f5f3ff', border:'#ddd6fe', text:'#5b21b6' },
+        { bg:'#0f766e', light:'#f0fdfa', border:'#99f6e4', text:'#0f766e' },
+        { bg:'#92400e', light:'#fffbeb', border:'#fde68a', text:'#92400e' }
+    ];
+
+    const statusMap = {
+        en_attente: { label:'En attente', bg:'#fef9c3', color:'#854d0e', border:'#fde047' },
+        en_cours:   { label:'En cours',   bg:'#e0f2fe', color:'#075985', border:'#7dd3fc' },
+        traite:     { label:'Trait&eacute;',     bg:'#dcfce7', color:'#14532d', border:'#86efac' },
+        rejete:     { label:'Rejet&eacute;',     bg:'#fee2e2', color:'#7f1d1d', border:'#fca5a5' },
+    };
+
+    const byService = {};
+    allDemandes.forEach(d => {
+        const key = d.service_nom || 'Inconnu';
+        if (!byService[key]) byService[key] = [];
+        byService[key].push(d);
+    });
+
+    const total   = allDemandes.length;
+    const attente = allDemandes.filter(d => d.statut === 'en_attente').length;
+    const traite  = allDemandes.filter(d => d.statut === 'traite').length;
+    const rejete  = allDemandes.filter(d => d.statut === 'rejete').length;
+
+    let servicesHtml = '';
+    let pIdx = 0;
+
+    for (const [nom, demandes] of Object.entries(byService)) {
+        const pal = palettes[pIdx % palettes.length]; pIdx++;
+        let rows = '';
+
+        demandes.forEach((d, i) => {
+            const st = statusMap[d.statut] || { label: d.statut, bg:'#f3f4f6', color:'#374151', border:'#d1d5db' };
+            const dt = new Date(d.date_creation).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'});
+            const userName = (d.user_prenom + ' ' + d.user_nom).trim();
+            const rowBg = i % 2 === 0 ? '#ffffff' : pal.light;
+            rows += '<tr style="background:'+rowBg+';">'
+                  + '<td style="padding:10px; border-bottom:1px solid '+pal.border+'; font-size:14px; width:25%; color:#333; font-weight:bold;">'+escHtml(userName)+'</td>'
+                  + '<td style="padding:10px; border-bottom:1px solid '+pal.border+'; font-size:14px; width:40%; color:#555;">'+escHtml(d.titre)+'</td>'
+                  + '<td style="padding:10px; border-bottom:1px solid '+pal.border+'; font-size:14px; width:15%; color:#555;">'+dt+'</td>'
+                  + '<td style="padding:10px; border-bottom:1px solid '+pal.border+'; text-align:center; width:20%;">'
+                  +   '<span style="background:'+st.bg+'; color:'+st.color+'; border:1px solid '+st.border+'; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold; display:inline-block;">'+st.label+'</span>'
+                  + '</td>'
+                  + '</tr>';
+        });
+
+        servicesHtml +=
+            '<div style="margin-bottom:30px; border:1px solid '+pal.border+'; border-radius:8px; overflow:hidden;">'
+          +   '<div style="background:'+pal.bg+'; padding:12px 15px; color:#fff; font-size:16px; font-weight:bold; display:flex; justify-content:space-between;">'
+          +     '<span>'+escHtml(nom)+'</span>'
+          +     '<span style="background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:4px; font-size:14px;">'+demandes.length+' demande(s)</span>'
+          +   '</div>'
+          +   '<table style="width:100%; border-collapse:collapse; table-layout:fixed;">'
+          +     '<thead>'
+          +       '<tr style="background:'+pal.light+';">'
+          +         '<th style="padding:8px 10px; text-align:left; font-size:12px; color:'+pal.text+'; border-bottom:2px solid '+pal.border+';">UTILISATEUR</th>'
+          +         '<th style="padding:8px 10px; text-align:left; font-size:12px; color:'+pal.text+'; border-bottom:2px solid '+pal.border+';">TITRE DE LA DEMANDE</th>'
+          +         '<th style="padding:8px 10px; text-align:left; font-size:12px; color:'+pal.text+'; border-bottom:2px solid '+pal.border+';">DATE</th>'
+          +         '<th style="padding:8px 10px; text-align:center; font-size:12px; color:'+pal.text+'; border-bottom:2px solid '+pal.border+';">STATUT</th>'
+          +       '</tr>'
+          +     '</thead>'
+          +     '<tbody>'+rows+'</tbody>'
+          +   '</table>'
+          + '</div>';
+    }
+
+    if (!servicesHtml) {
+        servicesHtml = '<div style="text-align:center; padding:40px; color:#6b7280;">Aucune demande trouv&eacute;e.</div>';
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Rapport Global UniServe</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9fafb; color: #111; }
+  .page { max-width: 800px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  @media print {
+    body { background: #fff !important; padding: 0 !important; }
+    .page { box-shadow: none !important; padding: 0 !important; max-width: 100% !important; }
+    .no-print { display: none !important; }
+    .stat-box { border: 1px solid #000 !important; }
+  }
+  .header { border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .title-main { font-size: 24px; font-weight: bold; color: #1e3a8a; margin: 0; }
+  .title-sub { font-size: 14px; color: #6b7280; margin-top: 5px; }
+  .stats-grid { display: flex; gap: 15px; margin-bottom: 30px; }
+  .stat-box { flex: 1; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e5e7eb; background: #f9fafb; }
+  .stat-val { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+  .stat-lbl { font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: bold; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div>
+        <h1 class="title-main">Rapport Global des Demandes</h1>
+        <div class="title-sub">Administration UniServe</div>
+      </div>
+      <div style="text-align:right; color:#4b5563; font-size:14px;">
+        G&eacute;n&eacute;r&eacute; le ` + now + `
+      </div>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-box" style="border-color:#bfdbfe; background:#eff6ff;">
+        <div class="stat-val" style="color:#1d4ed8;">` + total + `</div>
+        <div class="stat-lbl" style="color:#1d4ed8;">Total</div>
+      </div>
+      <div class="stat-box" style="border-color:#fde047; background:#fef9c3;">
+        <div class="stat-val" style="color:#a16207;">` + attente + `</div>
+        <div class="stat-lbl" style="color:#a16207;">En attente</div>
+      </div>
+      <div class="stat-box" style="border-color:#86efac; background:#dcfce7;">
+        <div class="stat-val" style="color:#15803d;">` + traite + `</div>
+        <div class="stat-lbl" style="color:#15803d;">Trait&eacute;s</div>
+      </div>
+      <div class="stat-box" style="border-color:#fca5a5; background:#fee2e2;">
+        <div class="stat-val" style="color:#b91c1c;">` + rejete + `</div>
+        <div class="stat-lbl" style="color:#b91c1c;">Rejet&eacute;s</div>
+      </div>
+    </div>
+    
+    <h2 style="font-size:16px; color:#4b5563; margin-bottom:20px; text-transform:uppercase; letter-spacing:1px;">Toutes les demandes par service</h2>
+    
+    ` + servicesHtml + `
+    
+    <div class="no-print" style="text-align:center; margin-top:40px; padding-top:20px; border-top:1px solid #e5e7eb;">
+      <button onclick="window.print()" style="background:#2563eb; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-size:16px; font-weight:bold; cursor:pointer;">
+        Imprimer / Enregistrer en PDF
+      </button>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const popup = window.open('', '_blank');
+    popup.document.write(html);
+    popup.document.close();
 }
 </script>

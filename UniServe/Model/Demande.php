@@ -40,23 +40,27 @@ class Demande extends Model
 
     public function create(array $data): bool
     {
-        $sql = "INSERT INTO {$this->table} (utilisateur_id, service_id, titre, description) VALUES (?, ?, ?, ?)";
+        $sql = "INSERT INTO {$this->table} (utilisateur_id, service_id, titre, description, email, telephone) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $this->query($sql, [
             $data['utilisateur_id'],
             $data['service_id'],
             $data['titre'],
-            $data['description']
+            $data['description'],
+            $data['email'] ?? null,
+            $data['telephone'] ?? null
         ]);
         return $stmt->rowCount() > 0;
     }
 
     public function update(int $id, array $data): bool
     {
-        $sql = "UPDATE {$this->table} SET service_id = ?, titre = ?, description = ? WHERE id = ?";
+        $sql = "UPDATE {$this->table} SET service_id = ?, titre = ?, description = ?, email = ?, telephone = ? WHERE id = ?";
         $stmt = $this->query($sql, [
             $data['service_id'],
             $data['titre'],
             $data['description'],
+            $data['email'] ?? null,
+            $data['telephone'] ?? null,
             $id
         ]);
         return $stmt->rowCount() > 0;

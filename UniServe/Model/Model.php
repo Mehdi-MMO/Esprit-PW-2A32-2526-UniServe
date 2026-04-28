@@ -15,9 +15,20 @@ class Model
 
     public function query(string $sql, array $params = []): PDOStatement
     {
-        $statement = self::$db->prepare($sql);
-        $statement->execute($params);
-        return $statement;
+        try {
+            $statement = self::$db->prepare($sql);
+            $statement->execute($params);
+            return $statement;
+        } catch (PDOException $e) {
+            // Reconnexion automatique si MySQL server has gone away (erreur 2006 ou 2013)
+            if (in_array($e->errorInfo[1] ?? 0, [2006, 2013])) {
+                self::$db = Database::connect(true);
+                $statement = self::$db->prepare($sql);
+                $statement->execute($params);
+                return $statement;
+            }
+            throw $e;
+        }
     }
 
     public function findAll(string $table): array

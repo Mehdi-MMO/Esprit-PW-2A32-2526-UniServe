@@ -71,8 +71,17 @@ class DemandesController extends Controller
             $service_id = (int)($_POST['service_id'] ?? 0);
             $titre = trim($_POST['titre'] ?? '');
             $description = trim($_POST['description'] ?? '');
-            if ($service_id > 0 && $titre !== '' && $description !== '') {
-                $this->demandeModel->create(['utilisateur_id' => 2, 'service_id' => $service_id, 'titre' => $titre, 'description' => $description]);
+            $email = trim($_POST['email'] ?? '');
+            $telephone = trim($_POST['telephone'] ?? '');
+            if ($service_id > 0 && $titre !== '' && $description !== '' && $email !== '' && preg_match('/^[0-9]{8}$/', $telephone)) {
+                $this->demandeModel->create([
+                    'utilisateur_id' => 2, 
+                    'service_id' => $service_id, 
+                    'titre' => $titre, 
+                    'description' => $description,
+                    'email' => $email,
+                    'telephone' => $telephone
+                ]);
             }
         }
         $this->redirect('/demandes/frontoffice');
@@ -95,10 +104,18 @@ class DemandesController extends Controller
             $service_id = (int)($_POST['service_id'] ?? 0);
             $titre = trim($_POST['titre'] ?? '');
             $description = trim($_POST['description'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $telephone = trim($_POST['telephone'] ?? '');
             $demande = $this->demandeModel->getById((int)$id);
             if ($demande && $demande['utilisateur_id'] == 2 && $demande['statut'] === 'en_attente') {
-                if ($service_id > 0 && $titre !== '' && $description !== '') {
-                    $this->demandeModel->update((int)$id, ['service_id' => $service_id, 'titre' => $titre, 'description' => $description]);
+                if ($service_id > 0 && $titre !== '' && $description !== '' && $email !== '' && preg_match('/^[0-9]{8}$/', $telephone)) {
+                    $this->demandeModel->update((int)$id, [
+                        'service_id' => $service_id, 
+                        'titre' => $titre, 
+                        'description' => $description,
+                        'email' => $email,
+                        'telephone' => $telephone
+                    ]);
                 }
             }
         }
