@@ -99,23 +99,24 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
                                     <h3 class="h5 mb-0">Informations personnelles</h3>
                                 </div>
 
-                                <form method="post" action="<?= $this->url('/users/profile') ?>" enctype="multipart/form-data">
+                                <form method="post" action="<?= $this->url('/users/profile') ?>" enctype="multipart/form-data" data-validate-account-form="1">
                                     <input type="hidden" name="form_action" value="profile_update">
 
                                     <div class="row g-3">
                                         <div class="col-md-6">
                                             <label class="form-label text-muted small" for="nom">Nom</label>
-                                            <input class="form-control" id="nom" name="nom" value="<?= htmlspecialchars((string) ($user['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+                                            <input class="form-control" id="nom" name="nom" value="<?= htmlspecialchars((string) ($user['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" data-required-label="Le nom" required>
                                         </div>
 
                                         <div class="col-md-6">
                                             <label class="form-label text-muted small" for="prenom">Prénom</label>
-                                            <input class="form-control" id="prenom" name="prenom" value="<?= htmlspecialchars((string) ($user['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+                                            <input class="form-control" id="prenom" name="prenom" value="<?= htmlspecialchars((string) ($user['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" data-required-label="Le prénom" required>
                                         </div>
 
                                         <div class="col-md-6">
                                             <label class="form-label text-muted small" for="email">Email</label>
-                                            <input class="form-control" id="email" type="email" name="email" value="<?= htmlspecialchars((string) ($user['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+                                            <input class="form-control" id="email" type="email" name="email" value="<?= htmlspecialchars((string) ($user['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" data-required-label="Email" data-validate-email="institutional" required>
+                                            <div class="form-text">Adresse institutionnelle uniquement.</div>
                                         </div>
 
                                         <div class="col-md-6">
@@ -192,22 +193,22 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
                             <div class="card-body p-4">
                                 <h3 class="h5 mb-3">Changer le mot de passe</h3>
 
-                                <form method="post" action="<?= $this->url('/users/profile') ?>">
+                                <form method="post" action="<?= $this->url('/users/profile') ?>" data-validate-account-form="1">
                                     <input type="hidden" name="form_action" value="password_update">
 
                                     <div class="row g-3">
                                         <div class="col-md-6">
                                             <label class="form-label text-muted small" for="current_password">Mot de passe actuel</label>
-                                            <input class="form-control" id="current_password" name="current_password" type="password" required>
+                                            <input class="form-control" id="current_password" name="current_password" type="password" data-required-label="Le mot de passe actuel" required>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label text-muted small" for="new_password">Nouveau mot de passe</label>
-                                            <input class="form-control" id="new_password" name="new_password" type="password" required>
+                                            <input class="form-control" id="new_password" name="new_password" type="password" data-required-label="Le nouveau mot de passe" data-password-label="Le nouveau mot de passe" data-validate-password-min="<?= (int) User::MIN_PASSWORD_LENGTH ?>" required>
                                             <div class="form-text">Minimum 8 caractères.</div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label text-muted small" for="confirm_password">Confirmer le nouveau mot de passe</label>
-                                            <input class="form-control" id="confirm_password" name="confirm_password" type="password" required>
+                                            <input class="form-control" id="confirm_password" name="confirm_password" type="password" data-required-label="La confirmation du mot de passe" data-validate-password-confirm="#new_password" required>
                                         </div>
                                     </div>
 
@@ -225,7 +226,7 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
 </div>
 
 <div class="modal fade us-avatar-crop-modal" id="profilePhotoCropModal" tabindex="-1" aria-labelledby="profilePhotoCropModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-fullscreen-sm-down">
         <div class="modal-content">
             <div class="modal-header border-0 pb-2">
                 <div>
@@ -235,6 +236,7 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
             <div class="modal-body pt-2">
+                <div id="profilePhotoCropStatus" class="us-crop-status d-none mb-3" role="status" aria-live="polite"></div>
                 <div class="us-crop-stage mb-3">
                     <img id="profilePhotoCropImage" class="us-crop-image" alt="Aperçu du recadrage">
                 </div>
@@ -245,9 +247,9 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
                 <p class="small text-muted mb-0">Astuce: deplacez l'image avec la souris ou le doigt pour choisir le cadrage.</p>
             </div>
             <div class="modal-footer border-0 pt-2">
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="profilePhotoCropReset">Reinitialiser</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="profilePhotoCropReset" disabled>Reinitialiser</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-primary btn-sm" id="profilePhotoCropConfirm">Appliquer</button>
+                <button type="button" class="btn btn-primary btn-sm" id="profilePhotoCropConfirm" disabled>Appliquer</button>
             </div>
         </div>
     </div>
@@ -266,16 +268,24 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
         const zoomInput = document.getElementById('profilePhotoCropZoom');
         const resetButton = document.getElementById('profilePhotoCropReset');
         const confirmButton = document.getElementById('profilePhotoCropConfirm');
+        const cropStatus = document.getElementById('profilePhotoCropStatus');
         const bootstrapModal = (cropModalEl && window.bootstrap && window.bootstrap.Modal)
             ? new window.bootstrap.Modal(cropModalEl)
             : null;
         const hasCropper = typeof window.Cropper !== 'undefined';
+        const MAX_UPLOAD_BYTES = 2097152;
+        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
 
         let cropper = null;
         let pendingSourceUrl = null;
         let previousPreviewUrl = null;
         let pendingFile = null;
         let cropConfirmed = false;
+        let cropReady = false;
+        let isApplyingCrop = false;
+        let currentZoomValue = 100;
+        let suppressZoomSync = false;
+        const defaultConfirmText = confirmButton ? confirmButton.textContent : 'Appliquer';
 
         if (!input) {
             return;
@@ -287,6 +297,41 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
             });
         });
 
+        function setCropStatus(message, variant) {
+            if (!cropStatus) {
+                return;
+            }
+            if (message === '') {
+                cropStatus.classList.add('d-none');
+                cropStatus.classList.remove('is-error', 'is-success', 'is-info');
+                cropStatus.textContent = '';
+                return;
+            }
+            cropStatus.textContent = message;
+            cropStatus.classList.remove('d-none', 'is-error', 'is-success', 'is-info');
+            cropStatus.classList.add(variant === 'error' ? 'is-error' : (variant === 'success' ? 'is-success' : 'is-info'));
+        }
+
+        function setCropControlsEnabled(enabled) {
+            if (zoomInput) {
+                zoomInput.disabled = !enabled;
+            }
+            if (resetButton) {
+                resetButton.disabled = !enabled;
+            }
+            if (confirmButton) {
+                confirmButton.disabled = !enabled || isApplyingCrop;
+            }
+        }
+
+        function setApplyBusyState(isBusy) {
+            isApplyingCrop = isBusy;
+            if (confirmButton) {
+                confirmButton.disabled = isBusy || !cropReady;
+                confirmButton.textContent = isBusy ? 'Application...' : defaultConfirmText;
+            }
+        }
+
         function clearPendingSelection(resetLabel) {
             pendingFile = null;
             cropConfirmed = false;
@@ -294,6 +339,7 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
             if (resetLabel && fileNameLabel) {
                 fileNameLabel.textContent = 'Aucun fichier sélectionné';
             }
+            setCropStatus('', 'info');
         }
 
         function ensureHeaderPreviewImage() {
@@ -322,6 +368,11 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
                 cropper.destroy();
                 cropper = null;
             }
+            cropReady = false;
+            currentZoomValue = 100;
+            suppressZoomSync = false;
+            setCropControlsEnabled(false);
+            setApplyBusyState(false);
             if (pendingSourceUrl) {
                 URL.revokeObjectURL(pendingSourceUrl);
                 pendingSourceUrl = null;
@@ -349,6 +400,7 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
             cropConfirmed = false;
 
             destroyCropper();
+            setCropStatus("Chargement de l'image...", 'info');
             pendingSourceUrl = URL.createObjectURL(file);
             cropImage.src = pendingSourceUrl;
 
@@ -363,9 +415,33 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
                     autoCropArea: 1,
                     background: false,
                     responsive: true,
-                    guides: false,
+                    guides: true,
                     center: true,
-                    checkCrossOrigin: false
+                    checkCrossOrigin: false,
+                    wheelZoomRatio: 0.08,
+                    ready: function () {
+                        cropReady = true;
+                        currentZoomValue = 100;
+                        if (zoomInput) {
+                            zoomInput.value = '100';
+                        }
+                        setCropControlsEnabled(true);
+                        setCropStatus("Ajustez le cadrage puis cliquez sur 'Appliquer'.", 'info');
+                    },
+                    zoom: function (event) {
+                        if (!zoomInput || !cropReady || suppressZoomSync) {
+                            return;
+                        }
+                        const oldRatio = Number(event.detail.oldRatio || 0);
+                        const newRatio = Number(event.detail.ratio || 0);
+                        if (!isFinite(oldRatio) || !isFinite(newRatio) || oldRatio <= 0 || newRatio <= 0) {
+                            return;
+                        }
+                        const zoomFactor = newRatio / oldRatio;
+                        const nextValue = Math.max(100, Math.min(300, Math.round(currentZoomValue * zoomFactor)));
+                        currentZoomValue = nextValue;
+                        zoomInput.value = String(nextValue);
+                    }
                 });
             };
 
@@ -383,10 +459,17 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
                 return;
             }
 
-            if (!file.type || file.type.indexOf('image/') !== 0) {
+            if (!file.type || !allowedMimeTypes.includes(file.type)) {
                 clearPendingSelection(false);
                 if (fileNameLabel) {
-                    fileNameLabel.textContent = 'Format non pris en charge';
+                    fileNameLabel.textContent = 'Format non pris en charge (JPG, PNG ou WEBP)';
+                }
+                return;
+            }
+            if (file.size > MAX_UPLOAD_BYTES) {
+                clearPendingSelection(false);
+                if (fileNameLabel) {
+                    fileNameLabel.textContent = 'Fichier trop volumineux (max 2 Mo)';
                 }
                 return;
             }
@@ -401,30 +484,42 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
 
         if (zoomInput) {
             zoomInput.addEventListener('input', function () {
-                if (!cropper) {
+                if (!cropper || !cropReady) {
                     return;
                 }
-                cropper.zoomTo(Number(zoomInput.value) / 100);
+                const requested = Math.max(100, Math.min(300, Number(zoomInput.value)));
+                if (!isFinite(requested) || requested === currentZoomValue) {
+                    return;
+                }
+                const zoomFactor = requested / currentZoomValue;
+                suppressZoomSync = true;
+                cropper.zoom(zoomFactor - 1);
+                suppressZoomSync = false;
+                currentZoomValue = requested;
             });
         }
 
         if (resetButton) {
             resetButton.addEventListener('click', function () {
-                if (!cropper) {
+                if (!cropper || !cropReady) {
                     return;
                 }
                 cropper.reset();
                 if (zoomInput) {
                     zoomInput.value = '100';
                 }
+                currentZoomValue = 100;
+                setCropStatus("Cadrage reinitialise.", 'info');
             });
         }
 
         if (confirmButton) {
             confirmButton.addEventListener('click', function () {
-                if (!cropper || !pendingFile) {
+                if (!cropper || !pendingFile || !cropReady || isApplyingCrop) {
                     return;
                 }
+                setApplyBusyState(true);
+                setCropStatus("Application du recadrage...", 'info');
 
                 const canvas = cropper.getCroppedCanvas({
                     width: 512,
@@ -434,15 +529,24 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
                 });
 
                 if (!canvas) {
+                    setApplyBusyState(false);
+                    setCropStatus('Impossible de generer le recadrage. Reessayez.', 'error');
                     return;
                 }
 
                 canvas.toBlob(function (blob) {
                     if (!blob) {
+                        setApplyBusyState(false);
+                        setCropStatus('Impossible de finaliser l image recadree.', 'error');
                         return;
                     }
 
                     const croppedFile = new File([blob], 'avatar_' + Date.now() + '.webp', { type: 'image/webp' });
+                    if (croppedFile.size > MAX_UPLOAD_BYTES) {
+                        setApplyBusyState(false);
+                        setCropStatus('Le fichier recadre depasse 2 Mo. Reduisez le zoom et reessayez.', 'error');
+                        return;
+                    }
                     setFileInput(croppedFile);
 
                     if (fileNameLabel) {
@@ -460,6 +564,8 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
 
                     cropConfirmed = true;
                     pendingFile = null;
+                    setApplyBusyState(false);
+                    setCropStatus('Recadrage applique avec succes.', 'success');
                     bootstrapModal.hide();
                 }, 'image/webp', 0.92);
             });
@@ -467,7 +573,7 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
 
         if (cropModalEl) {
             cropModalEl.addEventListener('hidden.bs.modal', function () {
-                if (!cropConfirmed) {
+                if (!cropConfirmed && !isApplyingCrop) {
                     clearPendingSelection(true);
                 }
                 destroyCropper();

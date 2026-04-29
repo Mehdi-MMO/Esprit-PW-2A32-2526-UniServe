@@ -28,27 +28,28 @@ function e(string $v): string
             </div>
         <?php endif; ?>
 
-        <form method="post" action="<?= $this->url('/utilisateurs/edit/' . (int) ($user['id'] ?? 0)) ?>">
+        <form method="post" action="<?= $this->url('/utilisateurs/edit/' . (int) ($user['id'] ?? 0)) ?>" data-validate-account-form="1">
             <h2 class="h6 mb-3">Compte utilisateur</h2>
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="nom">Nom *</label>
-                    <input class="form-control" id="nom" name="nom" value="<?= e((string) ($user['nom'] ?? '')) ?>" required>
+                    <input class="form-control" id="nom" name="nom" value="<?= e((string) ($user['nom'] ?? '')) ?>" data-required-label="Le nom" required>
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="prenom">Prénom *</label>
-                    <input class="form-control" id="prenom" name="prenom" value="<?= e((string) ($user['prenom'] ?? '')) ?>" required>
+                    <input class="form-control" id="prenom" name="prenom" value="<?= e((string) ($user['prenom'] ?? '')) ?>" data-required-label="Le prénom" required>
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="email">Email *</label>
-                    <input class="form-control" id="email" type="email" name="email" value="<?= e((string) ($user['email'] ?? '')) ?>" required>
+                    <input class="form-control" id="email" type="email" name="email" value="<?= e((string) ($user['email'] ?? '')) ?>" data-required-label="Email" data-validate-email="institutional" required>
+                    <div class="form-text">Adresse institutionnelle uniquement.</div>
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="role">Rôle *</label>
-                    <select class="form-select" id="role" name="role" required>
+                    <select class="form-select" id="role" name="role" data-required-label="Le rôle" required>
                         <?php $role = (string) ($user['role'] ?? 'etudiant'); ?>
                         <?php
                         $singleAdminIdExists = $singleAdminId !== null;
@@ -71,13 +72,13 @@ function e(string $v): string
 
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="new_password">Nouveau mot de passe</label>
-                    <input class="form-control" id="new_password" name="new_password" type="password" placeholder="Laisser vide pour conserver le mot de passe actuel">
+                    <input class="form-control" id="new_password" name="new_password" type="password" placeholder="Laisser vide pour conserver le mot de passe actuel" data-password-label="Le nouveau mot de passe" data-validate-password-min="<?= (int) User::MIN_PASSWORD_LENGTH ?>">
                     <div class="form-text">Optionnel</div>
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="statut_compte">Statut du compte *</label>
-                    <select class="form-select" id="statut_compte" name="statut_compte" required>
+                    <select class="form-select" id="statut_compte" name="statut_compte" data-required-label="Le statut du compte" required>
                         <?php $statut = (string) ($user['statut_compte'] ?? 'actif'); ?>
                         <option value="actif" <?= $statut === 'actif' ? 'selected' : '' ?>>Actif</option>
                         <option value="inactif" <?= $statut === 'inactif' ? 'selected' : '' ?>>Inactif</option>

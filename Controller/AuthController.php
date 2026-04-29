@@ -26,11 +26,16 @@ class AuthController extends Controller
         $error = null;
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-            $email = trim((string) ($_POST['email'] ?? ''));
+            $email = $this->normalizeEmail((string) ($_POST['email'] ?? ''));
             $password = (string) ($_POST['password'] ?? '');
 
             if ($email === '' || $password === '') {
                 $error = 'Veuillez renseigner votre email et votre mot de passe.';
+            } elseif (($emailError = $this->validateInstitutionalEmail($email)) !== null) {
+                $error = $emailError;
+            }
+
+            if ($error !== null) {
                 $this->render('auth_login', ['error' => $error], 'landing');
                 return;
             }

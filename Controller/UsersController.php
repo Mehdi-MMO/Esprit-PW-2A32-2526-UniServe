@@ -107,9 +107,9 @@ class UsersController extends Controller
             $formAction = (string) ($_POST['form_action'] ?? '');
 
             if ($formAction === 'profile_update') {
-                $nom = trim((string) ($_POST['nom'] ?? ''));
-                $prenom = trim((string) ($_POST['prenom'] ?? ''));
-                $email = trim((string) ($_POST['email'] ?? ''));
+                $nom = $this->normalizeText((string) ($_POST['nom'] ?? ''));
+                $prenom = $this->normalizeText((string) ($_POST['prenom'] ?? ''));
+                $email = $this->normalizeEmail((string) ($_POST['email'] ?? ''));
                 $matricule = (string) ($_POST['matricule'] ?? '');
                 $departement = (string) ($_POST['departement'] ?? '');
                 $niveau = (string) ($_POST['niveau'] ?? '');
@@ -126,6 +126,8 @@ class UsersController extends Controller
 
                 if ($nom === '' || $prenom === '' || $email === '') {
                     $error = 'Nom, prénom et email sont obligatoires.';
+                } elseif (($emailError = $this->validateInstitutionalEmail($email)) !== null) {
+                    $error = $emailError;
                 } elseif ($userModel->emailExists($email, $userId)) {
                     $error = 'Cet email est déjà utilisé par un autre compte.';
                 } else {
@@ -172,8 +174,8 @@ class UsersController extends Controller
 
                 if ($currentPassword === '' || $newPassword === '' || $confirmPassword === '') {
                     $error = 'Veuillez remplir tous les champs du changement de mot de passe.';
-                } elseif (strlen($newPassword) < User::MIN_PASSWORD_LENGTH) {
-                    $error = 'Le nouveau mot de passe doit contenir au moins ' . User::MIN_PASSWORD_LENGTH . ' caractères.';
+                } elseif (($passwordError = $this->validateMinLength($newPassword, User::MIN_PASSWORD_LENGTH, 'Le nouveau mot de passe')) !== null) {
+                    $error = $passwordError;
                 } elseif ($newPassword !== $confirmPassword) {
                     $error = 'Le nouveau mot de passe et sa confirmation ne correspondent pas.';
                 } elseif (!$userModel->verifyPasswordById($userId, $currentPassword)) {

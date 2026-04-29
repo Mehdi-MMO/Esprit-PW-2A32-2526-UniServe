@@ -28,14 +28,15 @@
 
                             <div class="us-divider mb-3"></div>
 
-                            <form method="post" action="<?= $this->url('/auth/login') ?>">
+                            <form method="post" action="<?= $this->url('/auth/login') ?>" data-validate-account-form="1">
                                 <div class="mb-3">
                                     <label for="email" class="form-label fw-semibold">Email</label>
-                                    <input type="email" id="email" class="form-control" name="email" placeholder="prenom.nom@universite.tld" autocomplete="username" required>
+                                    <input type="email" id="email" class="form-control" name="email" placeholder="prenom.nom@universite.tld" autocomplete="username" data-required-label="Email" data-validate-email="institutional" required>
+                                    <div class="form-text">Utilisez votre adresse email institutionnelle.</div>
                                 </div>
                                 <div class="mb-2">
                                     <label for="password" class="form-label fw-semibold">Mot de passe</label>
-                                    <input type="password" id="password" class="form-control" name="password" placeholder="Votre mot de passe" autocomplete="current-password" required>
+                                    <input type="password" id="password" class="form-control" name="password" placeholder="Votre mot de passe" autocomplete="current-password" data-required-label="Le mot de passe" required>
                                 </div>
 
                                 <button type="submit" class="btn btn-primary w-100 py-2 mt-2">Se connecter</button>

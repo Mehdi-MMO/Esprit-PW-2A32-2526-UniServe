@@ -242,9 +242,9 @@ class UtilisateursController extends Controller
         $singleAdminId = $userModel->findSingleAdminId();
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-            $nom = trim((string) ($_POST['nom'] ?? ''));
-            $prenom = trim((string) ($_POST['prenom'] ?? ''));
-            $email = trim((string) ($_POST['email'] ?? ''));
+            $nom = $this->normalizeText((string) ($_POST['nom'] ?? ''));
+            $prenom = $this->normalizeText((string) ($_POST['prenom'] ?? ''));
+            $email = $this->normalizeEmail((string) ($_POST['email'] ?? ''));
             $password = (string) ($_POST['password'] ?? '');
             $role = (string) ($_POST['role'] ?? 'etudiant');
             $matricule = (string) ($_POST['matricule'] ?? '');
@@ -267,8 +267,10 @@ class UtilisateursController extends Controller
 
             if ($nom === '' || $prenom === '' || $email === '' || $password === '') {
                 $error = 'Nom, prénom, email et mot de passe sont obligatoires.';
-            } elseif (strlen($password) < User::MIN_PASSWORD_LENGTH) {
-                $error = 'Le mot de passe doit contenir au moins ' . User::MIN_PASSWORD_LENGTH . ' caractères.';
+            } elseif (($emailError = $this->validateInstitutionalEmail($email)) !== null) {
+                $error = $emailError;
+            } elseif (($passwordError = $this->validateMinLength($password, User::MIN_PASSWORD_LENGTH, 'Le mot de passe')) !== null) {
+                $error = $passwordError;
             } elseif (!in_array($role, User::allowedRoles(), true)) {
                 $error = 'Rôle invalide.';
             } elseif (!in_array($statutCompte, User::allowedStatuses(), true)) {
@@ -332,9 +334,9 @@ class UtilisateursController extends Controller
         $error = null;
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-            $nom = trim((string) ($_POST['nom'] ?? ''));
-            $prenom = trim((string) ($_POST['prenom'] ?? ''));
-            $email = trim((string) ($_POST['email'] ?? ''));
+            $nom = $this->normalizeText((string) ($_POST['nom'] ?? ''));
+            $prenom = $this->normalizeText((string) ($_POST['prenom'] ?? ''));
+            $email = $this->normalizeEmail((string) ($_POST['email'] ?? ''));
             $role = (string) ($_POST['role'] ?? 'etudiant');
             $matricule = (string) ($_POST['matricule'] ?? '');
             $departement = (string) ($_POST['departement'] ?? '');
@@ -345,8 +347,10 @@ class UtilisateursController extends Controller
 
             if ($nom === '' || $prenom === '' || $email === '') {
                 $error = 'Nom, prénom et email sont obligatoires.';
-            } elseif ($newPassword !== '' && strlen($newPassword) < User::MIN_PASSWORD_LENGTH) {
-                $error = 'Le nouveau mot de passe doit contenir au moins ' . User::MIN_PASSWORD_LENGTH . ' caractères.';
+            } elseif (($emailError = $this->validateInstitutionalEmail($email)) !== null) {
+                $error = $emailError;
+            } elseif ($newPassword !== '' && ($passwordError = $this->validateMinLength($newPassword, User::MIN_PASSWORD_LENGTH, 'Le nouveau mot de passe')) !== null) {
+                $error = $passwordError;
             } elseif (!in_array($role, User::allowedRoles(), true)) {
                 $error = 'Rôle invalide.';
             } elseif (!in_array($statutCompte, User::allowedStatuses(), true)) {
