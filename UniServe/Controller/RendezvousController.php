@@ -129,10 +129,35 @@ class RendezvousController extends Controller {
         if (isset($_GET['id']) && isset($_GET['status'])) {
             $allowed = ['confirmed', 'cancelled', 'pending'];
             if (in_array($_GET['status'], $allowed, true)) {
+                // Récupérer le rendez-vous avant modification
+                $rdv = $this->rdvModel->getOne((int)$_GET['id']);
+                
+                // Mettre à jour le statut
                 $this->rdvModel->updateStatus((int)$_GET['id'], $_GET['status']);
+                
+                if ($rdv) {
+                    $_SESSION['notification'] = [
+                        'id' => (int)$_GET['id'],
+                        'type' => $_GET['status'] === 'confirmed' ? 'success' : 'danger',
+                        'title' => $_GET['status'] === 'confirmed' ? 'Rendez-vous confirmé !' : 'Rendez-vous annulé',
+                        'message' => $_GET['status'] === 'confirmed' 
+                            ? 'Votre rendez-vous a été confirmé par l\'administration.'
+                            : 'Votre rendez-vous a été annulé. Veuillez contacter l\'administration.',
+                        'nom_etudiant' => $rdv['nom_etudiant'] ?? '',
+                        'bureau_nom' => $rdv['bureau_nom'] ?? ''
+                    ];
+                }
             }
         }
-        $this->redirect('index.php?page=back&module=appointments&tab=appointments');
+        
+        $params = [];
+        if (isset($_GET['tab'])) $params['tab'] = $_GET['tab'];
+        if (isset($_GET['search_back'])) $params['search_back'] = $_GET['search_back'];
+        if (isset($_GET['status_back'])) $params['status_back'] = $_GET['status_back'];
+        if (isset($_GET['sort_back'])) $params['sort_back'] = $_GET['sort_back'];
+        
+        $query = http_build_query(array_merge(['page' => 'back', 'module' => 'appointments'], $params));
+        $this->redirect('index.php?' . $query);
     }
 
     // -------------------------------------------------------
@@ -190,7 +215,6 @@ class RendezvousController extends Controller {
             $this->bureauModel->responsable  = htmlspecialchars(strip_tags($_POST['responsable'] ?? ''));
 
             if ($this->bureauModel->update()) {
-                // Redirection vers la vue combinée onglet bureaux avec message succès
                 $this->redirect('index.php?page=back&module=appointments&tab=offices&success=updated');
             }
         }

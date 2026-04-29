@@ -33,9 +33,17 @@ class RendezVousModel {
     }
 
     public function updateStatus($id, $status) {
+        // Version SANS modifie_le (pour base sans cette colonne)
         $query = "UPDATE " . $this->table . " SET statut = :s WHERE id = :id";
         $stmt  = $this->conn->prepare($query);
         return $stmt->execute([':s' => $status, ':id' => $id]);
+    }
+
+    public function getOne($id) {
+        $query = "SELECT * FROM " . $this->table . " WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }
 ?>
