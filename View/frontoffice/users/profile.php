@@ -410,9 +410,9 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
                 }
                 cropper = new window.Cropper(cropImage, {
                     aspectRatio: 1,
-                    viewMode: 1,
+                    viewMode: 2,
                     dragMode: 'move',
-                    autoCropArea: 1,
+                    autoCropArea: 0.92,
                     background: false,
                     responsive: true,
                     guides: true,

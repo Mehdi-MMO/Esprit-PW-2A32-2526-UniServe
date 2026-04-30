@@ -70,6 +70,10 @@ class AuthController extends Controller
 
             session_regenerate_id(true);
 
+            // Update last login timestamp
+            $userModel = new User();
+            $userModel->updateLastLogin((int) ($user['id'] ?? 0));
+
             // Store only the required fields in session.
             $_SESSION['user'] = [
                 'id' => (int) ($user['id'] ?? 0),

@@ -29,6 +29,7 @@ CREATE TABLE utilisateurs (
   telephone VARCHAR(30),
   photo_profil VARCHAR(255) NULL,
   statut_compte ENUM('actif','inactif') NOT NULL DEFAULT 'actif',
+  derniere_connexion DATETIME NULL DEFAULT NULL,
   cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -108,6 +109,28 @@ CREATE TABLE rendez_vous (
   annule_le TIMESTAMP NULL DEFAULT NULL,
   FOREIGN KEY (etudiant_id) REFERENCES utilisateurs(id),
   FOREIGN KEY (bureau_id) REFERENCES bureaux(id)
+);
+
+CREATE TABLE calendar_demo_items (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  source_type ENUM('rendezvous','events_registered','events_public') NOT NULL,
+  title VARCHAR(150) NOT NULL,
+  start_at DATETIME NOT NULL,
+  end_at DATETIME NOT NULL,
+  location VARCHAR(255) DEFAULT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT '',
+  owner_label VARCHAR(120) DEFAULT NULL,
+  color VARCHAR(20) NOT NULL DEFAULT '#2f7df4',
+  url VARCHAR(255) DEFAULT NULL,
+  is_readonly BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_by BIGINT NULL DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES utilisateurs(id) ON DELETE SET NULL,
+  INDEX idx_demo_user_time (user_id, start_at),
+  INDEX idx_demo_source (source_type)
 );
 
 -- ==========================================

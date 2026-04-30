@@ -19,6 +19,7 @@ $statsActif = (int) ($stats['actif'] ?? 0);
 $statsInactif = (int) ($stats['inactif'] ?? 0);
 $statsAdmin = (int) ($stats['admin'] ?? 0);
 $statsStaff = (int) ($stats['staff'] ?? 0);
+$users = $users ?? [];
 
 $baseParams = [];
 if ($q !== '') {
@@ -44,10 +45,8 @@ $utilisateursUrl = $this->url('/utilisateurs');
     <div>
         <div class="us-kicker mb-1">Administration</div>
         <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Utilisateurs'), ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="us-page-subtitle">
-            <span id="users-results-label">
-                <?= $total > 0 ? 'Résultats: ' . (int) $total : 'Gestion des comptes utilisateurs.' ?>
-            </span>
+        <p class="us-page-subtitle mb-0">
+            <span id="users-results-label"><?= $total > 0 ? 'Résultats: ' . (int) $total : 'Gestion des comptes utilisateurs.' ?></span>
         </p>
     </div>
 
@@ -56,126 +55,38 @@ $utilisateursUrl = $this->url('/utilisateurs');
     </a>
 </div>
 
-<div class="us-surface-muted px-3 py-2 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-    <div class="small text-muted">Registre des comptes institutionnels</div>
-    <div class="small"><strong><?= (int) $total ?></strong> compte(s)</div>
+<div class="card us-users-hero mb-3">
+    <div class="card-body p-3 p-md-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+            <div class="text-uppercase small text-muted fw-semibold mb-1">Registre des comptes institutionnels</div>
+            <div class="d-flex align-items-baseline gap-2 flex-wrap">
+                <h2 class="h4 mb-0"><?= (int) $total ?></h2>
+                <span class="text-muted">compte(s) visibles</span>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="row g-2 mb-3">
-    <div class="col-md-6 col-xl-3">
-        <div class="us-stat-card">
+    <div class="col-md-6 col-xl-4">
+        <div class="us-stat-card us-stat-card--accent">
             <div class="us-stat-label">Total comptes</div>
             <div class="us-stat-value"><?= (int) $statsTotal ?></div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="us-stat-card">
+    <div class="col-md-6 col-xl-4">
+        <div class="us-stat-card us-stat-card--success">
             <div class="us-stat-label">Comptes actifs</div>
             <div class="us-stat-value"><?= (int) $statsActif ?></div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="us-stat-card">
+    <div class="col-md-6 col-xl-4">
+        <div class="us-stat-card us-stat-card--danger">
             <div class="us-stat-label">Comptes inactifs</div>
             <div class="us-stat-value"><?= (int) $statsInactif ?></div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="us-stat-card">
-            <div class="us-stat-label">Admin / Staff</div>
-            <div class="us-stat-value"><?= (int) $statsAdmin ?> / <?= (int) $statsStaff ?></div>
-        </div>
-    </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const ajaxUrl = '<?= $this->url('/utilisateurs/ajax') ?>';
-        const form = document.getElementById('utilisateurs-filters');
-        const rowsEl = document.getElementById('users-rows');
-        const paginationEl = document.getElementById('users-pagination');
-        const resultsLabel = document.getElementById('users-results-label');
-        const pageLabel = document.getElementById('users-page-label');
-
-        if (!form || !rowsEl || !paginationEl) {
-            return;
-        }
-
-        function fetchPage(page) {
-            const formData = new FormData(form);
-            const params = new URLSearchParams();
-
-            params.set('page', String(page));
-            params.set('per_page', String(formData.get('per_page') || '10'));
-            params.set('q', String(formData.get('q') || ''));
-            params.set('role', String(formData.get('role') || ''));
-            params.set('statut_compte', String(formData.get('statut_compte') || ''));
-
-            fetch(ajaxUrl + '?' + params.toString(), {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (data && typeof data.rowsHtml === 'string') {
-                        rowsEl.innerHTML = data.rowsHtml;
-                    }
-                    if (data && typeof data.paginationHtml === 'string') {
-                        paginationEl.innerHTML = data.paginationHtml;
-                    }
-                    if (data && data.meta && resultsLabel) {
-                        const total = Number(data.meta.total || 0);
-                        resultsLabel.textContent = total > 0 ? ('Résultats: ' + total) : 'Gestion des comptes utilisateurs.';
-                    }
-                    if (data && data.meta && pageLabel) {
-                        const current = Number(data.meta.page || 1);
-                        const pages = Number(data.meta.pages || 1);
-                        pageLabel.textContent = 'Page ' + current + ' / ' + pages;
-                    }
-                })
-                .catch(function () {
-                    // Fallback: do nothing, the user can still use classic GET filtering.
-                });
-        }
-
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-            fetchPage(1);
-        });
-
-        const resetBtn = form.querySelector('[data-reset-filters="1"]');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                form.reset();
-                const qInput = form.querySelector('#q');
-                if (qInput) {
-                    qInput.value = '';
-                }
-                fetchPage(1);
-            });
-        }
-
-        paginationEl.addEventListener('click', function (e) {
-            const a = e.target.closest('a.page-link');
-            if (!a) {
-                return;
-            }
-
-            const href = a.getAttribute('href') || '';
-            if (href === '#' || a.closest('.disabled')) {
-                e.preventDefault();
-                return;
-            }
-            const match = href.match(/[?&]page=(\d+)/);
-            if (!match) {
-                return;
-            }
-
-            e.preventDefault();
-            fetchPage(parseInt(match[1], 10));
-        });
-    });
-</script>
 
 <div class="us-section-card">
     <div class="card-body p-3 p-md-4">
@@ -186,7 +97,7 @@ $utilisateursUrl = $this->url('/utilisateurs');
         <?php endif; ?>
 
         <form id="utilisateurs-filters" method="get" action="<?= $this->url('/utilisateurs') ?>" class="row g-2 align-items-end mb-3 us-filter-shell us-users-toolbar">
-            <div class="col-lg-4">
+            <div class="col-12 col-lg-4">
                 <label class="form-label text-muted small mb-1" for="q">Recherche</label>
                 <input
                     type="text"
@@ -198,7 +109,7 @@ $utilisateursUrl = $this->url('/utilisateurs');
                 >
             </div>
 
-            <div class="col-lg-2">
+            <div class="col-6 col-lg-2">
                 <label class="form-label text-muted small mb-1" for="role">Rôle</label>
                 <select class="form-select" id="role" name="role">
                     <option value="" <?= $role === '' ? 'selected' : '' ?>>Tous</option>
@@ -209,7 +120,7 @@ $utilisateursUrl = $this->url('/utilisateurs');
                 </select>
             </div>
 
-            <div class="col-lg-2">
+            <div class="col-6 col-lg-2">
                 <label class="form-label text-muted small mb-1" for="statut_compte">Statut</label>
                 <select class="form-select" id="statut_compte" name="statut_compte">
                     <option value="" <?= $statutCompte === '' ? 'selected' : '' ?>>Tous</option>
@@ -218,7 +129,7 @@ $utilisateursUrl = $this->url('/utilisateurs');
                 </select>
             </div>
 
-            <div class="col-lg-2">
+            <div class="col-6 col-lg-2">
                 <label class="form-label text-muted small mb-1" for="per_page">Par page</label>
                 <select class="form-select" id="per_page" name="per_page" onchange="this.form.submit()">
                     <option value="10" <?= $perPage === 10 ? 'selected' : '' ?>>10</option>
@@ -226,39 +137,53 @@ $utilisateursUrl = $this->url('/utilisateurs');
                 </select>
             </div>
 
-            <div class="col-lg-2 d-grid d-sm-flex gap-2">
+            <div class="col-12 col-lg-2 d-grid d-sm-flex gap-2">
                 <button type="submit" class="btn btn-primary btn-sm w-100">Filtrer</button>
                 <a href="<?= $this->url('/utilisateurs') ?>" class="btn btn-outline-secondary btn-sm w-100" data-reset-filters="1">Réinitialiser</a>
             </div>
         </form>
 
-        <div class="table-responsive us-table-wrap">
-            <table class="table table-hover align-middle mb-0 us-users-table">
-                <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Email</th>
-                        <th>Rôle</th>
-                        <th>Matricule</th>
-                        <th>Téléphone</th>
-                        <th>Statut</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="users-rows">
+        <div class="us-table-shell">
+            <div class="table-responsive us-table-wrap">
+                <table class="table table-hover align-middle mb-0 us-users-table">
+                    <thead>
+                        <tr>
+                            <th>Profil</th>
+                            <th>Email</th>
+                            <th>Rôle</th>
+                            <th>Matricule</th>
+                            <th>Téléphone</th>
+                            <th>Statut</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-rows">
                     <?php if (empty($users)): ?>
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4 us-empty-state">Aucun utilisateur trouvé.</td>
+                            <td colspan="7" class="text-center text-muted py-4 us-empty-state">
+                                <div class="us-empty-state-box">
+                                    <i class="bi bi-person-x fs-3 mb-2 d-block"></i>
+                                    <strong>Aucun utilisateur trouvé.</strong>
+                                    <div class="small">Essayez de modifier vos filtres ou créez un nouveau compte.</div>
+                                </div>
+                            </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($users as $u): ?>
                             <tr>
                                 <td>
-                                    <div class="fw-semibold us-user-name">
-                                        <?= htmlspecialchars((string) ($u['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                                        <?= htmlspecialchars((string) ($u['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="us-user-avatar us-user-avatar--icon" aria-hidden="true">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold us-user-name">
+                                                <?= htmlspecialchars((string) ($u['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                                <?= htmlspecialchars((string) ($u['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                            </div>
+                                            <div class="text-muted small us-user-meta"><?= htmlspecialchars((string) ($u['departement'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                        </div>
                                     </div>
-                                    <div class="text-muted small us-user-meta"><?= htmlspecialchars((string) ($u['departement'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
                                 </td>
                                 <td><?= htmlspecialchars((string) ($u['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td>
@@ -303,8 +228,9 @@ $utilisateursUrl = $this->url('/utilisateurs');
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3">

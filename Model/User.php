@@ -15,6 +15,21 @@ class User
         $this->model = new Model();
     }
 
+    private function hasDerniereConnexionColumn(): bool
+    {
+        $statement = $this->model->query(
+            'SELECT COUNT(*) AS cnt
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = ?
+               AND COLUMN_NAME = ?',
+            ['utilisateurs', 'derniere_connexion']
+        );
+
+        $row = $statement->fetch();
+        return (int) ($row['cnt'] ?? 0) > 0;
+    }
+
     public static function allowedRoles(): array
     {
         return self::ALLOWED_ROLES;
@@ -314,6 +329,103 @@ class User
         }
 
         return [implode(' AND ', $where), $params];
+    }
+
+    /**
+     * Update last login timestamp for a user
+     */
+    public function updateLastLogin(int|string $id): bool
+    {
+        if (!$this->hasDerniereConnexionColumn()) {
+            return false;
+        }
+
+        $statement = $this->model->query(
+            'UPDATE utilisateurs SET derniere_connexion = NOW() WHERE id = ?',
+            [(int) $id]
+        );
+
+        return $statement->rowCount() > 0;
+    }
+
+    /**
+     * Get active users today (users with derniere_connexion today)
+     */
+    public function countActiveToday(): int
+    {
+        if (!$this->hasDerniereConnexionColumn()) {
+            return 0;
+        }
+
+        $statement = $this->model->query(
+            'SELECT COUNT(*) AS cnt FROM utilisateurs 
+             WHERE DATE(derniere_connexion) = DATE(NOW())'
+        );
+
+        $row = $statement->fetch();
+        return (int) ($row['cnt'] ?? 0);
+    }
+
+    /**
+     * Get active users this week
+     */
+    public function countActiveThisWeek(): int
+    {
+        if (!$this->hasDerniereConnexionColumn()) {
+            return 0;
+        }
+
+        $statement = $this->model->query(
+            'SELECT COUNT(*) AS cnt FROM utilisateurs 
+             WHERE WEEK(derniere_connexion) = WEEK(NOW()) 
+             AND YEAR(derniere_connexion) = YEAR(NOW())'
+        );
+
+        $row = $statement->fetch();
+        return (int) ($row['cnt'] ?? 0);
+    }
+
+    /**
+     * Get recent logins
+     */
+    public function getRecentLogins(int $limit = 10): array
+    {
+        if (!$this->hasDerniereConnexionColumn()) {
+            return [];
+        }
+
+        $statement = $this->model->query(
+            'SELECT id, nom, prenom, email, role, derniere_connexion 
+             FROM utilisateurs 
+             WHERE derniere_connexion IS NOT NULL
+             ORDER BY derniere_connexion DESC 
+             LIMIT ?',
+            [$limit]
+        );
+
+        return $statement->fetchAll();
+    }
+
+    /**
+     * Get login trend data for the past N days
+     */
+    public function getLoginTrendData(int $days = 7): array
+    {
+        if (!$this->hasDerniereConnexionColumn()) {
+            return [];
+        }
+
+        $statement = $this->model->query(
+            'SELECT DATE(derniere_connexion) as date, COUNT(*) as count
+             FROM utilisateurs
+             WHERE derniere_connexion IS NOT NULL 
+             AND DATE(derniere_connexion) >= DATE_SUB(NOW(), INTERVAL ? DAY)
+             GROUP BY DATE(derniere_connexion)
+             ORDER BY DATE(derniere_connexion) ASC',
+            [$days - 1]
+        );
+
+        return $statement->fetchAll();
     }
 }
 

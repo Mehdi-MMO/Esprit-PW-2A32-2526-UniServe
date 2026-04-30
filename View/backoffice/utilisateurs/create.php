@@ -9,28 +9,30 @@ function e(string $v): string
     <div>
         <div class="us-kicker mb-1">Gestion des comptes</div>
         <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Créer un utilisateur'), ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="us-page-subtitle">Créer un compte utilisateur.</p>
+        <p class="us-page-subtitle mb-0">Créer un compte utilisateur avec les bons droits et le bon niveau de visibilité.</p>
     </div>
 
     <a href="<?= $this->url('/utilisateurs') ?>" class="btn btn-outline-secondary btn-sm">Retour</a>
 </div>
 
-<div class="us-section-card">
-    <div class="card-body p-3 p-md-4">
-        <div class="us-surface-muted px-3 py-2 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="small text-muted">Champs marqués * : obligatoires</div>
-            <div class="small text-muted">Rôle admin unique appliqué automatiquement</div>
-        </div>
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="us-section-card">
+            <div class="card-body p-3 p-md-4">
+                <div class="us-surface-muted px-3 py-2 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="small text-muted">Champs marqués * : obligatoires</div>
+                    <div class="small text-muted">Rôle admin unique appliqué automatiquement</div>
+                </div>
 
-        <?php if (!empty($error)): ?>
-            <div class="alert alert-danger py-2 small" role="alert">
-                <?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?>
-            </div>
-        <?php endif; ?>
+                <?php if (!empty($error)): ?>
+                    <div class="alert alert-danger py-2 small" role="alert">
+                        <?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?>
+                    </div>
+                <?php endif; ?>
 
-        <form method="post" action="<?= $this->url('/utilisateurs/create') ?>" data-validate-account-form="1">
-            <h2 class="h6 mb-3">Compte utilisateur</h2>
-            <div class="row g-3">
+                <form method="post" action="<?= $this->url('/utilisateurs/create') ?>" data-validate-account-form="1">
+                    <h2 class="h6 mb-3">Compte utilisateur</h2>
+                    <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="nom">Nom *</label>
                     <input class="form-control" id="nom" name="nom" value="<?= e((string) ($old['nom'] ?? '')) ?>" data-required-label="Le nom" required>
@@ -77,12 +79,12 @@ function e(string $v): string
                         <option value="inactif" <?= $statut === 'inactif' ? 'selected' : '' ?>>Inactif</option>
                     </select>
                 </div>
-            </div>
+                    </div>
 
-            <div class="us-divider my-4"></div>
+                    <div class="us-divider my-4"></div>
 
-            <h2 class="h6 mb-3">Informations complémentaires</h2>
-            <div class="row g-3">
+                    <h2 class="h6 mb-3">Informations complémentaires</h2>
+                    <div class="row g-3">
 
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="matricule">Matricule</label>
@@ -107,12 +109,41 @@ function e(string $v): string
                     <input class="form-control" id="niveau" name="niveau" value="<?= e((string) ($old['niveau'] ?? '')) ?>">
                     <div class="form-text">Optionnel</div>
                 </div>
-            </div>
+                    </div>
 
-            <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-4 pt-2 border-top">
-                <a href="<?= $this->url('/utilisateurs') ?>" class="btn btn-outline-secondary">Annuler</a>
-                <button type="submit" class="btn btn-primary px-4">Créer le compte</button>
+                    <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mt-4 pt-2 border-top">
+                        <a href="<?= $this->url('/utilisateurs') ?>" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary px-4">Créer le compte</button>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card us-side-note h-100">
+            <div class="card-body p-3 p-md-4">
+                <div class="us-kicker mb-1">Aide rapide</div>
+                <h2 class="h6 mb-3">Conseils de création</h2>
+                <div class="us-note-list">
+                    <div class="us-note-item">
+                        <i class="bi bi-shield-check"></i>
+                        <div>Un seul compte admin est autorisé.</div>
+                    </div>
+                    <div class="us-note-item">
+                        <i class="bi bi-envelope-check"></i>
+                        <div>L’email doit rester institutionnel.</div>
+                    </div>
+                    <div class="us-note-item">
+                        <i class="bi bi-key"></i>
+                        <div>Le mot de passe doit respecter la politique de sécurité.</div>
+                    </div>
+                    <div class="us-note-item">
+                        <i class="bi bi-person-badge"></i>
+                        <div>Renseigne le matricule si le profil le nécessite.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

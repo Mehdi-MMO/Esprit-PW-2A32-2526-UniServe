@@ -9,9 +9,18 @@ class UtilisateursController extends Controller
         $this->index();
     }
 
+    private function findUniqueAdminId(User $userModel): ?int
+    {
+        if ($userModel->countByRole('admin') !== 1) {
+            return null;
+        }
+
+        return $userModel->findSingleAdminId();
+    }
+
     private function resolveListState(User $userModel): array
     {
-        $singleAdminId = $userModel->findSingleAdminId();
+        $singleAdminId = $this->findUniqueAdminId($userModel);
 
         $q = trim((string) ($_GET['q'] ?? ''));
         $role = trim((string) ($_GET['role'] ?? ''));
@@ -323,7 +332,7 @@ class UtilisateursController extends Controller
         }
 
         $userModel = new User();
-        $singleAdminId = $userModel->findSingleAdminId();
+        $singleAdminId = $this->findUniqueAdminId($userModel);
         $isSingleAdminEditing = $singleAdminId !== null && $userId === $singleAdminId;
         $user = $userModel->findById($userId);
         if ($user === null) {
@@ -334,15 +343,22 @@ class UtilisateursController extends Controller
         $error = null;
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+            $existingRole = (string) ($user['role'] ?? 'etudiant');
+            $existingStatutCompte = (string) ($user['statut_compte'] ?? 'actif');
+            $existingMatricule = (string) ($user['matricule'] ?? '');
+            $existingDepartement = (string) ($user['departement'] ?? '');
+            $existingNiveau = (string) ($user['niveau'] ?? '');
+            $existingTelephone = (string) ($user['telephone'] ?? '');
+
             $nom = $this->normalizeText((string) ($_POST['nom'] ?? ''));
             $prenom = $this->normalizeText((string) ($_POST['prenom'] ?? ''));
             $email = $this->normalizeEmail((string) ($_POST['email'] ?? ''));
-            $role = (string) ($_POST['role'] ?? 'etudiant');
-            $matricule = (string) ($_POST['matricule'] ?? '');
-            $departement = (string) ($_POST['departement'] ?? '');
-            $niveau = (string) ($_POST['niveau'] ?? '');
-            $telephone = (string) ($_POST['telephone'] ?? '');
-            $statutCompte = (string) ($_POST['statut_compte'] ?? 'actif');
+            $role = $isSingleAdminEditing ? $existingRole : (string) ($_POST['role'] ?? 'etudiant');
+            $matricule = $isSingleAdminEditing ? $existingMatricule : (string) ($_POST['matricule'] ?? '');
+            $departement = $isSingleAdminEditing ? $existingDepartement : (string) ($_POST['departement'] ?? '');
+            $niveau = $isSingleAdminEditing ? $existingNiveau : (string) ($_POST['niveau'] ?? '');
+            $telephone = $isSingleAdminEditing ? $existingTelephone : (string) ($_POST['telephone'] ?? '');
+            $statutCompte = $isSingleAdminEditing ? $existingStatutCompte : (string) ($_POST['statut_compte'] ?? 'actif');
             $newPassword = (string) ($_POST['new_password'] ?? '');
 
             if ($nom === '' || $prenom === '' || $email === '') {
@@ -359,6 +375,8 @@ class UtilisateursController extends Controller
                 $error = 'Vous ne pouvez pas changer le rôle du compte admin unique.';
             } elseif (!$isSingleAdminEditing && $role === 'admin' && $singleAdminId !== null) {
                 $error = 'Un seul compte admin est autorisé.';
+            } elseif ($isSingleAdminEditing && $statutCompte !== 'actif') {
+                $error = 'Le compte admin unique doit rester actif.';
             } elseif ($userModel->emailExists($email, $userId)) {
                 $error = 'Cet email existe déjà.';
             } else {
@@ -410,7 +428,7 @@ class UtilisateursController extends Controller
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $userModel = new User();
-            $singleAdminId = $userModel->findSingleAdminId();
+            $singleAdminId = $this->findUniqueAdminId($userModel);
             $currentUserId = (int) ($_SESSION['user']['id'] ?? 0);
 
             if ($currentUserId > 0 && $userId === $currentUserId) {

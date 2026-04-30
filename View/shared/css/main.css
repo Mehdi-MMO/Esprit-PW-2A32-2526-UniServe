@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
 
 :root {
     --navy: #0a1628;
@@ -26,6 +26,9 @@
     --shadow-soft: 0 4px 12px rgba(16, 24, 40, 0.05);
 
     --focus-ring: 0 0 0 0.25rem rgba(11, 42, 90, 0.20);
+
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+    --font-display: 'Space Grotesk', sans-serif;
 }
 
 *,
@@ -36,11 +39,52 @@
 
 body {
     margin: 0;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-body);
+    line-height: 1.5;
     background-color: var(--bg);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6,
+.navbar-brand,
+.us-card-title,
+.us-module-title {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+}
+
+h1,
+.h1 {
+    font-weight: 700;
+}
+
+h2,
+.h2,
+h3,
+.h3 {
+    font-weight: 700;
+}
+
+h4,
+.h4,
+h5,
+.h5,
+h6,
+.h6 {
+    font-weight: 600;
 }
 
 main {
@@ -516,7 +560,10 @@ a {
     margin-inline: auto;
     border-radius: var(--radius-md);
     overflow: hidden;
-    background: #0f172a;
+    background:
+        radial-gradient(circle at 30% 25%, rgba(42, 110, 223, 0.08), transparent 48%),
+        linear-gradient(160deg, #f7f9fc, #eef3f9);
+    border: 1px solid rgba(10, 22, 40, 0.08);
 }
 
 .us-crop-image {
