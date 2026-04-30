@@ -1,0 +1,173 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --navy: #0a1628;
+    --mint: #3ecfb2;
+
+    --brand: #0b2a5a;
+    --brand-contrast: #ffffff;
+    --accent: #9f7a2f;
+
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --surface-2: #fbfcfe;
+    --border: rgba(10, 22, 40, 0.10);
+
+    --text: #101828;
+    --text-muted: #667085;
+
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --shadow-sm: 0 10px 24px rgba(16, 24, 40, 0.08);
+    --shadow-md: 0 16px 40px rgba(16, 24, 40, 0.12);
+
+    --focus-ring: 0 0 0 0.25rem rgba(11, 42, 90, 0.20);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.bg-navy {
+    background-color: var(--navy) !important;
+}
+
+.text-mint {
+    color: var(--mint) !important;
+}
+
+/* Bootstrap refinements */
+.container {
+    max-width: 1140px;
+}
+
+.btn {
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    --bs-btn-hover-bg: #0a234c;
+    --bs-btn-hover-border-color: #0a234c;
+    --bs-btn-active-bg: #091f43;
+    --bs-btn-active-border-color: #091f43;
+}
+
+.btn-outline-light {
+    --bs-btn-hover-bg: rgba(255, 255, 255, 0.12);
+    --bs-btn-hover-border-color: rgba(255, 255, 255, 0.65);
+}
+
+.btn-outline-danger {
+    border-radius: 999px;
+}
+
+.form-control {
+    border-radius: var(--radius-sm);
+    border-color: var(--border);
+}
+
+.form-control:focus {
+    border-color: rgba(11, 42, 90, 0.45);
+    box-shadow: var(--focus-ring);
+}
+
+.dropdown-menu {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+
+.navbar-brand {
+    letter-spacing: 0.02em;
+}
+
+/* UniServe components */
+.us-topbar {
+    background: linear-gradient(180deg, rgba(10, 22, 40, 1) 0%, rgba(11, 42, 90, 1) 100%);
+}
+
+.us-brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: inline-grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: var(--brand-contrast);
+    font-weight: 700;
+}
+
+.us-hero {
+    position: relative;
+    background: radial-gradient(900px 400px at 10% 0%, rgba(159, 122, 47, 0.14) 0%, rgba(159, 122, 47, 0.00) 60%),
+        radial-gradient(900px 450px at 90% 10%, rgba(62, 207, 178, 0.10) 0%, rgba(62, 207, 178, 0.00) 55%),
+        linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%);
+    border-bottom: 1px solid var(--border);
+}
+
+.us-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.us-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-sm);
+    border-color: rgba(11, 42, 90, 0.22);
+}
+
+.us-card-title {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.us-divider {
+    height: 1px;
+    background: var(--border);
+}
+
+.us-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(11, 42, 90, 0.20);
+    background: rgba(11, 42, 90, 0.06);
+    color: var(--brand);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.module-card {
+    border: 1px solid rgba(10, 22, 40, 0.08);
+    border-radius: 14px;
+}
