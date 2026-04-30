@@ -1,4 +1,7 @@
 <?php
+// Include helpers for rendering UI components
+require_once __DIR__ . '/../../shared/helpers.php';
+
 function e(string $v): string
 {
     return htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
@@ -7,51 +10,108 @@ function e(string $v): string
 $old = $old ?? [];
 $error = (string) ($error ?? '');
 $isActif = (int) ($old['actif'] ?? 1) === 1;
+$validationRules = $validationRules ?? [];
 ?>
 
-<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header">
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header mb-4">
     <div>
         <div class="us-kicker mb-1">Gestion des clubs</div>
-        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Creer un club'), ENT_QUOTES, 'UTF-8') ?></h1>
+        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Créer un club'), ENT_QUOTES, 'UTF-8') ?></h1>
         <p class="text-muted mb-0">Ajouter un nouveau club universitaire.</p>
     </div>
-    <a href="<?= $this->url('/evenements/manageClubs') ?>" class="btn btn-outline-secondary btn-sm">Retour</a>
+    <a href="<?= $this->url('/clubs/manage') ?>" class="btn btn-outline-secondary btn-sm">Retour</a>
 </div>
 
 <div class="us-section-card">
     <div class="card-body p-3 p-md-4">
         <?php if ($error !== ''): ?>
-            <div class="alert alert-danger py-2 small" role="alert"><?= e($error) ?></div>
+            <?php echo renderErrorAlert($error); ?>
         <?php endif; ?>
 
-        <form method="post" action="<?= $this->url('/evenements/createClub') ?>">
+        <form method="post" action="<?= $this->url('/clubs/create') ?>" id="club-form">
+            <!-- Basic Information Section -->
+            <?php echo renderFormSection('Informations de base'); ?>
+            
             <div class="row g-3">
                 <div class="col-md-8">
-                    <label class="form-label text-muted small" for="nom">Nom *</label>
-                    <input class="form-control" id="nom" name="nom" required value="<?= e((string) ($old['nom'] ?? '')) ?>">
+                    <?php 
+                    echo renderFormField(
+                        'nom',
+                        'Nom du club',
+                        'text',
+                        $old['nom'] ?? '',
+                        [
+                            'required' => true,
+                            'placeholder' => 'Ex: Club de débat',
+                        ],
+                        $error === 'Le nom du club est obligatoire.' ? $error : ''
+                    );
+                    ?>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label text-muted small" for="email_contact">Email contact</label>
-                    <input class="form-control" id="email_contact" name="email_contact" type="email" value="<?= e((string) ($old['email_contact'] ?? '')) ?>">
-                </div>
-
-                <div class="col-12">
-                    <label class="form-label text-muted small" for="description">Description</label>
-                    <textarea class="form-control" id="description" name="description" rows="5"><?= e((string) ($old['description'] ?? '')) ?></textarea>
-                </div>
-
-                <div class="col-12">
-                    <div class="form-check">
-                        <input class="form-check-input" id="actif" name="actif" type="checkbox" value="1" <?= $isActif ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="actif">Club actif</label>
-                    </div>
+                    <?php 
+                    echo renderFormField(
+                        'email_contact',
+                        'Email de contact',
+                        'email',
+                        $old['email_contact'] ?? '',
+                        [
+                            'required' => false,
+                            'placeholder' => 'contact@club.com',
+                        ],
+                        ''
+                    );
+                    ?>
                 </div>
             </div>
 
-            <div class="d-flex justify-content-end mt-4 pt-2 border-top">
-                <button class="btn btn-primary px-4" type="submit">Creer le club</button>
+            <!-- Description Section -->
+            <?php echo renderFormSection('Description et détails'); ?>
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <?php 
+                    echo renderFormField(
+                        'description',
+                        'Description du club',
+                        'textarea',
+                        $old['description'] ?? '',
+                        [
+                            'required' => false,
+                            'placeholder' => 'Décrivez les objectifs et activités du club...',
+                            'rows' => 5,
+                        ],
+                        ''
+                    );
+                    ?>
+                </div>
+            </div>
+
+            <!-- Status Section -->
+            <?php echo renderFormSection('Statut'); ?>
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <?php 
+                    echo renderCheckboxField(
+                        'actif',
+                        'Ce club est actif',
+                        $isActif,
+                        '1'
+                    );
+                    ?>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                <a href="<?= $this->url('/clubs/manage') ?>" class="btn btn-secondary">Annuler</a>
+                <button class="btn btn-primary" type="submit">Créer le club</button>
             </div>
         </form>
     </div>
 </div>
+
+<!-- Load validation script -->
+<script src="<?= $this->url('/shared/js/validation.js') ?>"></script>
