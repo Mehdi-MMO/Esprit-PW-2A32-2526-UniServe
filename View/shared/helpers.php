@@ -26,16 +26,19 @@ function renderStatCard(string $title, int|string $value, string $color = 'prima
 
     $icon_html = '';
     if ($icon !== '') {
-        $icon_html = "<div class=\"stat-card-icon\"><i class=\"{$icon}\"></i></div>";
+        $icon_html = "<div class=\"stat-card-icon-circle\"><i class=\"{$icon}\"></i></div>";
+    } else {
+        // Default icon placeholder if none provided
+        $icon_html = "<div class=\"stat-card-icon-circle\"><i class=\"fa-solid fa-chart-simple\"></i></div>";
     }
 
     return <<<HTML
     <{$tag} class="{$classes}{$clickable}"{$href_attr}>
+        {$icon_html}
         <div class="stat-card-content">
             <div class="stat-card-value">{$value}</div>
             <div class="stat-card-title">{$title}</div>
         </div>
-        {$icon_html}
     </{$tag}>
 HTML;
 }

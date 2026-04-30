@@ -6,6 +6,7 @@
     <title>UniServe - BackOffice</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="<?= $this->url('/View/shared/css/main.css') ?>">
     <link rel="stylesheet" href="<?= $this->url('/View/shared/css/backoffice.css') ?>">
 </head>
@@ -28,10 +29,11 @@
         <nav class="nav flex-column p-3 gap-1">
             <a class="nav-link <?= $dashboardActive ? 'active' : '' ?>" href="<?= $this->url('/backoffice/dashboard') ?>"><i class="bi bi-speedometer2 me-2"></i>Tableau de bord</a>
             <a class="nav-link <?= $pathStartsWith('utilisateurs') ? 'active' : '' ?>" href="<?= $this->url('/utilisateurs') ?>"><i class="bi bi-people me-2"></i>Utilisateurs</a>
+            <a class="nav-link <?= $pathStartsWith('clubs') ? 'active' : '' ?>" href="<?= $this->url('/clubs/manage') ?>"><i class="bi bi-collection me-2"></i>Clubs</a>
+            <a class="nav-link <?= $pathStartsWith('events') ? 'active' : '' ?>" href="<?= $this->url('/events/manage') ?>"><i class="bi bi-calendar-event me-2"></i>Événements</a>
             <a class="nav-link <?= $pathStartsWith('demandes') ? 'active' : '' ?>" href="<?= $this->url('/demandes') ?>"><i class="bi bi-journal-text me-2"></i>Demandes</a>
             <a class="nav-link <?= $pathStartsWith('rendezvous') ? 'active' : '' ?>" href="<?= $this->url('/rendezvous') ?>"><i class="bi bi-calendar-check me-2"></i>Rendez-vous</a>
             <a class="nav-link <?= $pathStartsWith('documents') ? 'active' : '' ?>" href="<?= $this->url('/documents') ?>"><i class="bi bi-file-earmark-text me-2"></i>Documents</a>
-            <a class="nav-link <?= $pathStartsWith('evenements') ? 'active' : '' ?>" href="<?= $this->url('/evenements') ?>"><i class="bi bi-calendar-event me-2"></i>Événements</a>
         </nav>
     </aside>
 

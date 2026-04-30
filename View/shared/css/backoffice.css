@@ -87,89 +87,257 @@
     }
 }
 
+/* ===== MODULE NAVIGATION TABS ===== */
+
+.us-module-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 0;
+    margin-bottom: 2rem !important;
+}
+
+.nav-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-decoration: none;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+    position: relative;
+    bottom: -2px;
+}
+
+.nav-tab:hover {
+    color: #0b2a5a;
+    background-color: rgba(11, 42, 90, 0.05);
+}
+
+.nav-tab.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+}
+
+.nav-tab i {
+    font-size: 0.95rem;
+}
+
 /* ===== STAT CARDS & DASHBOARD STYLING ===== */
 
 .stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2.5rem;
 }
 
 .stat-card {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     background: white;
-    border-radius: 8px;
-    padding: 1.5rem;
-    border-left: 4px solid;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+    border-radius: 12px;
+    padding: 1.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card:hover .stat-card-icon-circle {
+    transform: scale(1.1) rotate(5deg);
 }
 
 .stat-card-clickable {
     cursor: pointer;
     text-decoration: none;
     color: inherit;
+    display: block;
+    width: 100%;
 }
 
 .stat-card-clickable:hover {
     text-decoration: none;
 }
 
+/* Circular icon container */
+.stat-card-icon-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    margin-right: 1.5rem;
+    font-size: 1.75rem;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
 .stat-card-content {
     flex: 1;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
 }
 
 .stat-card-value {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 2.2rem;
+    font-weight: 800;
     color: #0b2a5a;
     line-height: 1;
+    margin-bottom: 0.3rem;
+    letter-spacing: -0.5px;
 }
 
 .stat-card-title {
-    font-size: 0.875rem;
+    font-size: 0.9rem;
     color: #6c757d;
-    margin-top: 0.5rem;
     font-weight: 500;
+    margin: 0;
+    line-height: 1.4;
 }
 
-.stat-card-icon {
-    margin-left: 1rem;
-    font-size: 2rem;
-    opacity: 0.2;
+.stat-card-subtitle {
+    font-size: 0.8rem;
+    color: #adb5bd;
+    margin-top: 0.25rem;
 }
 
-/* Stat card color variants */
-.stat-card-primary {
-    border-left-color: #0d6efd;
+/* Stat card color variants - Primary */
+.stat-card-primary .stat-card-icon-circle {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ff8 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
 }
 
-.stat-card-success {
-    border-left-color: #198754;
+.stat-card-primary .stat-card-value {
+    color: #0d6efd;
 }
 
-.stat-card-warning {
-    border-left-color: #ffc107;
+/* Stat card color variants - Success */
+.stat-card-success .stat-card-icon-circle {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(25, 135, 84, 0.3);
 }
 
-.stat-card-danger {
-    border-left-color: #dc3545;
+.stat-card-success .stat-card-value {
+    color: #198754;
 }
 
-.stat-card-info {
-    border-left-color: #0dcaf0;
+/* Stat card color variants - Warning */
+.stat-card-warning .stat-card-icon-circle {
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
 }
 
-.stat-card-secondary {
-    border-left-color: #6c757d;
+.stat-card-warning .stat-card-value {
+    color: #ffc107;
+}
+
+/* Stat card color variants - Danger */
+.stat-card-danger .stat-card-icon-circle {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+}
+
+.stat-card-danger .stat-card-value {
+    color: #dc3545;
+}
+
+/* Stat card color variants - Info */
+.stat-card-info .stat-card-icon-circle {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(13, 202, 240, 0.3);
+}
+
+.stat-card-info .stat-card-value {
+    color: #0dcaf0;
+}
+
+/* Stat card color variants - Secondary */
+.stat-card-secondary .stat-card-icon-circle {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+.stat-card-secondary .stat-card-value {
+    color: #6c757d;
+}
+
+/* Responsive design for stat cards */
+@media (max-width: 768px) {
+    .stat-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .stat-card {
+        padding: 1.25rem;
+    }
+
+    .stat-card-icon-circle {
+        width: 60px;
+        height: 60px;
+        margin-right: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .stat-card-value {
+        font-size: 1.75rem;
+    }
+
+    .stat-card-title {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .stat-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .stat-card-icon-circle {
+        width: 55px;
+        height: 55px;
+        margin-right: 0.75rem;
+        font-size: 1.3rem;
+    }
+
+    .stat-card-value {
+        font-size: 1.5rem;
+    }
 }
 
 /* ===== FORM STYLING & VALIDATION ===== */

@@ -10,6 +10,16 @@ $success = (string) ($success ?? '');
 $error = (string) ($error ?? '');
 ?>
 
+<!-- Module Navigation Tabs -->
+<div class="d-flex gap-2 mb-4 us-module-tabs">
+    <a href="<?= $this->url('/clubs/manage') ?>" class="nav-tab active" aria-current="page">
+        <i class="fa-solid fa-objects-column me-2"></i>Clubs
+    </a>
+    <a href="<?= $this->url('/events/manage') ?>" class="nav-tab">
+        <i class="fa-solid fa-calendar-days me-2"></i>Événements
+    </a>
+</div>
+
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header mb-4">
     <div>
         <div class="us-kicker mb-1">Administration</div>
@@ -40,19 +50,19 @@ if ($error !== '') {
             'title' => 'Clubs total',
             'value' => $stats['total'] ?? 0,
             'color' => 'primary',
-            'icon' => 'bi bi-collection',
+            'icon' => 'fa-solid fa-objects-column',
         ],
         [
             'title' => 'En attente',
             'value' => $stats['pending'] ?? 0,
             'color' => 'warning',
-            'icon' => 'bi bi-hourglass-split',
+            'icon' => 'fa-solid fa-hourglass-end',
         ],
         [
             'title' => 'Clubs actifs',
             'value' => $stats['active'] ?? 0,
             'color' => 'success',
-            'icon' => 'bi bi-check-circle',
+            'icon' => 'fa-solid fa-circle-check',
         ],
     ];
     echo renderStatGrid($statCards);

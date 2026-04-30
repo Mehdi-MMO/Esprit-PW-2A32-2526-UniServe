@@ -21,6 +21,16 @@ $statusClass = static function (string $status): string {
 };
 ?>
 
+<!-- Module Navigation Tabs -->
+<div class="d-flex gap-2 mb-4 us-module-tabs">
+    <a href="<?= $this->url('/clubs/manage') ?>" class="nav-tab">
+        <i class="fa-solid fa-objects-column me-2"></i>Clubs
+    </a>
+    <a href="<?= $this->url('/events/manage') ?>" class="nav-tab active" aria-current="page">
+        <i class="fa-solid fa-calendar-days me-2"></i>Événements
+    </a>
+</div>
+
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header mb-4">
     <div>
         <div class="us-kicker mb-1">Administration</div>
@@ -51,25 +61,25 @@ if ($error !== '') {
             'title' => 'Événements total',
             'value' => $stats['total'] ?? 0,
             'color' => 'primary',
-            'icon' => 'bi bi-calendar-event',
+            'icon' => 'fa-solid fa-calendar-days',
         ],
         [
             'title' => 'Événements actifs',
             'value' => $stats['active'] ?? 0,
             'color' => 'success',
-            'icon' => 'bi bi-play-circle',
+            'icon' => 'fa-solid fa-circle-play',
         ],
         [
             'title' => 'Inscriptions total',
             'value' => $stats['total_registrations'] ?? 0,
             'color' => 'info',
-            'icon' => 'bi bi-people',
+            'icon' => 'fa-solid fa-users',
         ],
         [
             'title' => 'À venir',
             'value' => $stats['upcoming'] ?? 0,
             'color' => 'warning',
-            'icon' => 'bi bi-arrow-right-circle',
+            'icon' => 'fa-solid fa-clock',
         ],
     ];
     echo renderStatGrid($statCards);

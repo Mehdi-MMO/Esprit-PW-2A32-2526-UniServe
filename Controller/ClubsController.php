@@ -78,8 +78,7 @@ class ClubsController extends Controller
         $pendingCount = count($pendingClubs);
         
         $activeClubs = array_filter($allClubs, static fn (array $club): bool => 
-            (string) ($club['actif'] ?? '0') === '1' && 
-            (string) ($club['statut_validation'] ?? '') === 'approuve'
+            (int) ($club['actif'] ?? 0) === 1
         );
         $activeCount = count($activeClubs);
         
@@ -104,7 +103,7 @@ class ClubsController extends Controller
         $pendingClubs = $clubModel->getPendingForAdmin();
         $clubs = array_values(array_filter(
             $clubModel->getAllAdmin(),
-            static fn (array $club): bool => (string) ($club['statut_validation'] ?? '') !== 'en_attente'
+            static fn (array $club): bool => (int) ($club['actif'] ?? 0) === 1
         ));
         $q = trim((string) ($_GET['q'] ?? ''));
 
