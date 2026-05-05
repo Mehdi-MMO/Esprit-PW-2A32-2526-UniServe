@@ -107,6 +107,14 @@
 <?php
 $selectedBureau = $_POST['id_bureau'] ?? $_GET['bureau_id'] ?? '';
 $hasErrors      = !empty(array_filter($errors ?? []));
+
+// Collecter les bureaux pour le JSON (on clone le résultat avant de l'itérer dans le select)
+$bureauxList = [];
+$stmtBureaux->execute(); // réexécuter pour avoir les données fraîches
+while ($b = $stmtBureaux->fetch(PDO::FETCH_ASSOC)) {
+    $bureauxList[] = ['id' => $b['id'], 'nom' => $b['nom'], 'localisation' => $b['localisation']];
+}
+$bureauxJson = json_encode($bureauxList, JSON_UNESCAPED_UNICODE);
 ?>
 
 <div class="book-wrap">
@@ -204,12 +212,12 @@ $hasErrors      = !empty(array_filter($errors ?? []));
                             class="form-select <?= !empty($errors['id_bureau']) ? 'is-invalid' : '' ?>"
                             onchange="updateSummary()">
                         <option value="">— Sélectionnez un bureau —</option>
-                        <?php while ($b = $stmtBureaux->fetch(PDO::FETCH_ASSOC)): ?>
+                        <?php foreach ($bureauxList as $b): ?>
                             <option value="<?= $b['id'] ?>"
                                 <?= ($selectedBureau == $b['id']) ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($b['nom']) ?> — <?= htmlspecialchars($b['localisation']) ?>
                             </option>
-                        <?php endwhile; ?>
+                        <?php endforeach; ?>
                     </select>
                     <div class="invalid-feedback" id="err_bureau">
                         <?= htmlspecialchars($errors['id_bureau'] ?? '') ?>
@@ -230,10 +238,20 @@ $hasErrors      = !empty(array_filter($errors ?? []));
                            class="form-control <?= !empty($errors['objet']) ? 'is-invalid' : '' ?>"
                            value="<?= htmlspecialchars($_POST['objet'] ?? '') ?>"
                            placeholder="Ex : Demande de bourse, Inscription, Tutorat…"
-                           oninput="updateSummary()">
+                           oninput="updateSummary(); triggerAiSuggest();"
+                           autocomplete="off">
                     <div class="invalid-feedback" id="err_objet">
                         <?= htmlspecialchars($errors['objet'] ?? '') ?>
                     </div>
+                    <!-- Indicateur suggestion IA -->
+                    <div id="ai-indicator" style="display:none;margin-top:7px;display:none;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:linear-gradient(135deg,rgba(11,42,90,0.05),rgba(62,207,178,0.06));border:1px solid rgba(11,42,90,0.10);">
+                        <div id="ai-spinner" style="display:none;">
+                            <div style="width:16px;height:16px;border:2px solid rgba(11,42,90,0.15);border-top-color:#0b2a5a;border-radius:50%;animation:ai-spin .7s linear infinite;flex-shrink:0;"></div>
+                        </div>
+                        <i id="ai-icon" class="bi bi-stars" style="color:#0b2a5a;font-size:.9rem;display:none;"></i>
+                        <span id="ai-text" style="font-size:.78rem;font-weight:600;color:#0b2a5a;"></span>
+                    </div>
+                    <style>@keyframes ai-spin{to{transform:rotate(360deg);}}</style>
                 </div>
 
                 <!-- ─── Section 2 : Date & Heure ─── -->
@@ -363,10 +381,133 @@ function validateBookForm() {
     return valid;
 }
 
-function setError(fieldId, errId, msg) {
-    var field = document.getElementById(fieldId);
-    var errEl = document.getElementById(errId);
-    if (field) field.classList.add('is-invalid');
-    if (errEl) errEl.innerText = msg;
+/* ── Suggestion intelligente de bureau (locale, sans API) ── */
+const BUREAUX_DATA = <?= $bureauxJson ?>;
+
+let aiDebounceTimer = null;
+
+// Mots-clés associés à des types de bureaux
+const KEYWORDS = {
+    scolar:   ['bourse','inscription','scolarité','scolarite','frais','diplome','diplôme','attestation','certificat','relevé','releve','notes','résultats','resultats','réinscription','reinscription','equivalence','équivalence','admission'],
+    finance:  ['paiement','facture','remboursement','comptabilité','comptabilite','finance','financement','virement','reçu','recu','quittance'],
+    stage:    ['stage','internship','entreprise','convention','alternance','apprentissage','insertion','emploi','cv','lettre','recommandation'],
+    academ:   ['cours','programme','emploi du temps','horaire','matiere','matière','module','exam','examen','note','ue','semestre','licence','master','doctorat','professeur','enseignant'],
+    registr:  ['dossier','document','enregistrement','registre','inscription administrative','archive'],
+    biblio:   ['livre','bibliothèque','bibliotheque','emprunt','ouvrage','revue','ressource'],
+    sport:    ['sport','activité physique','activite physique','association','club','tournament','tournoi'],
+    info:     ['informatique','ordinateur','réseau','reseau','internet','wifi','logiciel','materiel','matériel','technique','bug','panne','impression','imprimante'],
+    rh:       ['ressources humaines','rh','personnel','contrat','poste','recrutement','carrière','carriere'],
+    sante:    ['santé','sante','médecin','medecin','médical','medical','infirmerie','psychologue','handicap','accessibilité','accessibilite','urgence'],
+};
+
+function suggestBureau(objet) {
+    const txt = objet.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    let bestId    = 0;
+    let bestScore = 0;
+    let bestNom   = '';
+
+    BUREAUX_DATA.forEach(b => {
+        const nomNorm = b.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        let score = 0;
+
+        // 1. Correspondance directe avec le nom du bureau
+        if (txt.includes(nomNorm)) score += 10;
+        nomNorm.split(/\s+/).forEach(word => { if (word.length > 2 && txt.includes(word)) score += 4; });
+
+        // 2. Correspondance via mots-clés thématiques
+        Object.entries(KEYWORDS).forEach(([theme, kws]) => {
+            // Vérifier si ce bureau correspond au thème
+            const bureauMatchTheme = nomNorm.includes(theme) ||
+                kws.some(k => nomNorm.includes(k.normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
+
+            if (bureauMatchTheme) {
+                kws.forEach(kw => {
+                    const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    if (txt.includes(kwNorm)) score += 3;
+                });
+            }
+        });
+
+        // 3. Correspondance partielle sujet → localisation
+        const locNorm = b.localisation.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        if (txt.includes(locNorm)) score += 2;
+
+        if (score > bestScore) { bestScore = score; bestId = b.id; bestNom = b.nom; }
+    });
+
+    return bestScore >= 3 ? { id: bestId, nom: bestNom } : null;
 }
+
+function triggerAiSuggest() {
+    const objet = document.getElementById('objet').value.trim();
+    clearTimeout(aiDebounceTimer);
+
+    if (objet.length < 3) { hideAiIndicator(); return; }
+
+    const sel = document.getElementById('id_bureau');
+    if (sel.dataset.userSelected === '1') return;
+
+    aiDebounceTimer = setTimeout(() => {
+        const suggestion = suggestBureau(objet);
+        if (suggestion) {
+            selectBureauById(suggestion.id);
+            showAiSuccess('Bureau suggéré : ' + suggestion.nom);
+        } else {
+            hideAiIndicator();
+        }
+    }, 500);
+}
+
+function selectBureauById(id) {
+    const sel = document.getElementById('id_bureau');
+    sel.dataset.aiChanging = '1';
+    for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value == id) { sel.selectedIndex = i; break; }
+    }
+    sel.dataset.aiChanging = '0';
+    updateSummary();
+}
+
+function showAiLoading() {
+    const box = document.getElementById('ai-indicator');
+    box.style.display = 'flex';
+    document.getElementById('ai-spinner').style.display = 'block';
+    document.getElementById('ai-icon').style.display    = 'none';
+    document.getElementById('ai-text').innerText        = 'Analyse…';
+}
+
+function showAiSuccess(msg) {
+    const box = document.getElementById('ai-indicator');
+    box.style.display = 'flex';
+    box.style.background   = 'linear-gradient(135deg,rgba(34,197,94,0.07),rgba(62,207,178,0.07))';
+    box.style.borderColor  = 'rgba(34,197,94,0.25)';
+    document.getElementById('ai-spinner').style.display = 'none';
+    const icon = document.getElementById('ai-icon');
+    icon.style.display = 'inline-block';
+    icon.style.color   = '#166534';
+    document.getElementById('ai-text').style.color   = '#166534';
+    document.getElementById('ai-text').innerText     = msg;
+}
+
+function hideAiIndicator() {
+    const box = document.getElementById('ai-indicator');
+    box.style.display    = 'none';
+    box.style.background = '';
+    box.style.borderColor = '';
+}
+
+// Marquer si l'utilisateur change le bureau manuellement
+document.addEventListener('DOMContentLoaded', function() {
+    updateSummary();
+    const sel = document.getElementById('id_bureau');
+    sel.dataset.userSelected = '0';
+    sel.dataset.aiChanging   = '0';
+    sel.addEventListener('change', function() {
+        if (this.dataset.aiChanging !== '1') {
+            this.dataset.userSelected = '1';
+            hideAiIndicator();
+        }
+    });
+});
 </script>
