@@ -1,0 +1,14 @@
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# PHP
+composer.lock
+vendor/
+
+# Local Config
+config/db_local.php
