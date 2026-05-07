@@ -116,7 +116,7 @@ $roleValue = strtolower((string) ($user['role'] ?? ''));
                                         <div class="col-md-6">
                                             <label class="form-label text-muted small" for="email">Email</label>
                                             <input class="form-control" id="email" type="email" name="email" value="<?= htmlspecialchars((string) ($user['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" data-required-label="Email" data-validate-email="institutional" required>
-                                            <div class="form-text">Adresse institutionnelle uniquement.</div>
+                                            <div class="form-text">Adresse @gmail.com uniquement.</div>
                                         </div>
 
                                         <div class="col-md-6">

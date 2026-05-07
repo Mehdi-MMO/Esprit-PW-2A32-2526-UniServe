@@ -5,7 +5,7 @@ declare(strict_types=1);
 class CalendarDemoService
 {
     private const TABLE_NAME = 'calendar_demo_items';
-    private const SAMPLE_STUDENT_EMAIL = 'etudiant@uniserve.net';
+    private const SAMPLE_STUDENT_EMAIL = 'etudiant.uniserve@gmail.com';
 
     private Model $model;
 

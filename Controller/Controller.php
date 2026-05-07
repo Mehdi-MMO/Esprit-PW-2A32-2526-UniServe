@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 class Controller
 {
-    private const DEFAULT_INSTITUTIONAL_EMAIL_DOMAINS = ['uniserve.net'];
+    private const DEFAULT_INSTITUTIONAL_EMAIL_DOMAINS = ['gmail.com'];
 
     protected function basePath(): string
     {
@@ -118,7 +118,7 @@ class Controller
         }
 
         if (!$this->isInstitutionalEmail($normalized)) {
-            return 'Utilisez une adresse email @uniserve.net.';
+            return 'Utilisez une adresse email @gmail.com.';
         }
 
         return null;

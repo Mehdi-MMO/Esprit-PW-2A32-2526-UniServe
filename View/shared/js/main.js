@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
     if (allowedDomains.length === 0) {
-        allowedDomains = ['universite.tld'];
+        allowedDomains = ['gmail.com'];
     }
 
     function isInstitutionalEmail(email) {
@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (!isInstitutionalEmail(normalizedEmail)) {
-                setFieldError(field, 'Utilisez une adresse email institutionnelle.');
+                setFieldError(field, 'Utilisez une adresse email @gmail.com.');
                 return false;
             }
         }

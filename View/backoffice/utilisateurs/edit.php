@@ -52,7 +52,7 @@ $isCompactAdminEdit = (bool) $isSingleAdminEditing;
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="email">Email *</label>
                     <input class="form-control" id="email" type="email" name="email" value="<?= e((string) ($user['email'] ?? '')) ?>" data-required-label="Email" data-validate-email="institutional" required>
-                    <div class="form-text">Adresse institutionnelle uniquement.</div>
+                    <div class="form-text">Adresse @gmail.com uniquement.</div>
                 </div>
 
                 <?php if (!$isCompactAdminEdit): ?>
@@ -155,7 +155,7 @@ $isCompactAdminEdit = (bool) $isSingleAdminEditing;
                     <?php if (!$isCompactAdminEdit): ?>
                         <div class="us-note-item">
                             <i class="bi bi-envelope-check"></i>
-                            <div>Conserve une adresse institutionnelle valide pour éviter les erreurs de validation.</div>
+                            <div>Conserve une adresse @gmail.com valide pour eviter les erreurs de validation.</div>
                         </div>
                         <div class="us-note-item">
                             <i class="bi bi-person-badge"></i>

@@ -121,6 +121,20 @@ class User
         return password_verify($plainPassword, $hash);
     }
 
+    public function updatePasswordById(int|string $id, string $plainPassword): bool
+    {
+        if (strlen($plainPassword) < self::MIN_PASSWORD_LENGTH) {
+            return false;
+        }
+
+        $statement = $this->model->query(
+            'UPDATE utilisateurs SET mot_de_passe_hash = ? WHERE id = ?',
+            [password_hash($plainPassword, PASSWORD_DEFAULT), (int) $id]
+        );
+
+        return $statement->rowCount() > 0;
+    }
+
     public function create(array $data): int|false
     {
         $nom = trim((string) ($data['nom'] ?? ''));

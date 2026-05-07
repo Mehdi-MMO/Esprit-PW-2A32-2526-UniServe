@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+// Optional local email + environment overrides (not committed).
+@include __DIR__ . '/config.smtp.local.php';
+
 class Database
 {
     private static ?PDO $instance = null;

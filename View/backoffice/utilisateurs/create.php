@@ -46,7 +46,7 @@ function e(string $v): string
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="email">Email *</label>
                     <input class="form-control" id="email" name="email" type="email" value="<?= e((string) ($old['email'] ?? '')) ?>" data-required-label="Email" data-validate-email="institutional" required>
-                    <div class="form-text">Adresse institutionnelle uniquement.</div>
+                    <div class="form-text">Adresse @gmail.com uniquement.</div>
                 </div>
 
                 <div class="col-md-6">
@@ -132,7 +132,7 @@ function e(string $v): string
                     </div>
                     <div class="us-note-item">
                         <i class="bi bi-envelope-check"></i>
-                        <div>L’email doit rester institutionnel.</div>
+                        <div>L'email doit etre une adresse @gmail.com.</div>
                     </div>
                     <div class="us-note-item">
                         <i class="bi bi-key"></i>

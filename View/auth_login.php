@@ -16,7 +16,11 @@
                                 <span class="us-badge">Université</span>
                             </div>
 
-                            <?php if (!empty($error)): ?>
+                            <?php if (!empty($success)): ?>
+                                <div class="alert alert-success py-2 small mb-3" role="alert">
+                                    <?= htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') ?>
+                                </div>
+                            <?php elseif (!empty($error)): ?>
                                 <div class="alert alert-danger py-2 small mb-3" role="alert">
                                     <?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?>
                                 </div>
@@ -31,12 +35,15 @@
                             <form method="post" action="<?= $this->url('/auth/login') ?>" data-validate-account-form="1">
                                 <div class="mb-3">
                                     <label for="email" class="form-label fw-semibold">Email</label>
-                                    <input type="email" id="email" class="form-control" name="email" placeholder="prenom.nom@universite.tld" autocomplete="username" data-required-label="Email" data-validate-email="institutional" required>
-                                    <div class="form-text">Utilisez votre adresse email institutionnelle.</div>
+                                    <input type="email" id="email" class="form-control" name="email" placeholder="prenom.nom@gmail.com" autocomplete="username" data-required-label="Email" data-validate-email="institutional" required>
+                                    <div class="form-text">Utilisez votre adresse email @gmail.com.</div>
                                 </div>
                                 <div class="mb-2">
                                     <label for="password" class="form-label fw-semibold">Mot de passe</label>
                                     <input type="password" id="password" class="form-control" name="password" placeholder="Votre mot de passe" autocomplete="current-password" data-required-label="Le mot de passe" required>
+                                </div>
+                                <div class="text-end mb-2">
+                                    <a href="<?= $this->url('/auth/forgot') ?>" class="small text-decoration-none">Mot de passe oublie ?</a>
                                 </div>
 
                                 <button type="submit" class="btn btn-primary w-100 py-2 mt-2">Se connecter</button>

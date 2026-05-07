@@ -11,6 +11,8 @@ DROP TABLE IF EXISTS bureaux;
 DROP TABLE IF EXISTS pieces_jointes;
 DROP TABLE IF EXISTS demandes_service;
 DROP TABLE IF EXISTS categories_service;
+DROP TABLE IF EXISTS password_reset_otps;
+DROP TABLE IF EXISTS calendar_demo_items;
 DROP TABLE IF EXISTS utilisateurs;
 
 -- ==========================================
@@ -35,10 +37,10 @@ CREATE TABLE utilisateurs (
 );
 
 INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe_hash, role) VALUES
-('Admin',    'UniServe', 'admin@uniserve.net',    '$2y$10$zU9XLJ01b.7.bZ9vf19ojOOU8Cd8gK.MZxMWl1AsVW5Pq39MwXKqa', 'admin'),
-('Dupont',   'Jean',     'etudiant@uniserve.net', '$2y$10$pNfl6q7OdMey/uTT0GVcZu8RGZW4PM1KCtcTpFam/3VbXbZf3KfFK', 'etudiant'),
-('Martin',   'Sophie',   'staff@uniserve.net',    '$2y$10$oDapi1WzNbmdzmFimOqlXuZC6aV1kKFQdmVH2970HVNnra2oyJZKS', 'staff'),
-('Leclerc',  'Paul',     'prof@uniserve.net',     '$2y$10$QY6VY/DTZJsHVAZ6IW2pbOpv6oTxnn4qX3N/v3ZJQHwAffuNeTqhm', 'enseignant');
+('Admin',    'UniServe', 'admin.uniserve@gmail.com',    '$2y$10$zU9XLJ01b.7.bZ9vf19ojOOU8Cd8gK.MZxMWl1AsVW5Pq39MwXKqa', 'admin'),
+('Dupont',   'Jean',     'etudiant.uniserve@gmail.com', '$2y$10$pNfl6q7OdMey/uTT0GVcZu8RGZW4PM1KCtcTpFam/3VbXbZf3KfFK', 'etudiant'),
+('Martin',   'Sophie',   'staff.uniserve@gmail.com',    '$2y$10$oDapi1WzNbmdzmFimOqlXuZC6aV1kKFQdmVH2970HVNnra2oyJZKS', 'staff'),
+('Leclerc',  'Paul',     'prof.uniserve@gmail.com',     '$2y$10$QY6VY/DTZJsHVAZ6IW2pbOpv6oTxnn4qX3N/v3ZJQHwAffuNeTqhm', 'enseignant');
 
 -- ==========================================
 -- MODULE 2 : DEMANDES DE SERVICE
@@ -206,4 +208,22 @@ CREATE TABLE inscriptions_evenement (
   UNIQUE KEY unique_inscription (evenement_id, utilisateur_id),
   FOREIGN KEY (evenement_id) REFERENCES evenements(id),
   FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id)
+);
+
+CREATE TABLE password_reset_otps (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  otp_hash VARCHAR(255) NOT NULL,
+  request_token CHAR(64) NOT NULL UNIQUE,
+  reset_token CHAR(64) NULL DEFAULT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  attempts INT NOT NULL DEFAULT 0,
+  verified_at DATETIME NULL DEFAULT NULL,
+  used_at DATETIME NULL DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_pwr_user (user_id),
+  INDEX idx_pwr_request (request_token),
+  INDEX idx_pwr_reset (reset_token),
+  FOREIGN KEY (user_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
