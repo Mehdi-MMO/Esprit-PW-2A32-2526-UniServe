@@ -12,7 +12,11 @@ class FrontofficeController extends Controller
     public function dashboard(): void
     {
         $this->requireLogin();
-        $this->redirect('/home');
+        $this->requireRole(['etudiant', 'enseignant']);
+
+        $this->render('frontoffice/dashboard', [
+            'title' => 'Tableau de bord',
+        ]);
     }
 }
 

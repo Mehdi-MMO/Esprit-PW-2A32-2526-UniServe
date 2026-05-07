@@ -290,7 +290,7 @@ class EvenementsController extends Controller
         }
 
         $this->applyCapacityStatus($eventModel, $eventId);
-        $this->redirect('/evenements/show/' . $eventId . '?success=' . urlencode('Inscription confirmee.'));
+        $this->redirect('/evenements/show/' . $eventId . '?success=' . urlencode('Inscription confirmee.') . '&route=1');
     }
 
     public function unregister(int|string $id): void

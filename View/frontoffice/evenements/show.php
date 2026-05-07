@@ -17,6 +17,7 @@ $statusClass = match ($status) {
 $eventId = (int) ($event['id'] ?? 0);
 $capacite = isset($event['capacite']) ? (int) $event['capacite'] : 0;
 $canRegister = !$isRegistered && !in_array($status, ['annule', 'termine', 'complet'], true) && ($capacite <= 0 || $registrations < $capacite);
+$shouldAutoRoute = $isRegistered && (string) ($_GET['route'] ?? '') === '1';
 ?>
 
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 us-page-header">
@@ -58,6 +59,27 @@ $canRegister = !$isRegistered && !in_array($status, ['annule', 'termine', 'compl
                         <?php endif; ?>
                     </div>
                 </div>
+
+                <div class="mt-3">
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary btn-sm"
+                        data-map-focus-btn="1"
+                        data-map-address="<?= htmlspecialchars((string) ($event['lieu'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                    >
+                        Voir sur carte
+                    </button>
+                    <?php if ($isRegistered): ?>
+                        <button
+                            type="button"
+                            class="btn btn-primary btn-sm ms-2"
+                            data-map-route-btn="1"
+                            data-map-address="<?= htmlspecialchars((string) ($event['lieu'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                        >
+                            Itineraire vers evenement
+                        </button>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -72,7 +94,7 @@ $canRegister = !$isRegistered && !in_array($status, ['annule', 'termine', 'compl
                         <button type="submit" class="btn btn-outline-danger w-100 py-2">Annuler inscription</button>
                     </form>
                 <?php elseif ($canRegister): ?>
-                    <form method="post" action="<?= $this->url('/evenements/register/' . $eventId) ?>">
+                    <form method="post" action="<?= $this->url('/evenements/register/' . $eventId) ?>" data-register-route-form="1" data-event-id="<?= $eventId ?>">
                         <button type="submit" class="btn btn-success w-100 py-2">S inscrire</button>
                     </form>
                 <?php else: ?>
@@ -84,3 +106,17 @@ $canRegister = !$isRegistered && !in_array($status, ['annule', 'termine', 'compl
         </div>
     </div>
 </div>
+
+<div
+    data-map-route-context="1"
+    data-map-event-id="<?= $eventId ?>"
+    data-map-is-registered="<?= $isRegistered ? '1' : '0' ?>"
+    data-map-address="<?= htmlspecialchars((string) ($event['lieu'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+></div>
+
+<?php if ($shouldAutoRoute): ?>
+    <div
+        data-map-auto-route="1"
+        data-map-address="<?= htmlspecialchars((string) ($event['lieu'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+    ></div>
+<?php endif; ?>

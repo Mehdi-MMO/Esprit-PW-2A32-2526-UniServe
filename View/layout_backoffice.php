@@ -50,6 +50,8 @@
         <?= $content ?>
     </main>
 
+    <?php require __DIR__ . '/shared/chat_widget.php'; ?>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?= $this->url('/View/shared/js/main.js') ?>"></script>
 </body>
