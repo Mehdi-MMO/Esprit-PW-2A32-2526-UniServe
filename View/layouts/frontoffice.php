@@ -8,6 +8,32 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= $this->url('/public/css/main.css') ?>">
     <link rel="stylesheet" href="<?= $this->url('/public/css/frontoffice.css') ?>">
+    <style>
+        .notif-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 10px;
+            padding: 3px 6px;
+            border-radius: 50%;
+        }
+        .notif-dropdown {
+            width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .notif-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+        .notif-item:last-child {
+            border-bottom: none;
+        }
+        .notif-item.unread {
+            background-color: #f8f9ff;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top us-topbar">
@@ -28,7 +54,23 @@
                     <li class="nav-item"><a class="nav-link <?= strpos($currentUri, '/documents') !== false ? 'active' : '' ?>" href="<?= $this->url('/documents') ?>">Documents</a></li>
                     <li class="nav-item"><a class="nav-link <?= strpos($currentUri, '/evenements') !== false ? 'active' : '' ?>" href="<?= $this->url('/evenements') ?>">Evenements</a></li>
                 </ul>
-                <div class="dropdown">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="dropdown">
+                        <button class="btn btn-link text-white position-relative p-0" type="button" data-bs-toggle="dropdown" id="notifBtn">
+                            <i class="bi bi-bell fs-5"></i>
+                            <span class="badge bg-danger notif-badge d-none" id="notifBadge">0</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end shadow-lg notif-dropdown" aria-labelledby="notifBtn">
+                            <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Notifications</span>
+                                <a href="<?= $this->url('/notifications/markAllAsRead') ?>" class="small text-decoration-none">Tout lire</a>
+                            </div>
+                            <div id="notifList">
+                                <div class="p-3 text-center text-muted small">Chargement...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dropdown">
                     <button class="btn btn-outline-light dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <span class="rounded-circle bg-light text-dark px-2 py-1 me-2">U</span>
                         <span class="d-none d-sm-inline">Mon compte</span>
@@ -37,6 +79,7 @@
                         <li><a class="dropdown-item" href="#">Mon profil</a></li>
                         <li><a class="dropdown-item" href="<?= $this->url('/auth/logout') ?>">Deconnexion</a></li>
                     </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -48,6 +91,38 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?= $this->url('/public/js/main.js') ?>"></script>
+    <script>
+        async function loadNotifications() {
+            try {
+                const response = await fetch('<?= $this->url('/notifications/getUnread') ?>');
+                const notifs = await response.json();
+                const badge = document.getElementById('notifBadge');
+                const list = document.getElementById('notifList');
+                
+                if (notifs.length > 0) {
+                    badge.innerText = notifs.length;
+                    badge.classList.remove('d-none');
+                    list.innerHTML = '';
+                    notifs.forEach(n => {
+                        list.innerHTML += `
+                            <a href="<?= $this->url('/notifications/markAsRead/') ?>${n.id}" class="notif-item unread text-decoration-none text-dark d-block">
+                                <div class="mb-1">${n.message}</div>
+                                <div class="small text-muted">${new Date(n.cree_le).toLocaleString('fr-FR')}</div>
+                            </a>
+                        `;
+                    });
+                } else {
+                    badge.classList.add('d-none');
+                    list.innerHTML = '<div class="p-3 text-center text-muted small">Aucune nouvelle notification</div>';
+                }
+            } catch (e) {
+                console.error("Erreur chargement notifications", e);
+            }
+        }
+        
+        loadNotifications();
+        setInterval(loadNotifications, 5000); // Rafraîchir toutes les 5s pour plus de réactivité
+    </script>
 
     <!-- Chatbot Widget -->
     <div id="chatbot-widget" class="position-fixed bottom-0 end-0 m-4" style="z-index: 1050; font-family: 'Inter', sans-serif; pointer-events: none;">

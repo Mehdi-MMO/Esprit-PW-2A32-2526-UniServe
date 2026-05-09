@@ -3,17 +3,20 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../Model/Demande.php';
 require_once __DIR__ . '/../Model/Service.php';
+require_once __DIR__ . '/../Model/Notification.php';
 require_once __DIR__ . '/../Model/Service/GroqService.php';
 
 class DemandesController extends Controller
 {
     private Demande $demandeModel;
     private Service $serviceModel;
+    private Notification $notificationModel;
 
     public function __construct()
     {
         $this->demandeModel = new Demande();
         $this->serviceModel = new Service();
+        $this->notificationModel = new Notification();
         
         // Ensure dummy users exist to avoid Foreign Key errors
         $db = Database::connect();
@@ -87,6 +90,13 @@ class DemandesController extends Controller
                     'email' => $email,
                     'telephone' => $telephone
                 ]);
+
+                // Notification pour l'Admin (ID 1 simuler)
+                $this->notificationModel->create([
+                    'utilisateur_id' => 1,
+                    'message' => "Nouvelle demande de service : \"$titre\"",
+                    'lien' => '/demandes/backoffice'
+                ]);
             }
         }
         $this->redirect('/demandes/frontoffice');
@@ -144,7 +154,26 @@ class DemandesController extends Controller
             $statut = $_POST['statut'] ?? '';
             $valid_statuts = ['en_attente', 'en_cours', 'traite', 'rejete'];
             if (in_array($statut, $valid_statuts)) {
+                $demande = $this->demandeModel->getById((int)$id);
                 $this->demandeModel->updateStatut((int)$id, $statut);
+
+                if ($demande) {
+                    $userId = (int)$demande->getUtilisateurId();
+                    $statusLabels = [
+                        'en_attente' => 'en attente',
+                        'en_cours' => 'en cours de traitement',
+                        'traite' => 'traitée',
+                        'rejete' => 'rejetée'
+                    ];
+                    $label = $statusLabels[$statut] ?? $statut;
+                    
+                    // On s'assure que la notif est créée avec le bon ID utilisateur
+                    $this->notificationModel->create([
+                        'utilisateur_id' => $userId,
+                        'message' => "Votre demande #" . $id . " est désormais : $label.",
+                        'lien' => '/demandes/frontoffice'
+                    ]);
+                }
             }
         }
         $this->redirect('/demandes/backoffice');
