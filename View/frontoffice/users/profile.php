@@ -1,4 +1,6 @@
 <?php
+$profile_identity_locked = !empty($profile_identity_locked ?? false);
+
 $fullName = trim(
     (string) ($user['prenom'] ?? '') . ' ' .
     (string) ($user['nom'] ?? '')
@@ -29,6 +31,20 @@ if ($photoProfil !== '' && str_starts_with($photoProfil, 'View/shared/assets/pro
             <div class="card-body p-4 p-md-5">
                 <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
                     <div class="d-flex align-items-center gap-3">
+                        <?php if ($profile_identity_locked): ?>
+                            <div class="rounded-circle border overflow-hidden bg-light d-inline-flex align-items-center justify-content-center" style="width:46px;height:46px;" aria-hidden="true">
+                                <?php if ($photoProfilUrl !== null): ?>
+                                    <img
+                                        src="<?= htmlspecialchars($photoProfilUrl, ENT_QUOTES, 'UTF-8') ?>"
+                                        alt=""
+                                        class="rounded-circle"
+                                        style="width:46px;height:46px;object-fit:cover;"
+                                    >
+                                <?php else: ?>
+                                    <span class="fw-bold text-primary"><?= htmlspecialchars(substr($fullName, 0, 1), ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php endif; ?>
+                            </div>
+                        <?php else: ?>
                         <button
                             type="button"
                             class="btn p-0 border-0 bg-transparent profile-photo-trigger"
@@ -51,6 +67,7 @@ if ($photoProfil !== '' && str_starts_with($photoProfil, 'View/shared/assets/pro
                                 </div>
                             <?php endif; ?>
                         </button>
+                        <?php endif; ?>
                         <div>
                             <h1 class="fw-bold fs-3 lh-1 mb-2"><?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></h1>
                             <div class="d-flex flex-wrap align-items-center gap-2">
@@ -87,6 +104,39 @@ if ($photoProfil !== '' && str_starts_with($photoProfil, 'View/shared/assets/pro
                                     <h3 class="h5 mb-0">Informations personnelles</h3>
                                 </div>
 
+                                <?php if ($profile_identity_locked): ?>
+                                    <div class="alert alert-info py-2 small mb-3" role="status">
+                                        Compte administrateur unique : ces informations ne peuvent pas être modifiées ici. Seul le mot de passe peut être changé (bloc ci-dessous ou depuis Utilisateurs).
+                                    </div>
+                                    <dl class="row mb-0 small">
+                                        <dt class="col-sm-4 col-md-3 text-muted">Nom</dt>
+                                        <dd class="col-sm-8 col-md-9"><?= htmlspecialchars((string) ($user['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd>
+                                        <dt class="col-sm-4 col-md-3 text-muted">Prénom</dt>
+                                        <dd class="col-sm-8 col-md-9"><?= htmlspecialchars((string) ($user['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd>
+                                        <dt class="col-sm-4 col-md-3 text-muted">Email</dt>
+                                        <dd class="col-sm-8 col-md-9"><?= htmlspecialchars((string) ($user['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd>
+                                        <dt class="col-sm-4 col-md-3 text-muted">Matricule</dt>
+                                        <dd class="col-sm-8 col-md-9"><?= htmlspecialchars((string) (($user['matricule'] ?? '') !== '' ? $user['matricule'] : '—'), ENT_QUOTES, 'UTF-8') ?></dd>
+                                        <dt class="col-sm-4 col-md-3 text-muted">Département</dt>
+                                        <dd class="col-sm-8 col-md-9"><?= htmlspecialchars((string) (($user['departement'] ?? '') !== '' ? $user['departement'] : '—'), ENT_QUOTES, 'UTF-8') ?></dd>
+                                        <dt class="col-sm-4 col-md-3 text-muted">Niveau</dt>
+                                        <dd class="col-sm-8 col-md-9"><?= htmlspecialchars((string) (($user['niveau'] ?? '') !== '' ? $user['niveau'] : '—'), ENT_QUOTES, 'UTF-8') ?></dd>
+                                        <dt class="col-sm-4 col-md-3 text-muted">Téléphone</dt>
+                                        <dd class="col-sm-8 col-md-9"><?= htmlspecialchars((string) (($user['telephone'] ?? '') !== '' ? $user['telephone'] : '—'), ENT_QUOTES, 'UTF-8') ?></dd>
+                                        <dt class="col-sm-4 col-md-3 text-muted">Rôle</dt>
+                                        <dd class="col-sm-8 col-md-9">
+                                            <span class="badge bg-light text-muted border">
+                                                <?= htmlspecialchars(ucfirst((string) ($user['role'] ?? '')), ENT_QUOTES, 'UTF-8') ?>
+                                            </span>
+                                        </dd>
+                                        <dt class="col-sm-4 col-md-3 text-muted">Statut</dt>
+                                        <dd class="col-sm-8 col-md-9">
+                                            <span class="badge <?= $statutCompte === 'actif' ? 'bg-success' : 'bg-secondary' ?>">
+                                                <?= htmlspecialchars(ucfirst($statutCompte), ENT_QUOTES, 'UTF-8') ?>
+                                            </span>
+                                        </dd>
+                                    </dl>
+                                <?php else: ?>
                                 <form method="post" action="<?= $this->url('/users/profile') ?>" enctype="multipart/form-data">
                                     <input type="hidden" name="form_action" value="profile_update">
 
@@ -171,6 +221,7 @@ if ($photoProfil !== '' && str_starts_with($photoProfil, 'View/shared/assets/pro
                                         <button class="btn btn-primary" type="submit">Enregistrer</button>
                                     </div>
                                 </form>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>

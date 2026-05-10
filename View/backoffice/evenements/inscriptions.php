@@ -19,8 +19,8 @@ $statusClass = static function (string $status): string {
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header">
     <div>
         <div class="us-kicker mb-1">Inscriptions</div>
-        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($event['titre'] ?? 'Participants evenement'), ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="text-muted mb-0">Suivi des participants et gestion de presence.</p>
+        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($event['titre'] ?? 'Événement'), ENT_QUOTES, 'UTF-8') ?></h1>
+        <p class="text-muted mb-0">Suivi des participants et gestion de présence.</p>
     </div>
     <a href="<?= $this->url('/evenements/manage') ?>" class="btn btn-outline-secondary btn-sm">Retour</a>
 </div>
@@ -35,7 +35,7 @@ $statusClass = static function (string $status): string {
 
 <div class="us-surface-muted px-3 py-2 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
     <?php $status = (string) ($event['statut'] ?? 'planifie'); ?>
-    <div class="small text-muted">Statut evenement: <span class="badge bg-<?= $statusClass($status) ?>"><?= htmlspecialchars(ucfirst($status), ENT_QUOTES, 'UTF-8') ?></span></div>
+    <div class="small text-muted">Statut de l’événement : <span class="badge bg-<?= $statusClass($status) ?>"><?= htmlspecialchars(ucfirst($status), ENT_QUOTES, 'UTF-8') ?></span></div>
     <div class="small text-muted">Total inscrits: <strong><?= count($inscriptions) ?></strong></div>
 </div>
 

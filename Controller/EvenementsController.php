@@ -170,6 +170,76 @@ class EvenementsController extends Controller
         }
     }
 
+    /**
+     * @return array{total: int, pending: int, active: int}
+     */
+    private function getClubStats(): array
+    {
+        $clubModel = new Club();
+
+        $allClubs = $clubModel->getAllAdmin();
+        $totalClubs = count($allClubs);
+
+        $pendingClubs = $clubModel->getPendingForAdmin();
+        $pendingCount = count($pendingClubs);
+
+        $activeClubs = array_filter(
+            $allClubs,
+            static fn (array $club): bool =>
+                (string) ($club['actif'] ?? '0') === '1'
+                && (string) ($club['statut_validation'] ?? '') === 'approuve'
+        );
+        $activeCount = count($activeClubs);
+
+        return [
+            'total' => $totalClubs,
+            'pending' => $pendingCount,
+            'active' => $activeCount,
+        ];
+    }
+
+    /**
+     * @return array{total: int, active: int, pending: int, total_registrations: int, upcoming: int}
+     */
+    private function getEventStats(): array
+    {
+        $eventModel = new Event();
+
+        $allEvents = $eventModel->getAllAdmin();
+        $totalEvents = count($allEvents);
+
+        $activeEvents = array_filter(
+            $allEvents,
+            static fn (array $event): bool => (string) ($event['statut'] ?? '') === 'ouvert'
+        );
+        $activeCount = count($activeEvents);
+
+        $pendingEvents = $eventModel->getPendingForAdmin();
+        $pendingCount = count($pendingEvents);
+
+        $totalRegistrations = 0;
+        foreach ($allEvents as $event) {
+            $totalRegistrations += $eventModel->countInscriptions((int) ($event['id'] ?? 0));
+        }
+
+        $upcomingCount = 0;
+        $now = time();
+        foreach ($allEvents as $event) {
+            $eventTime = strtotime((string) ($event['date_debut'] ?? ''));
+            if ($eventTime !== false && $eventTime > $now) {
+                $upcomingCount++;
+            }
+        }
+
+        return [
+            'total' => $totalEvents,
+            'active' => $activeCount,
+            'pending' => $pendingCount,
+            'total_registrations' => $totalRegistrations,
+            'upcoming' => $upcomingCount,
+        ];
+    }
+
     public function landing(): void
     {
         $this->requireLogin();
@@ -195,7 +265,7 @@ class EvenementsController extends Controller
         }
 
         $this->render('frontoffice/evenements/index', [
-            'title' => 'Evenements a venir',
+            'title' => 'Événements à venir',
             'events' => $events,
             'myEvents' => $myEvents,
             'success' => (string) ($_GET['success'] ?? ''),
@@ -226,7 +296,7 @@ class EvenementsController extends Controller
         $registrations = $eventModel->countInscriptions($eventId);
 
         $this->render('frontoffice/evenements/show', [
-            'title' => 'Detail evenement',
+            'title' => 'Détail de l’événement',
             'event' => $event,
             'registrations' => $registrations,
             'isRegistered' => $isRegistered,
@@ -437,8 +507,11 @@ class EvenementsController extends Controller
             }));
         }
 
+        $stats = $this->getEventStats();
+
         $this->render('backoffice/evenements/index', [
-            'title' => 'Gestion des evenements',
+            'title' => 'Gestion des événements',
+            'stats' => $stats,
             'pendingEvents' => $pendingEvents,
             'events' => $events,
             'q' => $q,
@@ -456,7 +529,7 @@ class EvenementsController extends Controller
         $clubs = $clubModel->getAllAdmin();
 
         $this->render('backoffice/evenements/create', [
-            'title' => 'Creer un evenement',
+            'title' => 'Créer un événement',
             'clubs' => $clubs,
             'old' => [
                 'club_id' => null,
@@ -489,7 +562,7 @@ class EvenementsController extends Controller
 
         if ($error !== null) {
             $this->render('backoffice/evenements/create', [
-                'title' => 'Creer un evenement',
+                'title' => 'Créer un événement',
                 'clubs' => $clubs,
                 'old' => $payload,
                 'error' => $error,
@@ -504,7 +577,7 @@ class EvenementsController extends Controller
         $eventId = $eventModel->create($payload);
         if ($eventId === false) {
             $this->render('backoffice/evenements/create', [
-                'title' => 'Creer un evenement',
+                'title' => 'Créer un événement',
                 'clubs' => $clubs,
                 'old' => $payload,
                 'error' => 'Impossible de creer l evenement.',
@@ -544,7 +617,7 @@ class EvenementsController extends Controller
             : $clubModel->findByOwner($this->currentUserId());
 
         $this->render('backoffice/evenements/edit', [
-            'title' => 'Modifier un evenement',
+            'title' => 'Modifier un événement',
             'clubs' => $clubs,
             'event' => $event,
             'error' => null,
@@ -588,7 +661,7 @@ class EvenementsController extends Controller
         if ($error !== null) {
             $event = array_merge($existingEvent, $payload);
             $this->render('backoffice/evenements/edit', [
-                'title' => 'Modifier un evenement',
+                'title' => 'Modifier un événement',
                 'clubs' => $clubs,
                 'event' => $event,
                 'error' => $error,
@@ -600,7 +673,7 @@ class EvenementsController extends Controller
         if (!$updated) {
             $event = array_merge($existingEvent, $payload);
             $this->render('backoffice/evenements/edit', [
-                'title' => 'Modifier un evenement',
+                'title' => 'Modifier un événement',
                 'clubs' => $clubs,
                 'event' => $event,
                 'error' => 'Aucune modification enregistree.',
@@ -656,7 +729,7 @@ class EvenementsController extends Controller
         $inscriptions = $eventModel->getInscriptions($eventId);
 
         $this->render('backoffice/evenements/inscriptions', [
-            'title' => 'Inscriptions evenement',
+            'title' => 'Inscriptions à l’événement',
             'event' => $event,
             'inscriptions' => $inscriptions,
             'success' => (string) ($_GET['success'] ?? ''),
@@ -708,7 +781,7 @@ class EvenementsController extends Controller
         ));
 
         $this->render('frontoffice/evenements/request_create', [
-            'title' => 'Soumettre un evenement',
+            'title' => 'Soumettre un événement',
             'clubs' => $clubs,
             'old' => [
                 'club_id' => null,
@@ -748,7 +821,7 @@ class EvenementsController extends Controller
 
         if ($error !== null) {
             $this->render('frontoffice/evenements/request_create', [
-                'title' => 'Soumettre un evenement',
+                'title' => 'Soumettre un événement',
                 'clubs' => $clubs,
                 'old' => $payload,
                 'error' => $error,
@@ -760,7 +833,7 @@ class EvenementsController extends Controller
         $createdId = $eventModel->createForClubOwner($payload, $ownerId);
         if ($createdId === false) {
             $this->render('frontoffice/evenements/request_create', [
-                'title' => 'Soumettre un evenement',
+                'title' => 'Soumettre un événement',
                 'clubs' => $clubs,
                 'old' => $payload,
                 'error' => 'Impossible de soumettre la demande (club non autorise ?).',
@@ -838,8 +911,11 @@ class EvenementsController extends Controller
             }));
         }
 
+        $stats = $this->getClubStats();
+
         $this->render('backoffice/clubs/index', [
             'title' => 'Gestion des clubs',
+            'stats' => $stats,
             'pendingClubs' => $pendingClubs,
             'clubs' => $clubs,
             'q' => $q,
@@ -854,7 +930,7 @@ class EvenementsController extends Controller
         $this->requireRole(['staff', 'admin']);
 
         $this->render('backoffice/clubs/create', [
-            'title' => 'Creer un club',
+            'title' => 'Créer un club',
             'old' => [
                 'nom' => '',
                 'description' => '',
@@ -886,7 +962,7 @@ class EvenementsController extends Controller
 
         if ($payload['nom'] === '') {
             $this->render('backoffice/clubs/create', [
-                'title' => 'Creer un club',
+                'title' => 'Créer un club',
                 'old' => $payload,
                 'error' => 'Le nom du club est obligatoire.',
             ]);
@@ -897,7 +973,7 @@ class EvenementsController extends Controller
         $createdId = $clubModel->create($payload);
         if ($createdId === false) {
             $this->render('backoffice/clubs/create', [
-                'title' => 'Creer un club',
+                'title' => 'Créer un club',
                 'old' => $payload,
                 'error' => 'Impossible de creer le club.',
             ]);

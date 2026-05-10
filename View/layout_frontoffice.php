@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UniServe - FrontOffice</title>
+    <meta name="description" content="Portail UniServe — services universitaires, demandes, rendez-vous, documents, vie associative.">
+    <title><?= htmlspecialchars(isset($title) && $title !== '' ? (string) $title . ' · UniServe' : 'UniServe', ENT_QUOTES, 'UTF-8') ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="<?= $this->url('/View/shared/css/main.css') ?>">
     <link rel="stylesheet" href="<?= $this->url('/View/shared/css/frontoffice.css') ?>">
 </head>
-<body>
+<body class="us-frontoffice-layout">
+    <a class="visually-hidden-focusable btn btn-sm btn-outline-secondary position-fixed top-0 start-0 m-2 z-3" href="#contenu-principal" style="background: var(--surface);">Aller au contenu</a>
     <?php
     $currentPath = trim((string) ($_GET['url'] ?? ''), '/');
     $pathStartsWith = static function (string $prefix) use ($currentPath): bool {
@@ -34,10 +36,15 @@
                     <?php
                     $clubsNavActive = $pathStartsWith('evenements/clubs')
                         || $pathStartsWith('evenements/clubShow')
-                        || ($pathStartsWith('evenements/createClubRequestForm') || $pathStartsWith('evenements/createClubRequest'));
+                        || ($pathStartsWith('evenements/createClubRequestForm') || $pathStartsWith('evenements/createClubRequest'))
+                        || $pathStartsWith('clubs')
+                        || $pathStartsWith('events/clubs')
+                        || $pathStartsWith('events/clubShow')
+                        || ($pathStartsWith('events/createClubRequestForm') || $pathStartsWith('events/createClubRequest'));
+                    $eventsNavActive = ($pathStartsWith('evenements') || $pathStartsWith('events')) && !$clubsNavActive;
                     ?>
                     <li class="nav-item"><a class="nav-link <?= $clubsNavActive ? 'active' : '' ?>" href="<?= $this->url('/evenements/clubs') ?>">Clubs</a></li>
-                    <li class="nav-item"><a class="nav-link <?= ($pathStartsWith('evenements') && !$clubsNavActive) ? 'active' : '' ?>" href="<?= $this->url('/evenements') ?>">Événements</a></li>
+                    <li class="nav-item"><a class="nav-link <?= $eventsNavActive ? 'active' : '' ?>" href="<?= $this->url('/evenements') ?>">Événements</a></li>
                 </ul>
                 <div class="dropdown ms-lg-2">
                     <button class="btn btn-outline-light dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -54,9 +61,20 @@
         </div>
     </nav>
 
-    <main class="container mt-5 pt-4 pb-4">
+    <main id="contenu-principal" class="container-fluid us-main-front px-3 px-sm-4 px-xl-5 mt-5 pt-4 pb-5">
         <?= $content ?>
     </main>
+
+    <footer class="us-site-footer border-top mt-auto py-4">
+        <div class="container">
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-2 small text-muted">
+                <span>&copy; <?= date('Y') ?> UniServe</span>
+                <span class="text-center text-md-end">Portail des services universitaires</span>
+            </div>
+        </div>
+    </footer>
+
+    <?php require __DIR__ . '/shared/chat_widget.php'; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?= $this->url('/View/shared/js/main.js') ?>"></script>

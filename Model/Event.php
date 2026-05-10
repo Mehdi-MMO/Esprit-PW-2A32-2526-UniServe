@@ -456,7 +456,10 @@ class Event
              FROM evenements e
              LEFT JOIN clubs c ON c.id = e.club_id
              WHERE e.id = ?
-               AND (e.cree_par = ? OR e.cree_par = ?)
+               AND (
+                 e.cree_par = ?
+                 OR (c.id IS NOT NULL AND c.cree_par = ?)
+               )
              LIMIT 1',
             [(int) $eventId, (int) $userId, (int) $userId]
         );

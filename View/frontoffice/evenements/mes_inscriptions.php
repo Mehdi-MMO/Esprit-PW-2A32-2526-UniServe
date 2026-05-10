@@ -19,9 +19,9 @@ $statusClass = static function (string $status): string {
     <div>
         <div class="us-kicker mb-1">Espace personnel</div>
         <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Mes inscriptions'), ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="text-muted mb-0">Retrouvez tous les evenements auxquels vous etes inscrit.</p>
+        <p class="text-muted mb-0">Retrouvez tous les événements auxquels vous êtes inscrit.</p>
     </div>
-    <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/evenements') ?>">Voir les evenements</a>
+    <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/evenements') ?>">Voir les événements</a>
 </div>
 
 <?php if ($success !== ''): ?>
@@ -41,7 +41,7 @@ $statusClass = static function (string $status): string {
                         <th>Evenement</th>
                         <th>Club</th>
                         <th>Date debut</th>
-                        <th>Statut evenement</th>
+                        <th>Statut (événement)</th>
                         <th>Votre presence</th>
                         <th class="text-end">Action</th>
                     </tr>

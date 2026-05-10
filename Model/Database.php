@@ -53,6 +53,14 @@ class Database
         }
     }
 
+    /**
+     * Load `.env` without opening a DB connection (e.g. for routes that only need getenv).
+     */
+    public static function ensureEnvLoaded(): void
+    {
+        self::loadDotEnv();
+    }
+
     public static function connect(): PDO
     {
         if (self::$instance instanceof PDO) {

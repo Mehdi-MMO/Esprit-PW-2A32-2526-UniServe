@@ -9,6 +9,41 @@ require_once __DIR__ . '/EvenementsController.php';
 
 class EventsController extends Controller
 {
+    public function landing(): void
+    {
+        (new EvenementsController())->landing();
+    }
+
+    public function clubs(): void
+    {
+        (new EvenementsController())->clubs();
+    }
+
+    public function clubShow(int|string $id): void
+    {
+        (new EvenementsController())->clubShow($id);
+    }
+
+    public function createClubRequestForm(): void
+    {
+        (new EvenementsController())->createClubRequestForm();
+    }
+
+    public function createClubRequest(): void
+    {
+        (new EvenementsController())->createClubRequest();
+    }
+
+    public function createEventRequestForm(): void
+    {
+        (new EvenementsController())->createEventRequestForm();
+    }
+
+    public function createEventRequest(): void
+    {
+        (new EvenementsController())->createEventRequest();
+    }
+
     public function manage(): void
     {
         (new EvenementsController())->manage();
@@ -92,5 +127,55 @@ class EventsController extends Controller
     public function createRequest(): void
     {
         (new EvenementsController())->createEventRequest();
+    }
+
+    public function approveEvent(int|string $id): void
+    {
+        (new EvenementsController())->approveEvent($id);
+    }
+
+    public function rejectEvent(int|string $id): void
+    {
+        (new EvenementsController())->rejectEvent($id);
+    }
+
+    public function manageClubs(): void
+    {
+        (new EvenementsController())->manageClubs();
+    }
+
+    public function createClubForm(): void
+    {
+        (new EvenementsController())->createClubForm();
+    }
+
+    public function createClub(): void
+    {
+        (new EvenementsController())->createClub();
+    }
+
+    public function editClubForm(int|string $id): void
+    {
+        (new EvenementsController())->editClubForm($id);
+    }
+
+    public function editClub(int|string $id): void
+    {
+        (new EvenementsController())->editClub($id);
+    }
+
+    public function deleteClub(int|string $id): void
+    {
+        (new EvenementsController())->deleteClub($id);
+    }
+
+    public function approveClub(int|string $id): void
+    {
+        (new EvenementsController())->approveClub($id);
+    }
+
+    public function rejectClub(int|string $id): void
+    {
+        (new EvenementsController())->rejectClub($id);
     }
 }

@@ -4,6 +4,6 @@
         <p class="text-muted mb-3">
             Cette section est un placeholder temporaire. Les modules profil et utilisateurs ont ete desactives.
         </p>
-        <a href="<?= $this->url('/auth/logout') ?>" class="btn btn-outline-danger btn-sm">Deconnexion</a>
+        <a href="<?= $this->url('/auth/logout') ?>" class="btn btn-outline-danger btn-sm">Déconnexion</a>
     </div>
 </div>

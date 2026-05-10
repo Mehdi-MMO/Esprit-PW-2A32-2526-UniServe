@@ -15,3 +15,6 @@ with data.sql
 
 # Local DB credentials (copy from .env.example)
 .env
+
+# Local debug session logs
+debug-*.log

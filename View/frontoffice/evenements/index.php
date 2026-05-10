@@ -21,12 +21,12 @@ $statusClass = static function (string $status): string {
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header">
     <div>
         <div class="us-kicker mb-1">Vie universitaire</div>
-        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Evenements a venir'), ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="text-muted mb-0">Decouvrez les prochains evenements et inscrivez-vous en ligne.</p>
+        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Événements à venir'), ENT_QUOTES, 'UTF-8') ?></h1>
+        <p class="text-muted mb-0">Découvrez les prochains événements et inscrivez-vous en ligne.</p>
     </div>
     <div class="d-flex gap-2">
         <?php if ($canSubmitRequest): ?>
-            <a class="btn btn-outline-secondary btn-sm" href="<?= $this->url('/evenements/createEventRequestForm') ?>">Soumettre un evenement</a>
+            <a class="btn btn-outline-secondary btn-sm" href="<?= $this->url('/evenements/createEventRequestForm') ?>">Soumettre un événement</a>
         <?php endif; ?>
         <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/evenements/mesInscriptions') ?>">Mes inscriptions</a>
         <a class="btn btn-primary btn-sm" href="<?= $this->url('/evenements/clubs') ?>">Voir les clubs</a>
@@ -44,7 +44,7 @@ $statusClass = static function (string $status): string {
 <?php if ($canSubmitRequest): ?>
     <div class="us-section-card mb-3">
         <div class="card-body p-3 p-md-4">
-            <h2 class="h6 mb-3">Mes evenements soumis</h2>
+            <h2 class="h6 mb-3">Mes événements soumis</h2>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
@@ -57,7 +57,7 @@ $statusClass = static function (string $status): string {
                     </thead>
                     <tbody>
                         <?php if (empty($myEvents)): ?>
-                            <tr><td colspan="4" class="text-center text-muted py-3">Aucun evenement soumis.</td></tr>
+                            <tr><td colspan="4" class="text-center text-muted py-3">Aucun événement soumis.</td></tr>
                         <?php else: ?>
                             <?php foreach ($myEvents as $event): ?>
                                 <?php
@@ -85,8 +85,8 @@ $statusClass = static function (string $status): string {
     <?php if (empty($events)): ?>
         <div class="col-12">
             <div class="us-card p-4 us-empty-state">
-                <div class="fw-semibold mb-1">Aucun evenement planifie</div>
-                <div class="text-muted">Revenez prochainement pour consulter les nouvelles activites.</div>
+                <div class="fw-semibold mb-1">Aucun événement à venir</div>
+                <div class="text-muted">Revenez prochainement pour consulter les nouvelles activités.</div>
             </div>
         </div>
     <?php else: ?>
@@ -119,7 +119,7 @@ $statusClass = static function (string $status): string {
                             </li>
                         </ul>
                         <div class="mt-auto">
-                            <a class="btn btn-outline-primary w-100" href="<?= $this->url('/evenements/show/' . $eventId) ?>">Voir details</a>
+                            <a class="btn btn-outline-primary w-100" href="<?= $this->url('/evenements/show/' . $eventId) ?>">Voir le détail</a>
                         </div>
                     </div>
                 </div>

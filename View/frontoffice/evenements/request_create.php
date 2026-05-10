@@ -21,9 +21,9 @@ $error = (string) ($error ?? '');
 
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header">
     <div>
-        <div class="us-kicker mb-1">Demande evenement</div>
-        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Soumettre un evenement'), ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="text-muted mb-0">Votre evenement sera examine par l administration.</p>
+        <div class="us-kicker mb-1">Demande d’événement</div>
+        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Soumettre un événement'), ENT_QUOTES, 'UTF-8') ?></h1>
+        <p class="text-muted mb-0">Votre événement sera examiné par l’administration.</p>
     </div>
     <a class="btn btn-outline-secondary btn-sm" href="<?= $this->url('/evenements') ?>">Retour</a>
 </div>

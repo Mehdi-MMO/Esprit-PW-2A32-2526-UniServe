@@ -340,66 +340,77 @@ class UtilisateursController extends Controller
         $error = null;
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-            $existingRole = (string) ($user['role'] ?? 'etudiant');
-            $existingStatutCompte = (string) ($user['statut_compte'] ?? 'actif');
-            $existingMatricule = (string) ($user['matricule'] ?? '');
-            $existingDepartement = (string) ($user['departement'] ?? '');
-            $existingNiveau = (string) ($user['niveau'] ?? '');
-            $existingTelephone = (string) ($user['telephone'] ?? '');
-
-            $nom = $this->normalizeText((string) ($_POST['nom'] ?? ''));
-            $prenom = $this->normalizeText((string) ($_POST['prenom'] ?? ''));
-            $email = $this->normalizeEmail((string) ($_POST['email'] ?? ''));
-            $role = $isSingleAdminEditing ? $existingRole : (string) ($_POST['role'] ?? 'etudiant');
-            $matricule = $isSingleAdminEditing ? $existingMatricule : (string) ($_POST['matricule'] ?? '');
-            $departement = $isSingleAdminEditing ? $existingDepartement : (string) ($_POST['departement'] ?? '');
-            $niveau = $isSingleAdminEditing ? $existingNiveau : (string) ($_POST['niveau'] ?? '');
-            $telephone = $isSingleAdminEditing ? $existingTelephone : (string) ($_POST['telephone'] ?? '');
-            $statutCompte = $isSingleAdminEditing ? $existingStatutCompte : (string) ($_POST['statut_compte'] ?? 'actif');
-            $newPassword = (string) ($_POST['new_password'] ?? '');
-
-            if ($nom === '' || $prenom === '' || $email === '') {
-                $error = 'Nom, prénom et email sont obligatoires.';
-            } elseif (($emailError = $this->validateInstitutionalEmail($email)) !== null) {
-                $error = $emailError;
-            } elseif ($newPassword !== '' && ($passwordError = $this->validateMinLength($newPassword, User::MIN_PASSWORD_LENGTH, 'Le nouveau mot de passe')) !== null) {
-                $error = $passwordError;
-            } elseif (!in_array($role, User::allowedRoles(), true)) {
-                $error = 'Rôle invalide.';
-            } elseif (!in_array($statutCompte, User::allowedStatuses(), true)) {
-                $error = 'Statut du compte invalide.';
-            } elseif ($isSingleAdminEditing && $role !== 'admin') {
-                $error = 'Vous ne pouvez pas changer le rôle du compte admin unique.';
-            } elseif (!$isSingleAdminEditing && $role === 'admin' && $singleAdminId !== null) {
-                $error = 'Un seul compte admin est autorisé.';
-            } elseif ($isSingleAdminEditing && $statutCompte !== 'actif') {
-                $error = 'Le compte admin unique doit rester actif.';
-            } elseif ($userModel->emailExists($email, $userId)) {
-                $error = 'Cet email existe déjà.';
-            } else {
-                $payload = [
-                    'nom' => $nom,
-                    'prenom' => $prenom,
-                    'email' => $email,
-                    'role' => $role,
-                    'matricule' => $matricule,
-                    'departement' => $departement,
-                    'niveau' => $niveau,
-                    'telephone' => $telephone,
-                    'statut_compte' => $statutCompte,
-                ];
-
-                if ($newPassword !== '') {
-                    $payload['password'] = $newPassword;
-                }
-
-                $ok = $userModel->updateById($userId, $payload);
-                if ($ok) {
+            if ($isSingleAdminEditing) {
+                $newPassword = (string) ($_POST['new_password'] ?? '');
+                if ($newPassword === '') {
                     $this->redirect('/utilisateurs');
+
                     return;
                 }
 
-                $error = 'Impossible de mettre à jour l’utilisateur (rien à modifier ?).';
+                if (($passwordError = $this->validateMinLength($newPassword, User::MIN_PASSWORD_LENGTH, 'Le nouveau mot de passe')) !== null) {
+                    $error = $passwordError;
+                } else {
+                    $ok = $userModel->updateById($userId, ['password' => $newPassword]);
+                    if ($ok) {
+                        $this->redirect('/utilisateurs');
+
+                        return;
+                    }
+
+                    $error = 'Impossible de mettre à jour le mot de passe.';
+                }
+            } else {
+                $nom = $this->normalizeText((string) ($_POST['nom'] ?? ''));
+                $prenom = $this->normalizeText((string) ($_POST['prenom'] ?? ''));
+                $email = $this->normalizeEmail((string) ($_POST['email'] ?? ''));
+                $role = (string) ($_POST['role'] ?? 'etudiant');
+                $matricule = (string) ($_POST['matricule'] ?? '');
+                $departement = (string) ($_POST['departement'] ?? '');
+                $niveau = (string) ($_POST['niveau'] ?? '');
+                $telephone = (string) ($_POST['telephone'] ?? '');
+                $statutCompte = (string) ($_POST['statut_compte'] ?? 'actif');
+                $newPassword = (string) ($_POST['new_password'] ?? '');
+
+                if ($nom === '' || $prenom === '' || $email === '') {
+                    $error = 'Nom, prénom et email sont obligatoires.';
+                } elseif (($emailError = $this->validateInstitutionalEmail($email)) !== null) {
+                    $error = $emailError;
+                } elseif ($newPassword !== '' && ($passwordError = $this->validateMinLength($newPassword, User::MIN_PASSWORD_LENGTH, 'Le nouveau mot de passe')) !== null) {
+                    $error = $passwordError;
+                } elseif (!in_array($role, User::allowedRoles(), true)) {
+                    $error = 'Rôle invalide.';
+                } elseif (!in_array($statutCompte, User::allowedStatuses(), true)) {
+                    $error = 'Statut du compte invalide.';
+                } elseif ($role === 'admin' && $singleAdminId !== null) {
+                    $error = 'Un seul compte admin est autorisé.';
+                } elseif ($userModel->emailExists($email, $userId)) {
+                    $error = 'Cet email existe déjà.';
+                } else {
+                    $payload = [
+                        'nom' => $nom,
+                        'prenom' => $prenom,
+                        'email' => $email,
+                        'role' => $role,
+                        'matricule' => $matricule,
+                        'departement' => $departement,
+                        'niveau' => $niveau,
+                        'telephone' => $telephone,
+                        'statut_compte' => $statutCompte,
+                    ];
+
+                    if ($newPassword !== '') {
+                        $payload['password'] = $newPassword;
+                    }
+
+                    $ok = $userModel->updateById($userId, $payload);
+                    if ($ok) {
+                        $this->redirect('/utilisateurs');
+                        return;
+                    }
+
+                    $error = 'Impossible de mettre à jour l’utilisateur (rien à modifier ?).';
+                }
             }
         }
 

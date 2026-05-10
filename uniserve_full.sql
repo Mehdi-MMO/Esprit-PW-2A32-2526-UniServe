@@ -121,12 +121,13 @@ CREATE TABLE `clubs` (
   UNIQUE KEY `nom` (`nom`),
   KEY `cree_par` (`cree_par`),
   CONSTRAINT `clubs_ibfk_cree_par` FOREIGN KEY (`cree_par`) REFERENCES `utilisateurs` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `clubs` (`id`, `cree_par`, `nom`, `description`, `email_contact`, `actif`, `statut_validation`) VALUES
 	(1, 1, 'Club Informatique', 'Club dédié aux projets tech et développement', 'info@club-info.tn', 1, 'approuve'),
 	(2, 1, 'Club Culturel', 'Activités culturelles et artistiques', 'info@club-culture.tn', 1, 'approuve'),
-	(3, 1, 'Club Sportif', 'Organisation des activités sportives du campus', 'info@club-sport.tn', 1, 'approuve');
+	(3, 1, 'Club Sportif', 'Organisation des activités sportives du campus', 'info@club-sport.tn', 1, 'approuve'),
+	(4, 2, 'Club Étudiants solidaires', 'Actions solidaires et bénévolat sur le campus.', 'solidarite@uniserve.tn', 1, 'approuve');
 
 CREATE TABLE `demandes_service` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -217,7 +218,15 @@ CREATE TABLE `evenements` (
   CONSTRAINT `evenements_ibfk_1` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`id`),
   CONSTRAINT `evenements_ibfk_2` FOREIGN KEY (`cree_par`) REFERENCES `utilisateurs` (`id`),
   CONSTRAINT `evenements_ibfk_3` FOREIGN KEY (`valide_par`) REFERENCES `utilisateurs` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `evenements` (`id`, `club_id`, `cree_par`, `titre`, `description`, `lieu`, `date_debut`, `date_fin`, `capacite`, `statut`) VALUES
+	(1, 1, 1, 'Forum des associations', 'Rencontre avec les clubs du campus et découverte des activités.', 'Cour centrale', '2026-06-15 09:30:00', '2026-06-15 11:30:00', 120, 'ouvert'),
+	(2, 2, 1, 'Soirée culturelle', 'Spectacles, stands et rencontres artistiques.', 'Amphi A', '2026-06-20 18:00:00', '2026-06-20 21:00:00', 80, 'ouvert'),
+	(3, 3, 1, 'Tournoi sportif inter-clubs', 'Matchs et animations sportives.', 'Gymnase universitaire', '2026-06-25 14:00:00', '2026-06-25 18:00:00', 60, 'ouvert'),
+	(4, 1, 1, 'Atelier développement web', 'Session pratique projets et bonnes pratiques.', 'Salle info B12', '2026-07-01 10:00:00', '2026-07-01 12:00:00', 25, 'ouvert'),
+	(5, 4, 2, 'Conférence orientation', 'Parcours et insertion — en attente de validation staff.', 'Salle polyvalente', '2026-06-10 11:00:00', '2026-06-10 12:00:00', 50, 'planifie'),
+	(6, 4, 2, 'Collecte solidaire', 'Stand et collecte au hall principal.', 'Hall principal', '2026-07-05 10:00:00', '2026-07-05 14:00:00', 30, 'planifie');
 
 CREATE TABLE `inscriptions_evenement` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,

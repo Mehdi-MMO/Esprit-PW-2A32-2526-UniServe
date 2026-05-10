@@ -74,6 +74,21 @@ class User
         return $statement->fetchAll();
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function findStaffAndAdminsActifs(): array
+    {
+        $statement = $this->model->query(
+            'SELECT id, nom, prenom, email, role
+             FROM utilisateurs
+             WHERE role IN ("staff", "admin") AND statut_compte = "actif"
+             ORDER BY nom ASC, prenom ASC'
+        );
+
+        return $statement->fetchAll();
+    }
+
     public function emailExists(string $email, ?int $excludeId = null): bool
     {
         if ($excludeId === null) {
@@ -104,6 +119,22 @@ class User
         }
 
         return password_verify($plainPassword, $hash);
+    }
+
+    public function touchLastLogin(int $userId): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        try {
+            $this->model->query(
+                'UPDATE utilisateurs SET derniere_connexion = NOW() WHERE id = ?',
+                [$userId]
+            );
+        } catch (Throwable) {
+            // Legacy schema without derniere_connexion
+        }
     }
 
     public function create(array $data): int|false
@@ -233,6 +264,20 @@ class User
         }
 
         return (int) ($row['id'] ?? 0);
+    }
+
+    /**
+     * True when there is exactly one admin account and $userId is that account.
+     */
+    public function isTheSingletonAdmin(int $userId): bool
+    {
+        if ($userId <= 0 || $this->countByRole('admin') !== 1) {
+            return false;
+        }
+
+        $onlyId = $this->findSingleAdminId();
+
+        return $onlyId !== null && $onlyId === $userId;
     }
 
     public function countFiltered(array $filters): int

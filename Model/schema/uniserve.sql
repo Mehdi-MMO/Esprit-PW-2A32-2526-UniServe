@@ -1,5 +1,0 @@
--- Deprecated as a full schema: the canonical dump is at the repository root.
--- Import:  ../../uniserve_full.sql
--- (Creates database `uniserve`, all tables, and seed data — single source of truth.)
---
--- Additive upgrades: place optional scripts under this folder, e.g. migrations/001_*.sql

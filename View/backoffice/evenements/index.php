@@ -21,15 +21,10 @@ $statusClass = static function (string $status): string {
 };
 ?>
 
-<!-- Module Navigation Tabs -->
-<div class="d-flex gap-2 mb-4 us-module-tabs">
-    <a href="<?= $this->url('/evenements/manageClubs') ?>" class="nav-tab">
-        <i class="fa-solid fa-objects-column me-2"></i>Clubs
-    </a>
-    <a href="<?= $this->url('/evenements/manage') ?>" class="nav-tab active" aria-current="page">
-        <i class="fa-solid fa-calendar-days me-2"></i>Événements
-    </a>
-</div>
+<?php
+$clubsEventsSubnavActive = 'events';
+require __DIR__ . '/../shared/clubs_events_subnav.php';
+?>
 
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header mb-4">
     <div>
@@ -38,7 +33,6 @@ $statusClass = static function (string $status): string {
         <p class="text-muted mb-0">Pilotez les événements, inscriptions et présences.</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="<?= $this->url('/evenements/manageClubs') ?>" class="btn btn-outline-primary btn-sm">Gérer les clubs</a>
         <a href="<?= $this->url('/evenements/createForm') ?>" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nouveau</a>
     </div>
 </div>

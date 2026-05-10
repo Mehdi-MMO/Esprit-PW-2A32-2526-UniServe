@@ -11,13 +11,13 @@ $canSubmitRequest = in_array($role, ['etudiant', 'enseignant'], true);
     <div>
         <div class="us-kicker mb-1">Vie associative</div>
         <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Clubs actifs'), ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="text-muted mb-0">Explorez les clubs actifs et leurs activites.</p>
+        <p class="text-muted mb-0">Explorez les clubs actifs et leurs activités.</p>
     </div>
     <div class="d-flex gap-2">
         <?php if ($canSubmitRequest): ?>
             <a class="btn btn-outline-secondary btn-sm" href="<?= $this->url('/evenements/createClubRequestForm') ?>">Demander un club</a>
         <?php endif; ?>
-        <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/evenements') ?>">Voir les evenements</a>
+            <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/evenements') ?>">Voir les événements</a>
     </div>
 </div>
 
@@ -32,7 +32,7 @@ $canSubmitRequest = in_array($role, ['etudiant', 'enseignant'], true);
 <?php if ($canSubmitRequest): ?>
     <div class="us-section-card mb-3">
         <div class="card-body p-3 p-md-4">
-            <h2 class="h6 mb-3">Mes clubs (proprietaire)</h2>
+            <h2 class="h6 mb-3">Mes clubs (propriétaire)</h2>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
@@ -44,7 +44,7 @@ $canSubmitRequest = in_array($role, ['etudiant', 'enseignant'], true);
                     </thead>
                     <tbody>
                         <?php if (empty($myClubs)): ?>
-                            <tr><td colspan="3" class="text-center text-muted py-3">Aucun club cree.</td></tr>
+                            <tr><td colspan="3" class="text-center text-muted py-3">Aucun club créé.</td></tr>
                         <?php else: ?>
                             <?php foreach ($myClubs as $club): ?>
                                 <?php
@@ -73,7 +73,7 @@ $canSubmitRequest = in_array($role, ['etudiant', 'enseignant'], true);
         <div class="col-12">
             <div class="us-card p-4 us-empty-state">
                 <div class="fw-semibold mb-1">Aucun club actif</div>
-                <div class="text-muted">Les clubs apparaitront ici des qu ils seront actives.</div>
+                <div class="text-muted">Les clubs apparaîtront ici dès qu’ils seront validés et actifs.</div>
             </div>
         </div>
     <?php else: ?>
@@ -89,7 +89,7 @@ $canSubmitRequest = in_array($role, ['etudiant', 'enseignant'], true);
                         <div class="small text-muted mb-3">
                             Contact: <?= htmlspecialchars((string) ($club['email_contact'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>
                         </div>
-                        <a class="btn btn-outline-primary w-100" href="<?= $this->url('/evenements/clubShow/' . $clubId) ?>">Voir details</a>
+                        <a class="btn btn-outline-primary w-100" href="<?= $this->url('/evenements/clubShow/' . $clubId) ?>">Voir le détail</a>
                     </div>
                 </div>
             </div>

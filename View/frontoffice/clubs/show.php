@@ -19,10 +19,13 @@ $statusClass = static function (string $status): string {
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 us-page-header">
     <div>
         <div class="us-kicker mb-1">Club</div>
-        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($club['nom'] ?? 'Detail club'), ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="text-muted mb-0">Informations du club et evenements associes.</p>
+        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($club['nom'] ?? 'Club'), ENT_QUOTES, 'UTF-8') ?></h1>
+        <p class="text-muted mb-0">Informations du club et événements associés.</p>
     </div>
-    <a class="btn btn-outline-secondary btn-sm" href="<?= $this->url('/evenements/clubs') ?>">Retour aux clubs</a>
+    <div class="d-flex flex-wrap gap-2 justify-content-end">
+        <a class="btn btn-outline-secondary btn-sm" href="<?= $this->url('/evenements/clubs') ?>">Retour aux clubs</a>
+        <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/evenements') ?>">Voir les événements</a>
+    </div>
 </div>
 
 <?php if ($success !== ''): ?>
@@ -42,12 +45,12 @@ $statusClass = static function (string $status): string {
 
 <div class="us-section-card">
     <div class="card-body p-3 p-md-4">
-        <h2 class="h5 mb-3">Evenements du club</h2>
+        <h2 class="h5 mb-3">Événements du club</h2>
 
         <div class="row g-3">
             <?php if (empty($events)): ?>
                 <div class="col-12">
-                    <div class="text-muted py-3">Ce club n a encore aucun evenement.</div>
+                    <div class="text-muted py-3">Ce club n’a pas encore d’événement public à afficher.</div>
                 </div>
             <?php else: ?>
                 <?php foreach ($events as $event): ?>
@@ -63,7 +66,7 @@ $statusClass = static function (string $status): string {
                                     <span class="badge bg-<?= $statusClass($status) ?>"><?= htmlspecialchars(ucfirst($status), ENT_QUOTES, 'UTF-8') ?></span>
                                 </div>
                                 <p class="text-muted small mb-2"><?= htmlspecialchars((string) ($event['date_debut'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                                <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/evenements/show/' . $eventId) ?>">Voir evenement</a>
+                                <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/evenements/show/' . $eventId) ?>">Voir l’événement</a>
                             </div>
                         </div>
                     </div>

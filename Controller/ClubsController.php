@@ -9,6 +9,11 @@ require_once __DIR__ . '/EvenementsController.php';
 
 class ClubsController extends Controller
 {
+    public function landing(): void
+    {
+        $this->index();
+    }
+
     public function manage(): void
     {
         (new EvenementsController())->manageClubs();

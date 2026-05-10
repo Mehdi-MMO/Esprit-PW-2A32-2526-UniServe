@@ -40,8 +40,10 @@ class Club
     public function getAllAdmin(): array
     {
         $statement = $this->model->query(
-            'SELECT c.id, c.nom, c.description, c.email_contact, c.actif
+            'SELECT c.id, c.cree_par, c.nom, c.description, c.email_contact, c.actif, c.statut_validation,
+                    CONCAT(u.prenom, " ", u.nom) AS owner_nom
              FROM clubs c
+             INNER JOIN utilisateurs u ON u.id = c.cree_par
              ORDER BY c.id DESC'
         );
 
@@ -51,9 +53,11 @@ class Club
     public function getPendingForAdmin(): array
     {
         $statement = $this->model->query(
-            'SELECT c.id, c.nom, c.description, c.email_contact, c.actif
+            'SELECT c.id, c.cree_par, c.nom, c.description, c.email_contact, c.actif, c.statut_validation,
+                    CONCAT(u.prenom, " ", u.nom) AS owner_nom
              FROM clubs c
-             WHERE c.actif = 0
+             INNER JOIN utilisateurs u ON u.id = c.cree_par
+             WHERE c.statut_validation = "en_attente"
              ORDER BY c.id DESC'
         );
 
@@ -63,8 +67,10 @@ class Club
     public function findById(int|string $id): ?array
     {
         $statement = $this->model->query(
-            'SELECT c.id, c.nom, c.description, c.email_contact, c.actif
+            'SELECT c.id, c.cree_par, c.nom, c.description, c.email_contact, c.actif, c.statut_validation,
+                    CONCAT(u.prenom, " ", u.nom) AS owner_nom
              FROM clubs c
+             INNER JOIN utilisateurs u ON u.id = c.cree_par
              WHERE c.id = ?
              LIMIT 1',
             [(int) $id]
@@ -77,8 +83,10 @@ class Club
     public function findByOwner(int|string $ownerId): array
     {
         $statement = $this->model->query(
-            'SELECT c.id, c.nom, c.description, c.email_contact, c.actif
+            'SELECT c.id, c.cree_par, c.nom, c.description, c.email_contact, c.actif, c.statut_validation,
+                    CONCAT(u.prenom, " ", u.nom) AS owner_nom
              FROM clubs c
+             INNER JOIN utilisateurs u ON u.id = c.cree_par
              WHERE c.cree_par = ?
              ORDER BY c.id DESC',
             [(int) $ownerId]

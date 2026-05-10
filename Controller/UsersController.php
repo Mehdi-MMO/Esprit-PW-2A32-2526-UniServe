@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../Model/User.php';
+require_once __DIR__ . '/../Model/ValidationService.php';
 
 class UsersController extends Controller
 {
@@ -64,14 +65,29 @@ class UsersController extends Controller
             'user' => $user,
             'success' => (string) ($_GET['success'] ?? ''),
             'error' => (string) ($_GET['error'] ?? ''),
+            'profile_identity_locked' => $userModel->isTheSingletonAdmin($userId),
         ]);
     }
 
     private function handleProfileUpdate(User $userModel, int $userId): void
     {
-        $nom = trim((string) ($_POST['nom'] ?? ''));
-        $prenom = trim((string) ($_POST['prenom'] ?? ''));
-        $email = trim((string) ($_POST['email'] ?? ''));
+        $existing = $userModel->findById($userId);
+        if ($existing === null) {
+            $this->redirectProfileError('Compte introuvable.');
+            return;
+        }
+
+        if ($userModel->isTheSingletonAdmin($userId)) {
+            $this->redirectProfileError(
+                'Le compte administrateur unique ne peut être modifié que par le mot de passe (ci-dessous ou dans Utilisateurs).'
+            );
+
+            return;
+        }
+
+        $nom = $this->normalizeText((string) ($_POST['nom'] ?? ''));
+        $prenom = $this->normalizeText((string) ($_POST['prenom'] ?? ''));
+        $email = $this->normalizeEmail((string) ($_POST['email'] ?? ''));
         $matricule = trim((string) ($_POST['matricule'] ?? ''));
         $departement = trim((string) ($_POST['departement'] ?? ''));
         $niveau = trim((string) ($_POST['niveau'] ?? ''));
@@ -79,6 +95,24 @@ class UsersController extends Controller
 
         if ($nom === '' || $prenom === '' || $email === '') {
             $this->redirectProfileError('Champs obligatoires manquants.');
+            return;
+        }
+
+        if (($emailInst = $this->validateInstitutionalEmail($email)) !== null) {
+            $this->redirectProfileError($emailInst);
+            return;
+        }
+
+        $profileFieldError = ValidationService::validateProfileFields([
+            'nom' => $nom,
+            'prenom' => $prenom,
+            'matricule' => $matricule !== '' ? $matricule : null,
+            'departement' => $departement !== '' ? $departement : null,
+            'niveau' => $niveau !== '' ? $niveau : null,
+            'telephone' => $telephone !== '' ? $telephone : null,
+        ]);
+        if ($profileFieldError !== null) {
+            $this->redirectProfileError($profileFieldError);
             return;
         }
 
@@ -97,7 +131,8 @@ class UsersController extends Controller
             'telephone' => $telephone !== '' ? $telephone : null,
         ];
 
-        $photoPath = $this->handleProfilePhotoUpload($userId);
+        $oldPhotoRel = trim((string) ($existing['photo_profil'] ?? ''));
+        $photoPath = $this->handleProfilePhotoUpload($userId, $oldPhotoRel !== '' ? $oldPhotoRel : null);
         if ($photoPath === false) {
             $this->redirectProfileError('Photo invalide : vérifiez le format (JPG, PNG, WEBP) et la taille (2 Mo max).');
             return;
@@ -107,14 +142,56 @@ class UsersController extends Controller
             $data['photo_profil'] = $photoPath;
         }
 
-        $userModel->updateById($userId, $data);
+        if ($photoPath === null && $this->profilePayloadMatchesStored($data, $existing)) {
+            $this->redirect('/users/profile?success=' . urlencode('Aucune modification à enregistrer.'));
+            return;
+        }
 
+        $ok = $userModel->updateById($userId, $data);
         $fresh = $userModel->findById($userId);
+
+        if (!$ok && $fresh !== null && $this->profilePayloadMatchesStored($data, $fresh)) {
+            $this->syncSessionUser($fresh);
+            $this->redirect('/users/profile?success=' . urlencode('Profil à jour.'));
+            return;
+        }
+
+        if (!$ok) {
+            $this->redirectProfileError('Aucun changement effectué ou mise à jour impossible.');
+            return;
+        }
+
         if ($fresh !== null) {
             $this->syncSessionUser($fresh);
         }
 
         $this->redirect('/users/profile?success=' . urlencode('Profil mis à jour.'));
+    }
+
+    /**
+     * Compare normalized POST payload to DB row (photo excluded — handled separately).
+     *
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $user
+     */
+    private function profilePayloadMatchesStored(array $data, array $user): bool
+    {
+        $normNull = static function (mixed $v): ?string {
+            if ($v === null) {
+                return null;
+            }
+            $t = trim((string) $v);
+
+            return $t === '' ? null : $t;
+        };
+
+        return $data['nom'] === $this->normalizeText((string) ($user['nom'] ?? ''))
+            && $data['prenom'] === $this->normalizeText((string) ($user['prenom'] ?? ''))
+            && $data['email'] === $this->normalizeEmail((string) ($user['email'] ?? ''))
+            && $normNull($data['matricule'] ?? null) === $normNull($user['matricule'] ?? null)
+            && $normNull($data['departement'] ?? null) === $normNull($user['departement'] ?? null)
+            && $normNull($data['niveau'] ?? null) === $normNull($user['niveau'] ?? null)
+            && $normNull($data['telephone'] ?? null) === $normNull($user['telephone'] ?? null);
     }
 
     private function handlePasswordUpdate(User $userModel, int $userId): void
@@ -133,8 +210,8 @@ class UsersController extends Controller
             return;
         }
 
-        if (strlen($new) < User::MIN_PASSWORD_LENGTH) {
-            $this->redirectProfileError('Le nouveau mot de passe doit contenir au moins ' . User::MIN_PASSWORD_LENGTH . ' caractères.');
+        if (($pwdErr = $this->validateMinLength($new, User::MIN_PASSWORD_LENGTH, 'Le nouveau mot de passe')) !== null) {
+            $this->redirectProfileError($pwdErr);
             return;
         }
 
@@ -143,14 +220,20 @@ class UsersController extends Controller
             return;
         }
 
-        $userModel->updateById($userId, ['password' => $new]);
+        $ok = $userModel->updateById($userId, ['password' => $new]);
+        if (!$ok) {
+            $this->redirectProfileError('Impossible de mettre à jour le mot de passe.');
+            return;
+        }
+
         $this->redirect('/users/profile?success=' . urlencode('Mot de passe mis à jour.'));
     }
 
     /**
+     * @param string|null $oldRelativePath Previous DB path under PROFILE_PHOTO_SUBDIR
      * @return string|null Relative path stored in DB, null if no upload, false on validation failure
      */
-    private function handleProfilePhotoUpload(int $userId): string|null|false
+    private function handleProfilePhotoUpload(int $userId, ?string $oldRelativePath): string|null|false
     {
         if (!isset($_FILES['photo_profil'])) {
             return null;
@@ -187,7 +270,8 @@ class UsersController extends Controller
         }
 
         $ext = $map[$mime];
-        $baseDir = dirname(__DIR__) . '/' . self::PROFILE_PHOTO_SUBDIR;
+        $root = dirname(__DIR__);
+        $baseDir = $root . '/' . self::PROFILE_PHOTO_SUBDIR;
         if (!is_dir($baseDir) && !mkdir($baseDir, 0775, true) && !is_dir($baseDir)) {
             return false;
         }
@@ -200,6 +284,18 @@ class UsersController extends Controller
             return false;
         }
 
+        $old = trim((string) ($oldRelativePath ?? ''));
+        if (
+            $old !== '' &&
+            $old !== $relative &&
+            str_starts_with($old, self::PROFILE_PHOTO_SUBDIR . '/')
+        ) {
+            $oldAbs = $root . '/' . $old;
+            if (is_file($oldAbs)) {
+                @unlink($oldAbs);
+            }
+        }
+
         return $relative;
     }
 
@@ -209,6 +305,7 @@ class UsersController extends Controller
         $_SESSION['user']['prenom'] = (string) ($user['prenom'] ?? '');
         $_SESSION['user']['email'] = (string) ($user['email'] ?? '');
         $_SESSION['user']['matricule'] = (string) ($user['matricule'] ?? '');
+        $_SESSION['user']['photo_profil'] = (string) ($user['photo_profil'] ?? '');
     }
 
     private function redirectProfileError(string $message): void

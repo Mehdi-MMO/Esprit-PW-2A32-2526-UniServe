@@ -21,11 +21,14 @@ $canRegister = !$isRegistered && !in_array($status, ['annule', 'termine', 'compl
 
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 us-page-header">
     <div>
-        <div class="us-kicker mb-1">Evenements</div>
-        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($event['titre'] ?? 'Detail evenement'), ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="text-muted mb-0">Consultez les informations et gerez votre inscription.</p>
+        <div class="us-kicker mb-1">Événements</div>
+        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($event['titre'] ?? 'Détail événement'), ENT_QUOTES, 'UTF-8') ?></h1>
+        <p class="text-muted mb-0">Consultez les informations et gérez votre inscription.</p>
     </div>
-    <a class="btn btn-outline-secondary btn-sm" href="<?= $this->url('/evenements') ?>">Retour</a>
+    <div class="d-flex flex-wrap gap-2 justify-content-end">
+        <a class="btn btn-outline-secondary btn-sm" href="<?= $this->url('/evenements') ?>">Retour aux événements</a>
+        <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/evenements/clubs') ?>">Voir les clubs</a>
+    </div>
 </div>
 
 <?php if ($success !== ''): ?>

@@ -10,15 +10,10 @@ $success = (string) ($success ?? '');
 $error = (string) ($error ?? '');
 ?>
 
-<!-- Module Navigation Tabs -->
-<div class="d-flex gap-2 mb-4 us-module-tabs">
-    <a href="<?= $this->url('/evenements/manageClubs') ?>" class="nav-tab active" aria-current="page">
-        <i class="fa-solid fa-objects-column me-2"></i>Clubs
-    </a>
-    <a href="<?= $this->url('/evenements/manage') ?>" class="nav-tab">
-        <i class="fa-solid fa-calendar-days me-2"></i>Événements
-    </a>
-</div>
+<?php
+$clubsEventsSubnavActive = 'clubs';
+require __DIR__ . '/../shared/clubs_events_subnav.php';
+?>
 
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header mb-4">
     <div>
@@ -27,7 +22,6 @@ $error = (string) ($error ?? '');
         <p class="text-muted mb-0">Créer et organiser les clubs de l'université.</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="<?= $this->url('/evenements/manage') ?>" class="btn btn-outline-secondary btn-sm">Événements</a>
         <a href="<?= $this->url('/evenements/createClubForm') ?>" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nouveau club</a>
     </div>
 </div>

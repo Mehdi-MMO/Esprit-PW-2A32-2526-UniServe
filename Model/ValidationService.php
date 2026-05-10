@@ -28,6 +28,67 @@ class ValidationService
     private const EVENT_CAPACITY_MIN = 1;
     private const EVENT_CAPACITY_MAX = 500;
 
+    // ===== PROFILE (USER_MODULE parity) =====
+
+    private const PROFILE_NAME_MIN = 2;
+    private const PROFILE_NAME_MAX = 100;
+    private const PROFILE_STRING_MAX = 255;
+    /** Optional TN-style phone: digits, spaces, common separators, optional leading + */
+    private const PROFILE_PHONE_REGEX = '/^[\d\s+().-]{8,25}$/';
+
+    /**
+     * Profile supplementary validation (after institutional email checks on the controller).
+     * Returns null if valid, otherwise a single French error message.
+     *
+     * @param array{n?: string, prenom?: string, matricule?: string|null, departement?: string|null, niveau?: string|null, telephone?: string|null} $data
+     */
+    public static function validateProfileFields(array $data): ?string
+    {
+        $nom = trim((string) ($data['nom'] ?? ''));
+        $prenom = trim((string) ($data['prenom'] ?? ''));
+
+        if ($nom === '') {
+            return 'Le nom est obligatoire.';
+        }
+        if (strlen($nom) < self::PROFILE_NAME_MIN) {
+            return 'Le nom doit contenir au moins ' . self::PROFILE_NAME_MIN . ' caractères.';
+        }
+        if (strlen($nom) > self::PROFILE_NAME_MAX) {
+            return 'Le nom ne doit pas dépasser ' . self::PROFILE_NAME_MAX . ' caractères.';
+        }
+
+        if ($prenom === '') {
+            return 'Le prénom est obligatoire.';
+        }
+        if (strlen($prenom) < self::PROFILE_NAME_MIN) {
+            return 'Le prénom doit contenir au moins ' . self::PROFILE_NAME_MIN . ' caractères.';
+        }
+        if (strlen($prenom) > self::PROFILE_NAME_MAX) {
+            return 'Le prénom ne doit pas dépasser ' . self::PROFILE_NAME_MAX . ' caractères.';
+        }
+
+        foreach (['matricule' => 'matricule', 'departement' => 'département', 'niveau' => 'niveau'] as $key => $label) {
+            $v = $data[$key] ?? null;
+            if ($v === null || $v === '') {
+                continue;
+            }
+            $s = trim((string) $v);
+            if (strlen($s) > self::PROFILE_STRING_MAX) {
+                return 'Le champ « ' . $label . ' » est trop long.';
+            }
+        }
+
+        $tel = $data['telephone'] ?? null;
+        if ($tel !== null && trim((string) $tel) !== '') {
+            $t = trim((string) $tel);
+            if (!preg_match(self::PROFILE_PHONE_REGEX, $t)) {
+                return 'Format de téléphone invalide (chiffres et séparateurs usuels, 8 à 25 caractères).';
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Validate club input data
      *
