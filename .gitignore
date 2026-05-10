@@ -9,3 +9,6 @@ THEMODULES/
 
 DOCAC_MODULE/
 RDV_MODULE/
+
+# Obsolete ad-hoc SQL dump filename (superseded by uniserve_full.sql)
+with data.sql

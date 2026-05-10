@@ -9,10 +9,10 @@ Plateforme PHP MVC unique : authentification, **demandes de service**, **rendez-
 | Dossier | Rôle |
 |---------|------|
 | [`Controller/`](Controller/) | Routage (`App.php`), contrôleurs par segment d’URL. |
-| [`Model/`](Model/) | PDO (`Database.php`), modèles, [`ValidationService.php`](Model/ValidationService.php), schéma SQL sous [`Model/schema/`](Model/schema/). |
+| [`Model/`](Model/) | PDO ([`Database.php`](Model/Database.php)), modèles, [`ValidationService.php`](Model/ValidationService.php) ; scripts SQL additifs optionnels sous [`Model/schema/`](Model/schema/) (migrations). |
 | [`View/`](View/) | Vues et assets partagés [`View/shared/`](View/shared/). |
 
-Fichiers de bootstrap à la racine : **`index.php`**, **`.htaccess`**, **`README.md`** (ce fichier).
+Fichiers à la racine (hors des trois dossiers) : **`index.php`**, **`.htaccess`**, **`README.md`**, et le dump **[`uniserve_full.sql`](uniserve_full.sql)** (base complète + données de démo).
 
 La connexion MySQL est configurée dans [`Model/Database.php`](Model/Database.php) (variables d’environnement `DB_*`).
 
@@ -25,19 +25,26 @@ La connexion MySQL est configurée dans [`Model/Database.php`](Model/Database.ph
 ## Installation rapide
 
 1. Cloner le dépôt et placer le dossier dans la racine web (ex. `htdocs/INTEG`).
-2. Créer la base et importer le schéma :
-   - Créer une base `uniserve` (ou adapter le nom selon `DB_NAME`).
-   - Importer [`Model/schema/uniserve.sql`](Model/schema/uniserve.sql).
+2. Créer / réinitialiser la base et importer le dump complet :
+   - Importer [`uniserve_full.sql`](uniserve_full.sql) dans MySQL / MariaDB (le script crée la base `uniserve` si besoin, supprime les tables existantes dans l’ordre, puis recrée schéma + jeux de données).
+   - Ou créer une base vide nommée comme `DB_NAME` puis n’y importer que le fichier (adapter `DB_NAME` dans l’environnement si le nom diffère de `uniserve`).
 3. Variables d’environnement (optionnel ; défauts dans [`Model/Database.php`](Model/Database.php)) :
    - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
 4. Ouvrir l’application via `index.php` (ex. `http://localhost/INTEG/`).
 
-Comptes de démo : voir les `INSERT` dans `Model/schema/uniserve.sql` (emails `@uniserve.net`).
+Comptes et données de démo : voir les `INSERT` dans [`uniserve_full.sql`](uniserve_full.sql) (ex. admin `admin.uniserve@gmail.com`, étudiant de test, etc.).
 
 ## Schéma et migrations
 
-- Script canonique : **`Model/schema/uniserve.sql`** (tous les modules : utilisateurs, demandes, rendez-vous, documents, événements/clubs).
-- Pour des évolutions après coup, ajouter des scripts SQL **additifs** sous `Model/schema/migrations/`, par exemple `001_description.sql`, et les appliquer dans l’ordre sur une base existante.
+- Dump canonique à la racine : **[`uniserve_full.sql`](uniserve_full.sql)** (schéma aligné avec les modèles PHP, clubs avec `cree_par` / `statut_validation`, tables auth optionnelles issues du dump Heidi, données de démo).
+- Le fichier [`Model/schema/uniserve.sql`](Model/schema/uniserve.sql) renvoie vers ce dump ; ne plus dupliquer le schéma complet à cet emplacement.
+- Évolutions ultérieures : scripts SQL **additifs** sous `Model/schema/migrations/`, par exemple `001_description.sql`, appliqués dans l’ordre sur une base déjà importée.
+
+### Vérification rapide après import
+
+1. Importer `uniserve_full.sql` sur une base de test (ou recréer `uniserve`).
+2. Vérifier [`Model/Database.php`](Model/Database.php) (`DB_*`) puis ouvrir l’app (`index.php`).
+3. Connexion : utiliser un compte présent dans les `INSERT` du dump ; parcourir accueil, liste clubs / événements si les routes sont activées.
 
 ## Développement Git (optionnel)
 
@@ -48,4 +55,4 @@ Les dossiers locaux **`worktrees/`**, **`THEMODULES/`** ou autres copies d’éq
 
 ## Branche `main`
 
-Le développement intégré suit **`main`** : une seule arborescence **Controller / Model / View** et un schéma dans **`Model/schema/uniserve.sql`**.
+Le développement intégré suit **`main`** : une seule arborescence **Controller / Model / View** et un dump unique **`uniserve_full.sql`** à la racine.

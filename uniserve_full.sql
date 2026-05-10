@@ -1,0 +1,358 @@
+-- UniServe — full database (schema + seed)
+-- Merged from HeidiSQL dump plus clubs/evenements DDL aligned with Model/Club.php and Model/Event.php.
+-- Import in phpMyAdmin / HeidiSQL after CREATE DATABASE or use as-is (creates `uniserve`).
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET NAMES utf8 */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+CREATE DATABASE IF NOT EXISTS `uniserve` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
+USE `uniserve`;
+
+-- Drop in dependency order (children before parents)
+DROP TABLE IF EXISTS `calendar_demo_items`;
+DROP TABLE IF EXISTS `login_risk_challenges`;
+DROP TABLE IF EXISTS `password_reset_otps`;
+DROP TABLE IF EXISTS `trusted_devices`;
+DROP TABLE IF EXISTS `login_failure_events`;
+DROP TABLE IF EXISTS `jc-postal`;
+DROP TABLE IF EXISTS `inscriptions_evenement`;
+DROP TABLE IF EXISTS `evenements`;
+DROP TABLE IF EXISTS `clubs`;
+DROP TABLE IF EXISTS `demandes_document`;
+DROP TABLE IF EXISTS `pieces_jointes`;
+DROP TABLE IF EXISTS `demandes_service`;
+DROP TABLE IF EXISTS `rendez_vous`;
+DROP TABLE IF EXISTS `types_document`;
+DROP TABLE IF EXISTS `categories_service`;
+DROP TABLE IF EXISTS `bureaux`;
+DROP TABLE IF EXISTS `utilisateurs`;
+
+-- ---------------------------------------------------------------------------
+-- utilisateurs (live dump columns: derniere_connexion, otp_login_enabled)
+-- ---------------------------------------------------------------------------
+CREATE TABLE `utilisateurs` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `nom` varchar(100) NOT NULL,
+  `prenom` varchar(100) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `mot_de_passe_hash` varchar(255) NOT NULL,
+  `role` enum('etudiant','enseignant','staff','admin') NOT NULL DEFAULT 'etudiant',
+  `matricule` varchar(50) DEFAULT NULL,
+  `departement` varchar(120) DEFAULT NULL,
+  `niveau` varchar(50) DEFAULT NULL,
+  `telephone` varchar(30) DEFAULT NULL,
+  `photo_profil` varchar(255) DEFAULT NULL,
+  `statut_compte` enum('actif','inactif') NOT NULL DEFAULT 'actif',
+  `derniere_connexion` datetime DEFAULT NULL,
+  `otp_login_enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `cree_le` timestamp NOT NULL DEFAULT current_timestamp(),
+  `modifie_le` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `matricule` (`matricule`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `utilisateurs` (`id`, `nom`, `prenom`, `email`, `mot_de_passe_hash`, `role`, `matricule`, `departement`, `niveau`, `telephone`, `photo_profil`, `statut_compte`, `derniere_connexion`, `otp_login_enabled`, `cree_le`, `modifie_le`) VALUES
+	(1, 'Admin', 'UniServe', 'admin.uniserve@gmail.com', '$2y$10$zU9XLJ01b.7.bZ9vf19ojOOU8Cd8gK.MZxMWl1AsVW5Pq39MwXKqa', 'admin', NULL, NULL, NULL, NULL, NULL, 'actif', '2026-05-07 15:06:40', 0, '2026-05-07 11:25:12', '2026-05-07 14:06:40'),
+	(2, 'Markus', 'Dakus', 'mesfrer135@gmail.com', '$2y$10$kWfWFhQfaztFw1mIopokwO7MC53C3Q3.uOeJbNyr72QYWhj3IqMjG', 'etudiant', NULL, NULL, NULL, NULL, NULL, 'actif', '2026-05-07 15:04:57', 1, '2026-05-07 11:25:12', '2026-05-07 14:04:57'),
+	(3, '3ami', 'Amen', 'staff.uniserve@gmail.com', '$2y$10$oDapi1WzNbmdzmFimOqlXuZC6aV1kKFQdmVH2970HVNnra2oyJZKS', 'staff', NULL, NULL, NULL, NULL, NULL, 'actif', NULL, 1, '2026-05-07 11:25:12', '2026-05-07 11:25:39'),
+	(4, 'Wi', 'Mrs', 'prof.uniserve@gmail.com', '$2y$10$QY6VY/DTZJsHVAZ6IW2pbOpv6oTxnn4qX3N/v3ZJQHwAffuNeTqhm', 'enseignant', NULL, NULL, NULL, NULL, NULL, 'inactif', NULL, 1, '2026-05-07 11:25:12', '2026-05-07 14:07:48');
+
+CREATE TABLE `categories_service` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `nom` varchar(120) NOT NULL,
+  `description` text DEFAULT NULL,
+  `actif` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nom` (`nom`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `categories_service` (`id`, `nom`, `description`, `actif`) VALUES
+	(1, 'Bulletin de notes', 'Demande de relevé de notes officiel', 1),
+	(2, 'Attestation de scolarité', 'Certificat de présence en cours', 1),
+	(3, 'Réclamation administrative', 'Réclamation auprès de l administration', 1),
+	(4, 'Aide financière', 'Demande de bourse ou aide sociale', 1);
+
+CREATE TABLE `types_document` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `nom` varchar(120) NOT NULL,
+  `description` text DEFAULT NULL,
+  `actif` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nom` (`nom`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `types_document` (`id`, `nom`, `description`, `actif`) VALUES
+	(1, 'Relevé de notes', 'Relevé officiel des notes par semestre', 1),
+	(2, 'Liste des cours suivis', 'Détail des matières étudiées', 1),
+	(3, 'Attestation de réussite', 'Attestation de validation de l année', 1),
+	(4, 'Diplôme', 'Demande de copie de diplôme', 1);
+
+CREATE TABLE `bureaux` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `nom` varchar(120) NOT NULL,
+  `localisation` varchar(255) DEFAULT NULL,
+  `type_service` varchar(120) NOT NULL,
+  `actif` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `bureaux` (`id`, `nom`, `localisation`, `type_service`, `actif`) VALUES
+	(1, 'Cellule d ecoute', 'Bâtiment A - Bureau 12', 'soutien_psychologique', 1),
+	(2, 'Service financier', 'Bâtiment B - Rez-de-chaussée', 'aide_financiere', 1),
+	(3, 'Scolarité', 'Bâtiment C - Bureau 3', 'administratif', 1);
+
+-- clubs: Model/Club.php requires cree_par + statut_validation (not present in raw Heidi dump)
+CREATE TABLE `clubs` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `cree_par` bigint(20) NOT NULL,
+  `nom` varchar(120) NOT NULL,
+  `description` text DEFAULT NULL,
+  `email_contact` varchar(255) DEFAULT NULL,
+  `actif` tinyint(1) NOT NULL DEFAULT 1,
+  `statut_validation` enum('en_attente','approuve','rejete') NOT NULL DEFAULT 'en_attente',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nom` (`nom`),
+  KEY `cree_par` (`cree_par`),
+  CONSTRAINT `clubs_ibfk_cree_par` FOREIGN KEY (`cree_par`) REFERENCES `utilisateurs` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `clubs` (`id`, `cree_par`, `nom`, `description`, `email_contact`, `actif`, `statut_validation`) VALUES
+	(1, 1, 'Club Informatique', 'Club dédié aux projets tech et développement', 'info@club-info.tn', 1, 'approuve'),
+	(2, 1, 'Club Culturel', 'Activités culturelles et artistiques', 'info@club-culture.tn', 1, 'approuve'),
+	(3, 1, 'Club Sportif', 'Organisation des activités sportives du campus', 'info@club-sport.tn', 1, 'approuve');
+
+CREATE TABLE `demandes_service` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `etudiant_id` bigint(20) NOT NULL,
+  `categorie_id` bigint(20) NOT NULL,
+  `titre` varchar(150) NOT NULL,
+  `description` text NOT NULL,
+  `statut` enum('en_attente','en_cours','traite','rejete') NOT NULL DEFAULT 'en_attente',
+  `assigne_a` bigint(20) DEFAULT NULL,
+  `soumise_le` timestamp NOT NULL DEFAULT current_timestamp(),
+  `cloturee_le` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `etudiant_id` (`etudiant_id`),
+  KEY `categorie_id` (`categorie_id`),
+  KEY `assigne_a` (`assigne_a`),
+  CONSTRAINT `demandes_service_ibfk_1` FOREIGN KEY (`etudiant_id`) REFERENCES `utilisateurs` (`id`),
+  CONSTRAINT `demandes_service_ibfk_2` FOREIGN KEY (`categorie_id`) REFERENCES `categories_service` (`id`),
+  CONSTRAINT `demandes_service_ibfk_3` FOREIGN KEY (`assigne_a`) REFERENCES `utilisateurs` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `pieces_jointes` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `demande_service_id` bigint(20) NOT NULL,
+  `nom_fichier` varchar(255) NOT NULL,
+  `chemin_fichier` varchar(500) NOT NULL,
+  `type_mime` varchar(100) DEFAULT NULL,
+  `televersee_le` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `demande_service_id` (`demande_service_id`),
+  CONSTRAINT `pieces_jointes_ibfk_1` FOREIGN KEY (`demande_service_id`) REFERENCES `demandes_service` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `demandes_document` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `etudiant_id` bigint(20) NOT NULL,
+  `type_document_id` bigint(20) NOT NULL,
+  `statut` enum('en_attente','en_validation','valide','rejete','livre') NOT NULL DEFAULT 'en_attente',
+  `valide_par` bigint(20) DEFAULT NULL,
+  `note_validation` text DEFAULT NULL,
+  `demandee_le` timestamp NOT NULL DEFAULT current_timestamp(),
+  `validee_le` timestamp NULL DEFAULT NULL,
+  `livree_le` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `etudiant_id` (`etudiant_id`),
+  KEY `type_document_id` (`type_document_id`),
+  KEY `valide_par` (`valide_par`),
+  CONSTRAINT `demandes_document_ibfk_1` FOREIGN KEY (`etudiant_id`) REFERENCES `utilisateurs` (`id`),
+  CONSTRAINT `demandes_document_ibfk_2` FOREIGN KEY (`type_document_id`) REFERENCES `types_document` (`id`),
+  CONSTRAINT `demandes_document_ibfk_3` FOREIGN KEY (`valide_par`) REFERENCES `utilisateurs` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `rendez_vous` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `etudiant_id` bigint(20) NOT NULL,
+  `bureau_id` bigint(20) NOT NULL,
+  `motif` varchar(255) DEFAULT NULL,
+  `date_debut` datetime NOT NULL,
+  `date_fin` datetime NOT NULL,
+  `statut` enum('reserve','confirme','annule','termine') NOT NULL DEFAULT 'reserve',
+  `reserve_le` timestamp NOT NULL DEFAULT current_timestamp(),
+  `annule_le` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `etudiant_id` (`etudiant_id`),
+  KEY `bureau_id` (`bureau_id`),
+  CONSTRAINT `rendez_vous_ibfk_1` FOREIGN KEY (`etudiant_id`) REFERENCES `utilisateurs` (`id`),
+  CONSTRAINT `rendez_vous_ibfk_2` FOREIGN KEY (`bureau_id`) REFERENCES `bureaux` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- evenements: adds optional valide_par / valide_le from Model/schema/uniserve.sql for admin workflows
+CREATE TABLE `evenements` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `club_id` bigint(20) DEFAULT NULL,
+  `cree_par` bigint(20) NOT NULL,
+  `titre` varchar(150) NOT NULL,
+  `description` text DEFAULT NULL,
+  `lieu` varchar(255) DEFAULT NULL,
+  `date_debut` datetime NOT NULL,
+  `date_fin` datetime NOT NULL,
+  `capacite` int(11) DEFAULT NULL,
+  `statut` enum('planifie','ouvert','complet','termine','annule') NOT NULL DEFAULT 'planifie',
+  `valide_par` bigint(20) DEFAULT NULL,
+  `valide_le` datetime DEFAULT NULL,
+  `cree_le` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `club_id` (`club_id`),
+  KEY `cree_par` (`cree_par`),
+  KEY `valide_par` (`valide_par`),
+  CONSTRAINT `evenements_ibfk_1` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`id`),
+  CONSTRAINT `evenements_ibfk_2` FOREIGN KEY (`cree_par`) REFERENCES `utilisateurs` (`id`),
+  CONSTRAINT `evenements_ibfk_3` FOREIGN KEY (`valide_par`) REFERENCES `utilisateurs` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `inscriptions_evenement` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `evenement_id` bigint(20) NOT NULL,
+  `utilisateur_id` bigint(20) NOT NULL,
+  `statut` enum('inscrit','present','absent') NOT NULL DEFAULT 'inscrit',
+  `inscrit_le` timestamp NOT NULL DEFAULT current_timestamp(),
+  `presence_le` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_inscription` (`evenement_id`,`utilisateur_id`),
+  KEY `utilisateur_id` (`utilisateur_id`),
+  CONSTRAINT `inscriptions_evenement_ibfk_1` FOREIGN KEY (`evenement_id`) REFERENCES `evenements` (`id`),
+  CONSTRAINT `inscriptions_evenement_ibfk_2` FOREIGN KEY (`utilisateur_id`) REFERENCES `utilisateurs` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `calendar_demo_items` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `source_type` enum('rendezvous','events_registered','events_public') NOT NULL,
+  `title` varchar(150) NOT NULL,
+  `start_at` datetime NOT NULL,
+  `end_at` datetime NOT NULL,
+  `location` varchar(255) DEFAULT NULL,
+  `status` varchar(50) NOT NULL DEFAULT '',
+  `owner_label` varchar(120) DEFAULT NULL,
+  `color` varchar(20) NOT NULL DEFAULT '#2f7df4',
+  `url` varchar(255) DEFAULT NULL,
+  `is_readonly` tinyint(1) NOT NULL DEFAULT 1,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_by` bigint(20) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `created_by` (`created_by`),
+  KEY `idx_demo_user_time` (`user_id`,`start_at`),
+  KEY `idx_demo_source` (`source_type`),
+  CONSTRAINT `calendar_demo_items_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `calendar_demo_items_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `utilisateurs` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `calendar_demo_items` (`id`, `user_id`, `source_type`, `title`, `start_at`, `end_at`, `location`, `status`, `owner_label`, `color`, `url`, `is_readonly`, `sort_order`, `created_by`, `created_at`) VALUES
+	(1, 2, 'rendezvous', 'Entretien dossier de bourse', '2026-05-08 09:00:00', '2026-05-08 09:30:00', 'Scolarité - Bâtiment C - Bureau 3', 'confirme', 'Rendez-vous', '#2f7df4', '/rendezvous', 1, 0, 1, '2026-05-07 12:55:13'),
+	(2, 2, 'rendezvous', 'Suivi administratif', '2026-05-09 14:00:00', '2026-05-09 14:45:00', 'Service financier - Bâtiment B - Rez-de-chaussée', 'reserve', 'Rendez-vous', '#2f7df4', '/rendezvous', 1, 1, 1, '2026-05-07 12:55:13'),
+	(3, 2, 'events_registered', 'Atelier CV et entretien', '2026-05-08 16:00:00', '2026-05-08 17:30:00', 'Amphi A', 'ouvert', 'Club Career Hub', '#f1a535', '/evenements', 1, 2, 1, '2026-05-07 12:55:13'),
+	(4, 2, 'events_registered', 'Conférence orientation', '2026-05-10 11:00:00', '2026-05-10 12:00:00', 'Salle polyvalente', 'planifie', 'Club Culturel', '#7056d8', '/evenements', 1, 3, 1, '2026-05-07 12:55:13'),
+	(5, 2, 'events_public', 'Forum des associations', '2026-05-11 09:30:00', '2026-05-11 11:30:00', 'Cour centrale', 'ouvert', 'Club Informatique', '#1fa971', '/evenements', 1, 4, 1, '2026-05-07 12:55:13'),
+	(6, 2, 'events_public', 'Soirée campus', '2026-05-12 18:00:00', '2026-05-12 20:00:00', 'Espaces extérieurs', 'complet', 'Club Sportif', '#8d6df2', '/evenements', 1, 5, 1, '2026-05-07 12:55:13');
+
+CREATE TABLE `jc-postal` (
+  `data` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `jc-postal` (`data`) VALUES
+	('{"box_border":"6","x":530,"y":1042,"background":"#000000","box_padding":"6","text_size":"18","text":"#fafafa","opacity":"0.7"}');
+
+CREATE TABLE `login_failure_events` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `email` varchar(255) NOT NULL,
+  `fingerprint_hash` char(64) NOT NULL,
+  `attempted_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_lfe_email_time` (`email`,`attempted_at`),
+  KEY `idx_lfe_fingerprint_time` (`fingerprint_hash`,`attempted_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `login_failure_events` (`id`, `email`, `fingerprint_hash`, `attempted_at`) VALUES
+	(1, 'mesfrer135@gmail.com', '70e9b076e2579236897d0119e9120e77ed1a18119d45c505b72cf39e64b0db3f', '2026-05-07 13:21:16'),
+	(2, 'mesfrer135@gmail.com', '70e9b076e2579236897d0119e9120e77ed1a18119d45c505b72cf39e64b0db3f', '2026-05-07 13:21:23'),
+	(3, 'mesfrer135@gmail.com', '70e9b076e2579236897d0119e9120e77ed1a18119d45c505b72cf39e64b0db3f', '2026-05-07 13:21:31'),
+	(4, 'mesfrer135@gmail.com', '70e9b076e2579236897d0119e9120e77ed1a18119d45c505b72cf39e64b0db3f', '2026-05-07 13:21:35');
+
+CREATE TABLE `login_risk_challenges` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `otp_hash` varchar(255) NOT NULL,
+  `request_token` char(64) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `attempts` int(11) NOT NULL DEFAULT 0,
+  `used_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `request_token` (`request_token`),
+  KEY `idx_lrc_user` (`user_id`),
+  KEY `idx_lrc_request` (`request_token`),
+  CONSTRAINT `login_risk_challenges_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `login_risk_challenges` (`id`, `user_id`, `email`, `otp_hash`, `request_token`, `expires_at`, `attempts`, `used_at`, `created_at`) VALUES
+	(1, 2, 'mesfrer135@gmail.com', '$2y$10$i6V.jIvfTq/3SNjfDzoLRuz5HiTAhSdA6TmS/cmgUnOzFKCY3oNiW', '6024694d5ae005bed8c9a24b486af8d6d5241b7d46252bf16c052acf67ef1b41', '2026-05-07 14:32:26', 0, '2026-05-07 14:22:51', '2026-05-07 13:22:26'),
+	(2, 2, 'mesfrer135@gmail.com', '$2y$10$hhZA8I54WIXP6i0fhI64WuAfimf9WoHdnQoTWhTd8pEP.Lw8kACUO', 'c2090481a01653055a292e7e31fee60710ac642bb0a74ac12e9eca6ffef74507', '2026-05-07 14:44:24', 0, '2026-05-07 14:34:43', '2026-05-07 13:34:24'),
+	(3, 1, 'admin.uniserve@gmail.com', '$2y$10$KCoiJC1r/W4QAamGWPOmDuoGOiczlQB1DJJFTjq8k2n0g1UchjlO.', '2c8aec5013f68c561bd8a80d6ef848025864e04876fd0d7b8032d56bae6d5d9d', '2026-05-07 14:54:38', 0, NULL, '2026-05-07 13:44:38'),
+	(4, 1, 'admin.uniserve@gmail.com', '$2y$10$IzQnSVxA51nvn6Bh1cVGW.fdWK.YMjzIzqnUnVa1lKav1jjfWGIAC', '31a95ff60a058392c287a8a2e6105c0ad77eac159e471ebfaa19e87e1dccfc39', '2026-05-07 14:55:25', 0, NULL, '2026-05-07 13:45:25');
+
+CREATE TABLE `password_reset_otps` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `otp_hash` varchar(255) NOT NULL,
+  `request_token` char(64) NOT NULL,
+  `reset_token` char(64) DEFAULT NULL,
+  `expires_at` datetime NOT NULL,
+  `attempts` int(11) NOT NULL DEFAULT 0,
+  `verified_at` datetime DEFAULT NULL,
+  `used_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `request_token` (`request_token`),
+  UNIQUE KEY `reset_token` (`reset_token`),
+  KEY `idx_pwr_user` (`user_id`),
+  KEY `idx_pwr_request` (`request_token`),
+  KEY `idx_pwr_reset` (`reset_token`),
+  CONSTRAINT `password_reset_otps_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `password_reset_otps` (`id`, `user_id`, `email`, `otp_hash`, `request_token`, `reset_token`, `expires_at`, `attempts`, `verified_at`, `used_at`, `created_at`) VALUES
+	(4, 2, 'mesfrer135@gmail.com', '$2y$10$iyQx0Q3xfUdU/LDOlRqM.ePzTJ6E9h8Z/mFnAPbLiL.45sH6xnC/e', '59c98bc303636c0ae1aeaa6a7bfa9e175f746508c554a39652876975397ac5fd', NULL, '2026-05-07 14:08:29', 0, NULL, NULL, '2026-05-07 12:58:29');
+
+CREATE TABLE `trusted_devices` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `fingerprint_hash` char(64) NOT NULL,
+  `first_seen` timestamp NOT NULL DEFAULT current_timestamp(),
+  `last_seen` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_trusted_device` (`user_id`,`fingerprint_hash`),
+  KEY `idx_td_user` (`user_id`),
+  CONSTRAINT `trusted_devices_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `trusted_devices` (`id`, `user_id`, `fingerprint_hash`, `first_seen`, `last_seen`) VALUES
+	(1, 2, '70e9b076e2579236897d0119e9120e77ed1a18119d45c505b72cf39e64b0db3f', '2026-05-07 13:22:51', '2026-05-07 14:04:57'),
+	(3, 1, '70e9b076e2579236897d0119e9120e77ed1a18119d45c505b72cf39e64b0db3f', '2026-05-07 13:50:12', '2026-05-07 14:06:40');
+
+/*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
+/*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
+/*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40111 SET SQL_NOTES=IFNULL(@OLD_SQL_NOTES, 1) */;
