@@ -2,6 +2,10 @@
 
 This folder holds **provenance and upstream snapshots** for code merged into the main UniServe MVC tree (`Controller/`, `Model/`, `View/`). The application router in `Controller/App.php` only loads controllers from `Controller/<Name>Controller.php`; it does not auto-discover subfolders here.
 
+## Integrated app on `main`
+
+The runnable application is the **repository root** (`index.php`, `Controller/`, `Model/`, `View/`) with schema [`uniserve.sql`](../uniserve.sql). See [`manifest.json`](manifest.json) for the current `main` commit pin.
+
 ## Canonical upstream from Git
 
 There is **one** published Git remote for this course project: `https://github.com/Mehdi-MMO/Esprit-PW-2A32-2526-UniServe.git`. Separate “module-only” repositories were not found under that maintainer account; all features ship in the monolith.

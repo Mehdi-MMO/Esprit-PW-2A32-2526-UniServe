@@ -46,5 +46,15 @@
             </div>
         </div>
     </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="us-module-card h-100">
+            <div class="card-body d-flex flex-column">
+                <div class="us-module-title">Clubs</div>
+                <div class="us-module-copy">Découvrir les clubs, créer une demande et suivre vos clubs.</div>
+                <a href="<?= $this->url('/evenements/clubs') ?>" class="btn btn-outline-primary btn-sm us-dashboard-action">Ouvrir</a>
+            </div>
+        </div>
+    </div>
 </div>
 

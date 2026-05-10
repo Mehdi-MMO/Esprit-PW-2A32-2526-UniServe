@@ -1,8 +1,14 @@
 {
+  "integratedMonolith": {
+    "branch": "main",
+    "commit": "fb94980f49e728a01d973aa3556ffcf8a2152c4a",
+    "runtimeRoot": ".",
+    "schemaFile": "uniserve.sql"
+  },
   "canonicalUpstream": {
     "gitUrl": "https://github.com/Mehdi-MMO/Esprit-PW-2A32-2526-UniServe.git",
     "cloneRelativePath": "modules/_upstream/Esprit-PW-2A32-2526-UniServe",
-    "pinnedCommitAtLastSync": "bea47e391a3863f6a3de9e5f120588528cc48b87",
-    "notes": "GitHub user Mehdi-MMO publishes only this monolith for PW 2A32 2526 UniServe; there are no separate module repositories to subtree-merge. Runtime code is integrated under Controller/, Model/, View/ at repository root."
+    "pinnedCommitAtLastSync": "fb94980f49e728a01d973aa3556ffcf8a2152c4a",
+    "notes": "Runtime UniServe is the integrated tree at repo root (Controller, Model, View). Optional shallow clone into modules/_upstream/ via tools/sync-upstream-reference.ps1."
   }
 }

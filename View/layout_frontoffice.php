@@ -31,7 +31,13 @@
                     <li class="nav-item"><a class="nav-link <?= $pathStartsWith('demandes') ? 'active' : '' ?>" href="<?= $this->url('/demandes') ?>">Demandes</a></li>
                     <li class="nav-item"><a class="nav-link <?= $pathStartsWith('rendezvous') ? 'active' : '' ?>" href="<?= $this->url('/rendezvous') ?>">Rendez-vous</a></li>
                     <li class="nav-item"><a class="nav-link <?= $pathStartsWith('documents') ? 'active' : '' ?>" href="<?= $this->url('/documents') ?>">Documents</a></li>
-                    <li class="nav-item"><a class="nav-link <?= $pathStartsWith('evenements') ? 'active' : '' ?>" href="<?= $this->url('/evenements') ?>">Événements</a></li>
+                    <?php
+                    $clubsNavActive = $pathStartsWith('evenements/clubs')
+                        || $pathStartsWith('evenements/clubShow')
+                        || ($pathStartsWith('evenements/createClubRequestForm') || $pathStartsWith('evenements/createClubRequest'));
+                    ?>
+                    <li class="nav-item"><a class="nav-link <?= $clubsNavActive ? 'active' : '' ?>" href="<?= $this->url('/evenements/clubs') ?>">Clubs</a></li>
+                    <li class="nav-item"><a class="nav-link <?= ($pathStartsWith('evenements') && !$clubsNavActive) ? 'active' : '' ?>" href="<?= $this->url('/evenements') ?>">Événements</a></li>
                 </ul>
                 <div class="dropdown ms-lg-2">
                     <button class="btn btn-outline-light dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
