@@ -17,6 +17,13 @@
         return $currentPath === $prefix || str_starts_with($currentPath, $prefix . '/');
     };
     $dashboardActive = $pathStartsWith('backoffice') || $pathStartsWith('dashboard');
+    $segments = $currentPath === '' ? [] : explode('/', $currentPath);
+    $seg2 = $segments[1] ?? '';
+    $clubSecond = ['manageClubs', 'createClubForm', 'createClub', 'editClubForm', 'editClub', 'deleteClub', 'approveClub', 'rejectClub'];
+    $eventSecond = ['manage', 'createForm', 'create', 'editForm', 'edit', 'delete', 'approveEvent', 'rejectEvent', 'inscriptions', 'checkIn'];
+    $evenementsPrefix = (($segments[0] ?? '') === 'evenements');
+    $clubsNavActive = $evenementsPrefix && in_array($seg2, $clubSecond, true);
+    $eventsNavActive = $evenementsPrefix && in_array($seg2, $eventSecond, true);
     ?>
     <aside class="sidebar d-flex flex-column shadow-sm">
         <div class="p-4 border-bottom border-secondary-subtle d-flex align-items-center gap-2">
@@ -29,8 +36,8 @@
         <nav class="nav flex-column p-3 gap-1">
             <a class="nav-link <?= $dashboardActive ? 'active' : '' ?>" href="<?= $this->url('/backoffice/dashboard') ?>"><i class="bi bi-speedometer2 me-2"></i>Tableau de bord</a>
             <a class="nav-link <?= $pathStartsWith('utilisateurs') ? 'active' : '' ?>" href="<?= $this->url('/utilisateurs') ?>"><i class="bi bi-people me-2"></i>Utilisateurs</a>
-            <a class="nav-link <?= $pathStartsWith('clubs') ? 'active' : '' ?>" href="<?= $this->url('/clubs/manage') ?>"><i class="bi bi-collection me-2"></i>Clubs</a>
-            <a class="nav-link <?= $pathStartsWith('events') ? 'active' : '' ?>" href="<?= $this->url('/events/manage') ?>"><i class="bi bi-calendar-event me-2"></i>Événements</a>
+            <a class="nav-link <?= $clubsNavActive ? 'active' : '' ?>" href="<?= $this->url('/evenements/manageClubs') ?>"><i class="bi bi-collection me-2"></i>Clubs</a>
+            <a class="nav-link <?= $eventsNavActive ? 'active' : '' ?>" href="<?= $this->url('/evenements/manage') ?>"><i class="bi bi-calendar-event me-2"></i>Événements</a>
             <a class="nav-link <?= $pathStartsWith('demandes') ? 'active' : '' ?>" href="<?= $this->url('/demandes') ?>"><i class="bi bi-journal-text me-2"></i>Demandes</a>
             <a class="nav-link <?= $pathStartsWith('rendezvous') ? 'active' : '' ?>" href="<?= $this->url('/rendezvous') ?>"><i class="bi bi-calendar-check me-2"></i>Rendez-vous</a>
             <a class="nav-link <?= $pathStartsWith('documents') ? 'active' : '' ?>" href="<?= $this->url('/documents') ?>"><i class="bi bi-file-earmark-text me-2"></i>Documents</a>
@@ -45,7 +52,10 @@
                 <?= htmlspecialchars((string) ($_SESSION['user']['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
             </span>
         </div>
-        <a href="<?= $this->url('/auth/logout') ?>" class="btn btn-outline-danger btn-sm">Déconnexion</a>
+        <div class="d-flex align-items-center gap-2">
+            <a href="<?= $this->url('/users/profile') ?>" class="btn btn-outline-secondary btn-sm">Mon profil</a>
+            <a href="<?= $this->url('/auth/logout') ?>" class="btn btn-outline-danger btn-sm">Déconnexion</a>
+        </div>
     </header>
 
     <main class="ms-sidebar p-3 p-md-4">

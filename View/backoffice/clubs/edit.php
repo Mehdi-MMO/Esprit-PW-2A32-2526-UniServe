@@ -20,7 +20,7 @@ $validationRules = $validationRules ?? [];
         <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Modifier un club'), ENT_QUOTES, 'UTF-8') ?></h1>
         <p class="text-muted mb-0">Mettre à jour les informations du club.</p>
     </div>
-    <a href="<?= $this->url('/clubs/manage') ?>" class="btn btn-outline-secondary btn-sm">Retour</a>
+    <a href="<?= $this->url('/evenements/manageClubs') ?>" class="btn btn-outline-secondary btn-sm">Retour</a>
 </div>
 
 <div class="us-section-card">
@@ -29,7 +29,7 @@ $validationRules = $validationRules ?? [];
             <?php echo renderErrorAlert($error); ?>
         <?php endif; ?>
 
-        <form method="post" action="<?= $this->url('/clubs/edit/' . $clubId) ?>" id="club-form">
+        <form method="post" action="<?= $this->url('/evenements/editClub/' . $clubId) ?>" id="club-form">
             <!-- Basic Information Section -->
             <?php echo renderFormSection('Informations de base'); ?>
             
@@ -107,7 +107,7 @@ $validationRules = $validationRules ?? [];
 
             <!-- Action Buttons -->
             <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-                <a href="<?= $this->url('/clubs/manage') ?>" class="btn btn-secondary">Annuler</a>
+                <a href="<?= $this->url('/evenements/manageClubs') ?>" class="btn btn-secondary">Annuler</a>
                 <button class="btn btn-primary" type="submit">Enregistrer les modifications</button>
             </div>
         </form>

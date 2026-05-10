@@ -1,0 +1,7 @@
+# Fresh upstream snapshot(s) from git clone — regenerate with tools/sync-upstream-reference.ps1
+modules/_upstream/
+
+# Parallel branch checkouts — regenerate with tools/checkout-all-remote-branches.ps1 / .bat
+worktrees/
+
+THEMODULES/

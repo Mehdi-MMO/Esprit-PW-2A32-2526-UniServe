@@ -1,0 +1,8 @@
+{
+  "canonicalUpstream": {
+    "gitUrl": "https://github.com/Mehdi-MMO/Esprit-PW-2A32-2526-UniServe.git",
+    "cloneRelativePath": "modules/_upstream/Esprit-PW-2A32-2526-UniServe",
+    "pinnedCommitAtLastSync": "bea47e391a3863f6a3de9e5f120588528cc48b87",
+    "notes": "GitHub user Mehdi-MMO publishes only this monolith for PW 2A32 2526 UniServe; there are no separate module repositories to subtree-merge. Runtime code is integrated under Controller/, Model/, View/ at repository root."
+  }
+}

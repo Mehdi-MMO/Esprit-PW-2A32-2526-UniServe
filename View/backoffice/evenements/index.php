@@ -23,10 +23,10 @@ $statusClass = static function (string $status): string {
 
 <!-- Module Navigation Tabs -->
 <div class="d-flex gap-2 mb-4 us-module-tabs">
-    <a href="<?= $this->url('/clubs/manage') ?>" class="nav-tab">
+    <a href="<?= $this->url('/evenements/manageClubs') ?>" class="nav-tab">
         <i class="fa-solid fa-objects-column me-2"></i>Clubs
     </a>
-    <a href="<?= $this->url('/events/manage') ?>" class="nav-tab active" aria-current="page">
+    <a href="<?= $this->url('/evenements/manage') ?>" class="nav-tab active" aria-current="page">
         <i class="fa-solid fa-calendar-days me-2"></i>Événements
     </a>
 </div>
@@ -38,8 +38,8 @@ $statusClass = static function (string $status): string {
         <p class="text-muted mb-0">Pilotez les événements, inscriptions et présences.</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="<?= $this->url('/clubs/manage') ?>" class="btn btn-outline-primary btn-sm">Gérer les clubs</a>
-        <a href="<?= $this->url('/events/createForm') ?>" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nouveau</a>
+        <a href="<?= $this->url('/evenements/manageClubs') ?>" class="btn btn-outline-primary btn-sm">Gérer les clubs</a>
+        <a href="<?= $this->url('/evenements/createForm') ?>" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nouveau</a>
     </div>
 </div>
 
@@ -89,14 +89,14 @@ if ($error !== '') {
 <div class="us-section-card">
     <div class="card-body p-3 p-md-4">
         <!-- Search and Filter Form -->
-        <form method="get" action="<?= $this->url('/events/manage') ?>" class="row g-2 align-items-end mb-4 us-filter-shell">
+        <form method="get" action="<?= $this->url('/evenements/manage') ?>" class="row g-2 align-items-end mb-4 us-filter-shell">
             <div class="col-lg-8">
                 <label class="form-label text-muted small mb-1" for="q">Recherche</label>
                 <input class="form-control" id="q" name="q" placeholder="Titre, club, lieu, statut..." value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>">
             </div>
             <div class="col-lg-4 d-flex gap-2">
                 <button type="submit" class="btn btn-primary w-100">Filtrer</button>
-                <a href="<?= $this->url('/events/manage') ?>" class="btn btn-outline-secondary w-100">Réinitialiser</a>
+                <a href="<?= $this->url('/evenements/manage') ?>" class="btn btn-outline-secondary w-100">Réinitialiser</a>
             </div>
         </form>
 
@@ -131,11 +131,11 @@ if ($error !== '') {
                                     <td><?= htmlspecialchars((string) ($event['date_debut'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                     <td class="text-end">
                                         <div class="d-flex gap-2 justify-content-end flex-wrap">
-                                            <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/events/editForm/' . $eventId) ?>">Modifier</a>
-                                            <form method="post" action="<?= $this->url('/events/approve/' . $eventId) ?>" class="d-inline">
+                                            <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/evenements/editForm/' . $eventId) ?>">Modifier</a>
+                                            <form method="post" action="<?= $this->url('/evenements/approveEvent/' . $eventId) ?>" class="d-inline">
                                                 <button class="btn btn-outline-success btn-sm" type="submit">Approuver</button>
                                             </form>
-                                            <form method="post" action="<?= $this->url('/events/reject/' . $eventId) ?>" class="d-inline">
+                                            <form method="post" action="<?= $this->url('/evenements/rejectEvent/' . $eventId) ?>" class="d-inline">
                                                 <button class="btn btn-outline-danger btn-sm" type="submit">Rejeter</button>
                                             </form>
                                         </div>
@@ -193,9 +193,9 @@ if ($error !== '') {
                                     <td><span class="badge bg-<?= $statusClass($status) ?>"><?= htmlspecialchars(ucfirst($status), ENT_QUOTES, 'UTF-8') ?></span></td>
                                     <td class="text-end">
                                         <div class="d-flex gap-2 justify-content-end flex-wrap">
-                                            <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/events/editForm/' . $eventId) ?>">Modifier</a>
-                                            <a class="btn btn-outline-secondary btn-sm" href="<?= $this->url('/events/inscriptions/' . $eventId) ?>">Inscriptions</a>
-                                            <form method="post" action="<?= $this->url('/events/delete/' . $eventId) ?>" class="d-inline">
+                                            <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/evenements/editForm/' . $eventId) ?>">Modifier</a>
+                                            <a class="btn btn-outline-secondary btn-sm" href="<?= $this->url('/evenements/inscriptions/' . $eventId) ?>">Inscriptions</a>
+                                            <form method="post" action="<?= $this->url('/evenements/delete/' . $eventId) ?>" class="d-inline">
                                                 <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Supprimer cet événement ?');">Supprimer</button>
                                             </form>
                                         </div>

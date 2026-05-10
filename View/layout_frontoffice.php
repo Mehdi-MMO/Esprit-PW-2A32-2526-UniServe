@@ -39,6 +39,8 @@
                         <span class="d-none d-sm-inline">Mon compte</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="<?= $this->url('/users/profile') ?>">Mon profil</a></li>
+                        <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="<?= $this->url('/auth/logout') ?>">Déconnexion</a></li>
                     </ul>
                 </div>

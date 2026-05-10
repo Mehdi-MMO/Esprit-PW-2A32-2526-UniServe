@@ -77,8 +77,14 @@ class Controller
 
     protected function redirectByUserRole(string $role): void
     {
-        if (in_array($role, ['etudiant', 'enseignant', 'staff', 'admin'], true)) {
-            $this->redirect('/home');
+        if (in_array($role, ['etudiant', 'enseignant'], true)) {
+            $this->redirect('/frontoffice/dashboard');
+            return;
+        }
+
+        if (in_array($role, ['staff', 'admin'], true)) {
+            $this->redirect('/backoffice/dashboard');
+            return;
         }
 
         $this->redirect('/auth/login');

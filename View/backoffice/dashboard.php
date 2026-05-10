@@ -11,7 +11,7 @@
         <div class="us-module-card h-100">
             <div class="card-body d-flex flex-column">
                 <div class="us-module-title">Utilisateurs</div>
-                <div class="us-module-copy">Module en placeholder (bientot disponible).</div>
+                <div class="us-module-copy">Création, modification et désactivation des comptes.</div>
                 <a href="<?= $this->url('/utilisateurs') ?>" class="btn btn-outline-primary btn-sm us-dashboard-action">Ouvrir</a>
             </div>
         </div>

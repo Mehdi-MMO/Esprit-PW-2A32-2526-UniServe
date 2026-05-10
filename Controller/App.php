@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+/**
+ * Front controller: first URL segment selects Controller/<Segment>Controller.php.
+ * Integration strategy (flat MVC + optional thin proxies): see modules/README.md.
+ */
 class App
 {
     private string $controller = 'AuthController';

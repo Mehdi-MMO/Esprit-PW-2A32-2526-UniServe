@@ -12,7 +12,10 @@ class BackofficeController extends Controller
     public function dashboard(): void
     {
         $this->requireLogin();
-        $this->redirect('/home');
+        $this->requireRole(['staff', 'admin']);
+
+        $this->render('backoffice/dashboard', [
+            'title' => 'Tableau de bord',
+        ]);
     }
 }
-
