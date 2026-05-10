@@ -1,7 +1,11 @@
-# Fresh upstream snapshot(s) from git clone — regenerate with tools/sync-upstream-reference.ps1
-modules/_upstream/
-
-# Parallel branch checkouts — regenerate with tools/checkout-all-remote-branches.ps1 / .bat
+# Parallel git worktrees or local branch copies (optional dev convenience)
 worktrees/
 
+# Old optional upstream clone path (remove folder locally if still present)
+modules/
+
+# Local copies of per-team module trees / experiments — not part of MVC runtime
 THEMODULES/
+
+DOCAC_MODULE/
+RDV_MODULE/
