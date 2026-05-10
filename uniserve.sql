@@ -2,6 +2,7 @@ USE uniserve;
 
 -- Drop tables in reverse FK order
 DROP TABLE IF EXISTS inscriptions_evenement;
+DROP TABLE IF EXISTS evenement_tickets;
 DROP TABLE IF EXISTS evenements;
 DROP TABLE IF EXISTS clubs;
 DROP TABLE IF EXISTS demandes_document;
@@ -170,6 +171,7 @@ CREATE TABLE evenements (
   date_debut DATETIME NOT NULL,
   date_fin DATETIME NOT NULL,
   capacite INT,
+  prix_ticket DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   statut ENUM('planifie','ouvert','complet','termine','annule') NOT NULL DEFAULT 'planifie',
   valide_par BIGINT NULL DEFAULT NULL,
   valide_le DATETIME NULL DEFAULT NULL,
@@ -177,6 +179,17 @@ CREATE TABLE evenements (
   FOREIGN KEY (club_id) REFERENCES clubs(id),
   FOREIGN KEY (cree_par) REFERENCES utilisateurs(id),
   FOREIGN KEY (valide_par) REFERENCES utilisateurs(id)
+);
+
+CREATE TABLE evenement_tickets (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  evenement_id BIGINT NOT NULL UNIQUE,
+  prix_ticket DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  devise VARCHAR(10) NOT NULL DEFAULT 'USD',
+  modifie_par BIGINT NULL DEFAULT NULL,
+  modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (evenement_id) REFERENCES evenements(id) ON DELETE CASCADE,
+  FOREIGN KEY (modifie_par) REFERENCES utilisateurs(id)
 );
 
 CREATE TABLE inscriptions_evenement (

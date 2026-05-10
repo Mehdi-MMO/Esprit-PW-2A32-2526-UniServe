@@ -90,6 +90,15 @@ $error = (string) ($error ?? '');
                     <label class="form-label text-muted small" for="capacite">Capacite</label>
                     <input class="form-control" id="capacite" name="capacite" type="number" min="1" value="<?= e((string) ($old['capacite'] ?? '')) ?>">
                 </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-muted small" for="prix_ticket">Prix ticket</label>
+                    <div class="input-group">
+                        <span class="input-group-text">USD</span>
+                        <input class="form-control" id="prix_ticket" name="prix_ticket" type="number" min="0" step="0.01" value="<?= e((string) ($old['prix_ticket'] ?? '0')) ?>">
+                    </div>
+                    <div class="form-text">Devise principale: USD. Conversion TND affichee dans les pages evenement.</div>
+                </div>
             </div>
 
             <div class="d-flex justify-content-end mt-4 pt-2 border-top">

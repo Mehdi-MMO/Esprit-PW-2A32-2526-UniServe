@@ -84,6 +84,7 @@ class EvenementsController extends Controller
             'date_debut' => $dateDebut ?? '',
             'date_fin' => $dateFin ?? '',
             'capacite' => $capaciteRaw === '' ? null : (int) $capaciteRaw,
+            'prix_ticket' => round(max(0, (float) ($source['prix_ticket'] ?? 0)), 2),
             'statut' => trim((string) ($source['statut'] ?? 'planifie')),
         ];
     }
@@ -138,6 +139,11 @@ class EvenementsController extends Controller
             return 'La capacite doit etre un nombre positif.';
         }
 
+        $prixTicket = (float) ($payload['prix_ticket'] ?? 0);
+        if ($prixTicket < 0) {
+            return 'Le prix du ticket ne peut pas etre negatif.';
+        }
+
         if (!in_array((string) $payload['statut'], Event::allowedStatuses(), true)) {
             return 'Statut d evenement invalide.';
         }
@@ -168,6 +174,112 @@ class EvenementsController extends Controller
         if ($count < $capacite && $statut === 'complet') {
             $eventModel->update($eventId, ['statut' => 'ouvert']);
         }
+    }
+
+    private function absoluteUrl(string $path): string
+    {
+        $https = (string) ($_SERVER['HTTPS'] ?? '');
+        $forwardedProto = (string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '');
+        $isHttps = $https === 'on' || $https === '1' || strtolower($forwardedProto) === 'https';
+        $scheme = $isHttps ? 'https' : 'http';
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        return $scheme . '://' . $host . $this->url($path);
+    }
+
+    private function createStripeCheckoutSession(array $event, int $userId): ?string
+    {
+        $secretKey = app_env('STRIPE_SECRET_KEY', '');
+        if ($secretKey === '') {
+            return null;
+        }
+
+        $eventId = (int) ($event['id'] ?? 0);
+        $eventTitle = trim((string) ($event['titre'] ?? 'Evenement UniServe'));
+        $ticketPrice = round(max(0.0, (float) ($event['prix_ticket'] ?? 0)), 2);
+        $amount = (int) round($ticketPrice * 100);
+        if ($amount <= 0) {
+            return null;
+        }
+        $currency = strtolower(trim(app_env('STRIPE_CURRENCY', 'usd')));
+        if ($currency === '') {
+            $currency = 'usd';
+        }
+
+        $successUrl = $this->absoluteUrl('/evenements/paymentSuccess?event_id=' . $eventId . '&session_id={CHECKOUT_SESSION_ID}');
+        $cancelUrl = $this->absoluteUrl('/evenements/paymentCancel?event_id=' . $eventId);
+
+        $payload = http_build_query([
+            'mode' => 'payment',
+            'success_url' => $successUrl,
+            'cancel_url' => $cancelUrl,
+            'line_items[0][price_data][currency]' => $currency,
+            'line_items[0][price_data][product_data][name]' => 'Inscription - ' . $eventTitle,
+            'line_items[0][price_data][unit_amount]' => (string) $amount,
+            'line_items[0][quantity]' => '1',
+            'metadata[event_id]' => (string) $eventId,
+            'metadata[user_id]' => (string) $userId,
+        ]);
+
+        if (function_exists('curl_init')) {
+            $ch = curl_init('https://api.stripe.com/v1/checkout/sessions');
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => $payload,
+                CURLOPT_HTTPHEADER => [
+                    'Authorization: Bearer ' . $secretKey,
+                    'Content-Type: application/x-www-form-urlencoded',
+                ],
+                CURLOPT_TIMEOUT => 25,
+            ]);
+            $response = curl_exec($ch);
+            $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            if (!is_string($response) || $response === '' || $status >= 400 || $error !== '') {
+                return null;
+            }
+
+            $decoded = json_decode($response, true);
+            $checkoutUrl = (string) ($decoded['url'] ?? '');
+            return $checkoutUrl !== '' ? $checkoutUrl : null;
+        }
+
+        return null;
+    }
+
+    private function fetchStripeSession(string $sessionId): ?array
+    {
+        $secretKey = app_env('STRIPE_SECRET_KEY', '');
+        if ($secretKey === '' || trim($sessionId) === '') {
+            return null;
+        }
+
+        if (!function_exists('curl_init')) {
+            return null;
+        }
+
+        $ch = curl_init('https://api.stripe.com/v1/checkout/sessions/' . rawurlencode($sessionId));
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPGET => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $secretKey,
+            ],
+            CURLOPT_TIMEOUT => 25,
+        ]);
+        $response = curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if (!is_string($response) || $response === '' || $status >= 400 || $error !== '') {
+            return null;
+        }
+
+        $decoded = json_decode($response, true);
+        return is_array($decoded) ? $decoded : null;
     }
 
     public function landing(): void
@@ -251,6 +363,11 @@ class EvenementsController extends Controller
         }
 
         $eventModel = new Event();
+        if (!$eventModel->supportsTicketPricing()) {
+            $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Paiement indisponible: stockage ticket introuvable en base.'));
+            return;
+        }
+
         $event = $eventModel->findById($eventId);
         if ($event === null) {
             $this->redirect('/evenements?error=' . urlencode('Evenement introuvable.'));
@@ -283,14 +400,88 @@ class EvenementsController extends Controller
             return;
         }
 
-        $registered = $eventModel->register($eventId, $userId);
-        if (!$registered) {
-            $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Inscription impossible.'));
+        $ticketPrice = round(max(0.0, (float) ($event['prix_ticket'] ?? 0)), 2);
+        if ($ticketPrice <= 0) {
+            $registered = $eventModel->register($eventId, $userId);
+            if (!$registered) {
+                $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Inscription impossible.'));
+                return;
+            }
+            $this->applyCapacityStatus($eventModel, $eventId);
+            $this->redirect('/evenements/show/' . $eventId . '?success=' . urlencode('Inscription gratuite confirmee.') . '&route=1');
             return;
         }
 
+        $checkoutUrl = $this->createStripeCheckoutSession($event, $userId);
+        if ($checkoutUrl === null) {
+            $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Paiement indisponible. Verifiez STRIPE_SECRET_KEY.'));
+            return;
+        }
+
+        $this->redirect($checkoutUrl);
+    }
+
+    public function paymentSuccess(): void
+    {
+        $this->requireLogin();
+
+        $eventId = (int) ($_GET['event_id'] ?? 0);
+        $sessionId = trim((string) ($_GET['session_id'] ?? ''));
+        if ($eventId <= 0 || $sessionId === '') {
+            $this->redirect('/evenements?error=' . urlencode('Retour paiement invalide.'));
+            return;
+        }
+
+        $currentUser = $this->currentUser();
+        $userId = (int) ($currentUser['id'] ?? 0);
+        if ($userId <= 0) {
+            $this->redirect('/auth/login');
+            return;
+        }
+
+        $stripeSession = $this->fetchStripeSession($sessionId);
+        if ($stripeSession === null) {
+            $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Verification paiement impossible.'));
+            return;
+        }
+
+        $paymentStatus = (string) ($stripeSession['payment_status'] ?? '');
+        $metaUserId = (int) ($stripeSession['metadata']['user_id'] ?? 0);
+        $metaEventId = (int) ($stripeSession['metadata']['event_id'] ?? 0);
+        if ($paymentStatus !== 'paid' || $metaUserId !== $userId || $metaEventId !== $eventId) {
+            $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Paiement non valide.'));
+            return;
+        }
+
+        $eventModel = new Event();
+        $event = $eventModel->findById($eventId);
+        if ($event === null) {
+            $this->redirect('/evenements?error=' . urlencode('Evenement introuvable.'));
+            return;
+        }
+
+        if (!$eventModel->isUserRegistered($eventId, $userId)) {
+            $ok = $eventModel->register($eventId, $userId);
+            if (!$ok) {
+                $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Inscription impossible apres paiement.'));
+                return;
+            }
+        }
+
         $this->applyCapacityStatus($eventModel, $eventId);
-        $this->redirect('/evenements/show/' . $eventId . '?success=' . urlencode('Inscription confirmee.') . '&route=1');
+        $this->redirect('/evenements/show/' . $eventId . '?success=' . urlencode('Paiement confirme. Inscription validee.') . '&route=1');
+    }
+
+    public function paymentCancel(): void
+    {
+        $this->requireLogin();
+        $eventId = (int) ($_GET['event_id'] ?? 0);
+        if ($eventId <= 0) {
+            $this->redirect('/evenements?error=' . urlencode('Paiement annule.'));
+            return;
+        }
+
+        $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Paiement annule. Inscription non effectuee.'));
     }
 
     public function unregister(int|string $id): void
@@ -466,6 +657,7 @@ class EvenementsController extends Controller
                 'date_debut' => '',
                 'date_fin' => '',
                 'capacite' => null,
+                'prix_ticket' => 0,
                 'statut' => 'planifie',
             ],
             'error' => null,
@@ -718,6 +910,7 @@ class EvenementsController extends Controller
                 'date_debut' => '',
                 'date_fin' => '',
                 'capacite' => null,
+                'prix_ticket' => 0,
             ],
             'error' => null,
         ]);

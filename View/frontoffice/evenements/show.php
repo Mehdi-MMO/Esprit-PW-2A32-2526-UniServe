@@ -16,6 +16,9 @@ $statusClass = match ($status) {
 };
 $eventId = (int) ($event['id'] ?? 0);
 $capacite = isset($event['capacite']) ? (int) $event['capacite'] : 0;
+$prixTicket = round(max(0, (float) ($event['prix_ticket'] ?? 0)), 2);
+$usdToTnd = max(0.1, (float) (function_exists('app_env') ? app_env('USD_TO_TND_RATE', '3.10') : '3.10'));
+$prixTicketTnd = round($prixTicket * $usdToTnd, 2);
 $canRegister = !$isRegistered && !in_array($status, ['annule', 'termine', 'complet'], true) && ($capacite <= 0 || $registrations < $capacite);
 $shouldAutoRoute = $isRegistered && (string) ($_GET['route'] ?? '') === '1';
 ?>
@@ -52,6 +55,7 @@ $shouldAutoRoute = $isRegistered && (string) ($_GET['route'] ?? '') === '1';
                     <div class="col-md-6"><strong>Lieu:</strong> <?= htmlspecialchars((string) ($event['lieu'] ?? 'A definir'), ENT_QUOTES, 'UTF-8') ?></div>
                     <div class="col-md-6"><strong>Debut:</strong> <?= htmlspecialchars((string) ($event['date_debut'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
                     <div class="col-md-6"><strong>Fin:</strong> <?= htmlspecialchars((string) ($event['date_fin'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="col-md-6"><strong>Ticket:</strong> <?= $prixTicket > 0 ? ('$' . number_format($prixTicket, 2, '.', ' ') . ' (~ ' . number_format($prixTicketTnd, 2, '.', ' ') . ' TND)') : 'Gratuit' ?></div>
                     <div class="col-md-6">
                         <strong>Inscriptions:</strong> <?= $registrations ?>
                         <?php if ($capacite > 0): ?>
@@ -64,21 +68,11 @@ $shouldAutoRoute = $isRegistered && (string) ($_GET['route'] ?? '') === '1';
                     <button
                         type="button"
                         class="btn btn-outline-primary btn-sm"
-                        data-map-focus-btn="1"
+                        data-map-route-btn="1"
                         data-map-address="<?= htmlspecialchars((string) ($event['lieu'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                     >
-                        Voir sur carte
+                        Voir sur carte (itineraire)
                     </button>
-                    <?php if ($isRegistered): ?>
-                        <button
-                            type="button"
-                            class="btn btn-primary btn-sm ms-2"
-                            data-map-route-btn="1"
-                            data-map-address="<?= htmlspecialchars((string) ($event['lieu'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                        >
-                            Itineraire vers evenement
-                        </button>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -95,7 +89,7 @@ $shouldAutoRoute = $isRegistered && (string) ($_GET['route'] ?? '') === '1';
                     </form>
                 <?php elseif ($canRegister): ?>
                     <form method="post" action="<?= $this->url('/evenements/register/' . $eventId) ?>" data-register-route-form="1" data-event-id="<?= $eventId ?>">
-                        <button type="submit" class="btn btn-success w-100 py-2">S inscrire</button>
+                        <button type="submit" class="btn btn-success w-100 py-2"><?= $prixTicket > 0 ? 'Confirmer inscription et payer' : 'S inscrire gratuitement' ?></button>
                     </form>
                 <?php else: ?>
                     <button type="button" class="btn btn-secondary w-100 py-2" disabled>Inscriptions indisponibles</button>

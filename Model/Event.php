@@ -7,6 +7,8 @@ class Event
     public const ALLOWED_STATUSES = ['planifie', 'ouvert', 'complet', 'termine', 'annule'];
 
     private Model $model;
+    private ?bool $hasPrixTicketColumn = null;
+    private ?bool $hasEventTicketsTable = null;
 
     public function __construct()
     {
@@ -38,6 +40,94 @@ class Event
         return self::ALLOWED_STATUSES;
     }
 
+    public function supportsTicketPricing(): bool
+    {
+        return $this->hasPrixTicketColumn() || $this->hasEventTicketsTable();
+    }
+
+    private function hasPrixTicketColumn(): bool
+    {
+        if ($this->hasPrixTicketColumn !== null) {
+            return $this->hasPrixTicketColumn;
+        }
+
+        try {
+            $statement = $this->model->query('SHOW COLUMNS FROM evenements LIKE "prix_ticket"');
+            $this->hasPrixTicketColumn = (bool) $statement->fetch();
+        } catch (\Throwable $e) {
+            $this->hasPrixTicketColumn = false;
+        }
+
+        return $this->hasPrixTicketColumn;
+    }
+
+    private function prixTicketSelectExpr(string $alias = 'e'): string
+    {
+        $hasColumn = $this->hasPrixTicketColumn();
+        $hasTable = $this->hasEventTicketsTable();
+
+        if ($hasTable && $hasColumn) {
+            return 'COALESCE((SELECT et.prix_ticket FROM evenement_tickets et WHERE et.evenement_id = ' . $alias . '.id LIMIT 1), ' . $alias . '.prix_ticket, 0.00) AS prix_ticket,';
+        }
+
+        if ($hasTable) {
+            return 'COALESCE((SELECT et.prix_ticket FROM evenement_tickets et WHERE et.evenement_id = ' . $alias . '.id LIMIT 1), 0.00) AS prix_ticket,';
+        }
+
+        if ($hasColumn) {
+            return $alias . '.prix_ticket,';
+        }
+
+        return '0.00 AS prix_ticket,';
+    }
+
+    private function hasEventTicketsTable(): bool
+    {
+        if ($this->hasEventTicketsTable !== null) {
+            return $this->hasEventTicketsTable;
+        }
+
+        try {
+            $statement = $this->model->query('SHOW TABLES LIKE "evenement_tickets"');
+            $exists = (bool) $statement->fetch();
+            if (!$exists) {
+                $this->model->query(
+                    'CREATE TABLE IF NOT EXISTS evenement_tickets (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        evenement_id BIGINT NOT NULL UNIQUE,
+                        prix_ticket DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                        devise VARCHAR(10) NOT NULL DEFAULT "USD",
+                        modifie_par BIGINT NULL DEFAULT NULL,
+                        modifie_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        FOREIGN KEY (evenement_id) REFERENCES evenements(id) ON DELETE CASCADE,
+                        FOREIGN KEY (modifie_par) REFERENCES utilisateurs(id)
+                    )'
+                );
+                $statement = $this->model->query('SHOW TABLES LIKE "evenement_tickets"');
+                $exists = (bool) $statement->fetch();
+            }
+            $this->hasEventTicketsTable = $exists;
+        } catch (\Throwable $e) {
+            $this->hasEventTicketsTable = false;
+        }
+
+        return $this->hasEventTicketsTable;
+    }
+
+    private function upsertTicketPriceForEvent(int $eventId, float $price, ?int $updatedBy = null): void
+    {
+        if (!$this->hasEventTicketsTable() || $eventId <= 0) {
+            return;
+        }
+
+        $this->model->query(
+            'INSERT INTO evenement_tickets (evenement_id, prix_ticket, devise, modifie_par)
+             VALUES (?, ?, "USD", ?)
+             ON DUPLICATE KEY UPDATE prix_ticket = VALUES(prix_ticket), modifie_par = VALUES(modifie_par)',
+            [$eventId, max(0.0, round($price, 2)), $updatedBy]
+        );
+    }
+
     public function getAllUpcoming(): array
     {
         $statement = $this->model->query(
@@ -51,6 +141,7 @@ class Event
                 e.date_debut,
                 e.date_fin,
                 e.capacite,
+                ' . $this->prixTicketSelectExpr('e') . '
                 e.statut,
                 e.cree_le,
                 c.nom AS club_nom,
@@ -82,6 +173,7 @@ class Event
                 e.date_debut,
                 e.date_fin,
                 e.capacite,
+                ' . $this->prixTicketSelectExpr('e') . '
                 e.statut,
                 e.cree_le,
                 c.nom AS club_nom,
@@ -112,6 +204,7 @@ class Event
                 e.date_debut,
                 e.date_fin,
                 e.capacite,
+                ' . $this->prixTicketSelectExpr('e') . '
                 e.statut,
                 e.cree_le,
                 c.nom AS club_nom,
@@ -143,6 +236,7 @@ class Event
                 e.date_debut,
                 e.date_fin,
                 e.capacite,
+                ' . $this->prixTicketSelectExpr('e') . '
                 e.statut,
                 e.cree_le,
                 c.nom AS club_nom,
@@ -177,6 +271,7 @@ class Event
                 e.date_debut,
                 e.date_fin,
                 e.capacite,
+                ' . $this->prixTicketSelectExpr('e') . '
                 e.statut,
                 e.cree_le,
                 c.nom AS club_nom,
@@ -206,6 +301,7 @@ class Event
         $dateDebut = trim((string) ($data['date_debut'] ?? ''));
         $dateFin = trim((string) ($data['date_fin'] ?? ''));
         $capacite = $this->normalizeNullableInt($data['capacite'] ?? null);
+        $prixTicket = isset($data['prix_ticket']) ? max(0.0, round((float) $data['prix_ticket'], 2)) : 0.0;
         $statut = (string) ($data['statut'] ?? 'planifie');
 
         if ($creePar <= 0 || $titre === '' || $dateDebut === '' || $dateFin === '') {
@@ -216,6 +312,21 @@ class Event
             $statut = 'planifie';
         }
 
+        if ($this->hasPrixTicketColumn()) {
+            $this->model->query(
+                'INSERT INTO evenements
+                    (club_id, cree_par, titre, description, lieu, date_debut, date_fin, capacite, prix_ticket, statut)
+                 VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [$clubId, $creePar, $titre, $description, $lieu, $dateDebut, $dateFin, $capacite, $prixTicket, $statut]
+            );
+            $newEventId = (int) $this->model->lastInsertId();
+            if ($this->hasEventTicketsTable()) {
+                $this->upsertTicketPriceForEvent($newEventId, $prixTicket, $creePar);
+            }
+            return $newEventId;
+        }
+
         $this->model->query(
             'INSERT INTO evenements
                 (club_id, cree_par, titre, description, lieu, date_debut, date_fin, capacite, statut)
@@ -224,7 +335,9 @@ class Event
             [$clubId, $creePar, $titre, $description, $lieu, $dateDebut, $dateFin, $capacite, $statut]
         );
 
-        return (int) $this->model->lastInsertId();
+        $newEventId = (int) $this->model->lastInsertId();
+        $this->upsertTicketPriceForEvent($newEventId, $prixTicket, $creePar);
+        return $newEventId;
     }
 
     public function createForClubOwner(array $data, int|string $ownerId): int|false
@@ -263,8 +376,19 @@ class Event
             'date_debut' => 'date_debut',
             'date_fin' => 'date_fin',
             'capacite' => 'capacite',
+            'prix_ticket' => 'prix_ticket',
             'statut' => 'statut',
         ];
+
+        $priceUpdatedInTicketTable = false;
+        if ($this->hasEventTicketsTable() && array_key_exists('prix_ticket', $data)) {
+            $this->upsertTicketPriceForEvent($eventId, (float) $data['prix_ticket']);
+            $priceUpdatedInTicketTable = true;
+        }
+
+        if (!$this->hasPrixTicketColumn()) {
+            unset($allowed['prix_ticket']);
+        }
 
         $sets = [];
         $params = [];
@@ -278,6 +402,8 @@ class Event
 
             if ($inputKey === 'club_id' || $inputKey === 'capacite') {
                 $value = $this->normalizeNullableInt($value);
+            } elseif ($inputKey === 'prix_ticket') {
+                $value = max(0.0, round((float) $value, 2));
             } elseif ($inputKey === 'description' || $inputKey === 'lieu') {
                 $value = $this->normalizeNullableString(is_string($value) ? $value : null);
             } elseif ($inputKey === 'titre' || $inputKey === 'date_debut' || $inputKey === 'date_fin') {
@@ -297,7 +423,7 @@ class Event
         }
 
         if ($sets === []) {
-            return false;
+            return $priceUpdatedInTicketTable;
         }
 
         $params[] = $eventId;
@@ -306,7 +432,7 @@ class Event
             $params
         );
 
-        return $statement->rowCount() > 0;
+        return $statement->rowCount() > 0 || $priceUpdatedInTicketTable;
     }
 
     public function delete(int|string $id): bool
@@ -410,6 +536,7 @@ class Event
                 e.date_debut,
                 e.date_fin,
                 e.capacite,
+                ' . $this->prixTicketSelectExpr('e') . '
                 e.statut AS evenement_statut,
                 c.nom AS club_nom
              FROM inscriptions_evenement ie

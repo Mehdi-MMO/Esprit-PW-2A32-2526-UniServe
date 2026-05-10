@@ -29,7 +29,7 @@ $validationRules = $validationRules ?? [];
         <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Créer un événement'), ENT_QUOTES, 'UTF-8') ?></h1>
         <p class="text-muted mb-0">Planifier un nouvel événement universitaire.</p>
     </div>
-    <a href="<?= $this->url('/events/manage') ?>" class="btn btn-outline-secondary btn-sm">Retour</a>
+    <a href="<?= $this->url('/evenements/manage') ?>" class="btn btn-outline-secondary btn-sm">Retour</a>
 </div>
 
 <div class="us-section-card">
@@ -38,7 +38,7 @@ $validationRules = $validationRules ?? [];
             <?php echo renderErrorAlert($error); ?>
         <?php endif; ?>
 
-        <form method="post" action="<?= $this->url('/events/create') ?>" id="event-form">
+        <form method="post" action="<?= $this->url('/evenements/create') ?>" id="event-form">
             <!-- Event Title and Club Section -->
             <?php echo renderFormSection('Informations générales'); ?>
             
@@ -97,6 +97,14 @@ $validationRules = $validationRules ?? [];
                         ''
                     );
                     ?>
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary btn-sm mt-2"
+                        data-map-picker-btn="1"
+                        data-map-target-input="lieu"
+                    >
+                        Choisir lieu sur carte
+                    </button>
                 </div>
 
                 <div class="col-md-6">
@@ -113,6 +121,24 @@ $validationRules = $validationRules ?? [];
                             'max' => 500,
                         ],
                         ''
+                    );
+                    ?>
+                </div>
+
+                <div class="col-md-6">
+                    <?php
+                    echo renderFormField(
+                        'prix_ticket',
+                        'Prix ticket (USD)',
+                        'number',
+                        $old['prix_ticket'] ?? '0',
+                        [
+                            'required' => false,
+                            'placeholder' => 'Ex: 15.00',
+                            'min' => 0,
+                            'step' => '0.01',
+                        ],
+                        'Devise principale USD (conversion TND visible côté front). Mettre 0 pour gratuit.'
                     );
                     ?>
                 </div>
@@ -198,7 +224,7 @@ $validationRules = $validationRules ?? [];
 
             <!-- Action Buttons -->
             <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-                <a href="<?= $this->url('/events/manage') ?>" class="btn btn-secondary">Annuler</a>
+                <a href="<?= $this->url('/evenements/manage') ?>" class="btn btn-secondary">Annuler</a>
                 <button class="btn btn-primary" type="submit">Créer l'événement</button>
             </div>
         </form>

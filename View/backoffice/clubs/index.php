@@ -17,7 +17,7 @@ $error = (string) ($error ?? '');
         <p class="text-muted mb-0">Créer et organiser les clubs de l'université.</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="<?= $this->url('/events/manage') ?>" class="btn btn-outline-secondary btn-sm">Événements</a>
+        <a href="<?= $this->url('/evenements/manage') ?>" class="btn btn-outline-secondary btn-sm">Événements</a>
         <a href="<?= $this->url('/clubs/createForm') ?>" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nouveau club</a>
     </div>
 </div>

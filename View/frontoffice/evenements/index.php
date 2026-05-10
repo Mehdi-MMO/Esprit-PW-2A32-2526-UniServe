@@ -5,6 +5,7 @@ $success = (string) ($success ?? '');
 $error = (string) ($error ?? '');
 $role = (string) ($_SESSION['user']['role'] ?? '');
 $canSubmitRequest = in_array($role, ['etudiant', 'enseignant'], true);
+$usdToTnd = max(0.1, (float) (function_exists('app_env') ? app_env('USD_TO_TND_RATE', '3.10') : '3.10'));
 
 $statusClass = static function (string $status): string {
     return match ($status) {
@@ -96,6 +97,8 @@ $statusClass = static function (string $status): string {
             $status = (string) ($event['statut'] ?? 'planifie');
             $registrations = (int) ($event['inscriptions_count'] ?? 0);
             $capacite = isset($event['capacite']) ? (int) $event['capacite'] : 0;
+            $prixTicket = round(max(0, (float) ($event['prix_ticket'] ?? 0)), 2);
+            $prixTicketTnd = round($prixTicket * $usdToTnd, 2);
             ?>
             <div class="col-md-6 col-xl-4">
                 <div class="card h-100 shadow-sm border-0">
@@ -110,6 +113,7 @@ $statusClass = static function (string $status): string {
                         <ul class="list-unstyled small text-muted mb-3">
                             <li><i class="bi bi-geo-alt me-1"></i><?= htmlspecialchars((string) ($event['lieu'] ?? 'A definir'), ENT_QUOTES, 'UTF-8') ?></li>
                             <li><i class="bi bi-calendar-event me-1"></i><?= htmlspecialchars((string) ($event['date_debut'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
+                            <li><i class="bi bi-cash-coin me-1"></i><?= $prixTicket > 0 ? ('$' . number_format($prixTicket, 2, '.', ' ') . ' (~ ' . number_format($prixTicketTnd, 2, '.', ' ') . ' TND)') : 'Gratuit' ?></li>
                             <li>
                                 <i class="bi bi-people me-1"></i>
                                 <?= $registrations ?> inscrit(s)
