@@ -12,3 +12,6 @@ RDV_MODULE/
 
 # Obsolete ad-hoc SQL dump filename (superseded by uniserve_full.sql)
 with data.sql
+
+# Local DB credentials (copy from .env.example)
+.env

@@ -14,7 +14,7 @@ Plateforme PHP MVC unique : authentification, **demandes de service**, **rendez-
 
 Fichiers à la racine (hors des trois dossiers) : **`index.php`**, **`.htaccess`**, **`README.md`**, et le dump **[`uniserve_full.sql`](uniserve_full.sql)** (base complète + données de démo).
 
-La connexion MySQL est configurée dans [`Model/Database.php`](Model/Database.php) (variables d’environnement `DB_*`).
+La connexion MySQL est configurée dans [`Model/Database.php`](Model/Database.php) : variables `DB_*`, ou fichier **`.env`** à la racine (copier [`.env.example`](.env.example)). Au premier échec PDO **1045 / Access denied (using password: NO)**, définissez **`DB_PASSWORD`** dans `.env` (mot de passe MySQL du compte utilisé ; vide pour XAMPP si `root` sans mot de passe **uniquement** depuis `localhost`). Si PHP tourne dans Docker et MySQL sur la machine hôte, utilisez souvent **`DB_HOST=host.docker.internal`**.
 
 ## Prérequis
 
@@ -28,8 +28,8 @@ La connexion MySQL est configurée dans [`Model/Database.php`](Model/Database.ph
 2. Créer / réinitialiser la base et importer le dump complet :
    - Importer [`uniserve_full.sql`](uniserve_full.sql) dans MySQL / MariaDB (le script crée la base `uniserve` si besoin, supprime les tables existantes dans l’ordre, puis recrée schéma + jeux de données).
    - Ou créer une base vide nommée comme `DB_NAME` puis n’y importer que le fichier (adapter `DB_NAME` dans l’environnement si le nom diffère de `uniserve`).
-3. Variables d’environnement (optionnel ; défauts dans [`Model/Database.php`](Model/Database.php)) :
-   - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+3. Configuration MySQL : copier **`.env.example`** vers **`.env`** et renseigner au besoin `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, **`DB_PASSWORD`** (obligatoire si votre serveur MySQL refuse une connexion sans mot de passe pour `root` depuis l’IP du client, ex. `172.18.0.1` sous Docker).
+   - Vous pouvez aussi définir les mêmes clés dans les variables d’environnement du serveur web / système.
    - `INSTITUTIONAL_EMAIL_DOMAINS` : liste séparée par des virgules pour la validation email à la création / édition d’utilisateurs (défaut : `gmail.com`). Ex. `gmail.com,esprit.tn`.
 4. Ouvrir l’application via `index.php` (ex. `http://localhost/INTEG/`).
 
