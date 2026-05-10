@@ -30,6 +30,7 @@ La connexion MySQL est configurée dans [`Model/Database.php`](Model/Database.ph
    - Ou créer une base vide nommée comme `DB_NAME` puis n’y importer que le fichier (adapter `DB_NAME` dans l’environnement si le nom diffère de `uniserve`).
 3. Variables d’environnement (optionnel ; défauts dans [`Model/Database.php`](Model/Database.php)) :
    - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+   - `INSTITUTIONAL_EMAIL_DOMAINS` : liste séparée par des virgules pour la validation email à la création / édition d’utilisateurs (défaut : `gmail.com`). Ex. `gmail.com,esprit.tn`.
 4. Ouvrir l’application via `index.php` (ex. `http://localhost/INTEG/`).
 
 Comptes et données de démo : voir les `INSERT` dans [`uniserve_full.sql`](uniserve_full.sql) (ex. admin `admin.uniserve@gmail.com`, étudiant de test, etc.).
