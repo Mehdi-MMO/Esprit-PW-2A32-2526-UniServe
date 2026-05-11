@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 class CalendarBriefService
 {
-    private const DEFAULT_MODEL = 'gemini-2.0-flash';
+    private const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
 
     /**
      * @param array<int, array<string, mixed>> $events
@@ -304,55 +304,30 @@ class CalendarBriefService
      */
     private function requestAiBrief(array $events, array $fallback, array $window, string $activeFilter): ?array
     {
-        $apiKey = trim((string) (getenv('GEMINI_API_KEY') ?: ''));
+        $apiKey = trim((string) (getenv('GROQ_API_KEY') ?: ''));
         if ($apiKey === '') {
             return null;
         }
 
-        $model = trim((string) (getenv('CALENDAR_BRIEF_GEMINI_MODEL') ?: getenv('GEMINI_MODEL') ?: self::DEFAULT_MODEL));
-        $prompt = $this->buildPrompt($events, $fallback, $window, $activeFilter);
-        $payload = [
-            'contents' => [[
-                'parts' => [[
-                    'text' => $prompt,
-                ]],
-            ]],
-            'generationConfig' => [
-                'temperature' => 0.2,
-                'responseMimeType' => 'application/json',
+        $model = trim((string) (getenv('CALENDAR_BRIEF_GROQ_MODEL') ?: getenv('GROQ_MODEL') ?: self::DEFAULT_MODEL));
+        $userPrompt = $this->buildPrompt($events, $fallback, $window, $activeFilter);
+
+        $systemInstruction = 'You reply with a single JSON object only (no markdown). '
+            . 'Keys required: summary, ranked_priorities, risks, next_actions, daily_briefs. '
+            . 'Shape must match the user instructions exactly.';
+
+        $requestBody = [
+            'model' => $model,
+            'messages' => [
+                ['role' => 'system', 'content' => $systemInstruction],
+                ['role' => 'user', 'content' => $userPrompt],
             ],
+            'temperature' => 0.2,
+            'response_format' => ['type' => 'json_object'],
         ];
 
-        $url = sprintf(
-            'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s',
-            rawurlencode($model),
-            rawurlencode($apiKey)
-        );
-
-        $jsonPayload = json_encode($payload);
-        if (!is_string($jsonPayload) || $jsonPayload === '') {
-            return null;
-        }
-
-        $ch = curl_init($url);
-        if ($ch === false) {
-            return null;
-        }
-
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_POSTFIELDS => $jsonPayload,
-            CURLOPT_TIMEOUT => 8,
-            CURLOPT_CONNECTTIMEOUT => 4,
-        ]);
-
-        $raw = curl_exec($ch);
-        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if (!is_string($raw) || $raw === '' || $httpCode < 200 || $httpCode >= 300) {
+        [$httpCode, $raw, $transportError] = GroqClient::postChatCompletions($apiKey, $requestBody, 20);
+        if ($transportError !== '' || !is_string($raw) || $raw === '' || $httpCode < 200 || $httpCode >= 300) {
             return null;
         }
 
@@ -361,7 +336,12 @@ class CalendarBriefService
             return null;
         }
 
-        $text = (string) ($decoded['candidates'][0]['content']['parts'][0]['text'] ?? '');
+        $choice = $decoded['choices'][0] ?? null;
+        if (!is_array($choice) || !isset($choice['message']['content'])) {
+            return null;
+        }
+
+        $text = (string) $choice['message']['content'];
         if ($text === '') {
             return null;
         }

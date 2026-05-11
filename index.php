@@ -14,6 +14,7 @@ require_once __DIR__ . '/Model/Bureau.php';
 require_once __DIR__ . '/Model/RendezVous.php';
 require_once __DIR__ . '/Model/DashboardService.php';
 require_once __DIR__ . '/Model/CalendarService.php';
+require_once __DIR__ . '/Model/GroqClient.php';
 require_once __DIR__ . '/Model/CalendarBriefService.php';
 require_once __DIR__ . '/Model/CalendarDemoService.php';
 require_once __DIR__ . '/Model/User.php';

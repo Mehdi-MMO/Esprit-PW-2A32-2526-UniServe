@@ -28,6 +28,7 @@ class FrontofficeController extends Controller
             $fromDate,
             $toDate
         );
+        $calendarFeed['events'] = $this->normalizeCalendarEventUrls($calendarFeed['events'] ?? []);
 
         $briefService = new CalendarBriefService();
         $aiBrief = $briefService->generateBrief(
@@ -75,6 +76,7 @@ class FrontofficeController extends Controller
             $toDate,
             $filters
         );
+        $calendarFeed['events'] = $this->normalizeCalendarEventUrls($calendarFeed['events'] ?? []);
 
         $briefService = new CalendarBriefService();
         $brief = $briefService->generateBrief(
@@ -84,6 +86,29 @@ class FrontofficeController extends Controller
         );
 
         $this->jsonResponse($brief);
+    }
+
+    /**
+     * Prefix calendar event URLs with the app base path so links work when the app is served from a subdirectory (e.g. /INTEG/...).
+     *
+     * @param list<array<string, mixed>> $events
+     * @return list<array<string, mixed>>
+     */
+    private function normalizeCalendarEventUrls(array $events): array
+    {
+        foreach ($events as &$event) {
+            if (!is_array($event)) {
+                continue;
+            }
+            $raw = isset($event['url']) ? trim((string) $event['url']) : '';
+            if ($raw === '' || preg_match('#^https?://#i', $raw)) {
+                continue;
+            }
+            $event['url'] = $this->url($raw);
+        }
+        unset($event);
+
+        return $events;
     }
 
     /**

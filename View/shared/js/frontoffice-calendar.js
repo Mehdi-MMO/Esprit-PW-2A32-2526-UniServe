@@ -45,6 +45,10 @@
             return p;
         }
         const normalized = p.startsWith('/') ? p : `/${p}`;
+        // Server may already emit URLs with the app base (e.g. /INTEG/evenements/...); avoid /INTEG/INTEG/...
+        if (base !== '' && (normalized === base || normalized.startsWith(`${base}/`))) {
+            return normalized;
+        }
         return `${base}${normalized}`;
     }
 
