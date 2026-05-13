@@ -9,7 +9,7 @@
     $ogTitle = isset($title) && (string) $title !== ''
         ? htmlspecialchars((string) $title . ' · UniServe', ENT_QUOTES, 'UTF-8')
         : 'UniServe';
-    $ogDescription = 'Portail institutionnel UniServe : demandes, rendez-vous, documents et vie étudiante.';
+    $ogDescription = 'Portail institutionnel UniServe : demandes, rendez-vous, documents, certifications, clubs, événements et notifications.';
     ?>
     <meta property="og:type" content="website">
     <meta property="og:title" content="<?= $ogTitle ?>">
@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="<?= $this->asset('/View/shared/css/main.css') ?>">
     <link rel="stylesheet" href="<?= $this->asset('/View/shared/css/landing.css') ?>">
+    <link rel="icon" href="<?= $this->asset('/View/shared/assets/img/logo.png') ?>" type="image/png">
 </head>
 <body class="us-landing">
     <?php $landingNav = $landingNav ?? null; ?>
@@ -26,7 +27,7 @@
     <nav class="navbar navbar-expand-lg us-topbar us-landing-nav navbar-dark shadow-sm" aria-label="Navigation principale">
         <div class="container">
             <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= $this->url('/') ?>"<?= $landingNav === 'home' ? ' aria-current="page"' : '' ?>>
-                <span class="us-brand-mark" aria-hidden="true">U</span>
+                <?= us_brand_logo_html($this, 'us-brand-logo--nav', true) ?>
                 <span>UniServe</span>
             </a>
             <a class="btn btn-outline-light btn-sm px-3" href="<?= $this->url('/auth/login') ?>"<?= $landingNav === 'login' ? ' aria-current="page"' : '' ?>>Se connecter</a>

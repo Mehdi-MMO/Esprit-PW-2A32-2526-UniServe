@@ -2,6 +2,7 @@
     <div class="row justify-content-center">
         <div class="col-12 col-md-8 col-lg-6">
             <div class="us-card p-4 p-md-4">
+                <?php require __DIR__ . '/shared/auth_brand_strip.php'; ?>
                 <h1 class="h4 mb-2">Mot de passe oublié</h1>
                 <p class="text-muted small mb-3">Entrez votre adresse email institutionnelle pour recevoir un code OTP.</p>
 

@@ -63,12 +63,35 @@ class BureauxController extends Controller
         $this->requireLogin();
         $this->requireRole(['staff', 'admin']);
 
+        $this->redirect('/rendezvous?tab=bureaux');
+    }
+
+    public function delete(int|string $id): void
+    {
+        $this->requireLogin();
+        $this->requireRole(['staff', 'admin']);
+
+        if (!$this->isPost()) {
+            $this->redirect('/rendezvous?tab=bureaux');
+            return;
+        }
+
+        $bid = (int) $id;
         $bureauModel = new Bureau();
-        $this->render('backoffice/bureaux/index', [
-            'title' => 'Bureaux',
-            'bureaux' => $bureauModel->findAllOrdered(),
-            'flash' => $this->popFlash(),
-        ]);
+        if ($bureauModel->countRendezVousForBureau($bid) > 0) {
+            $this->setFlash('error', 'Impossible de supprimer ce bureau : des rendez-vous y sont liés.');
+            $this->redirect('/rendezvous?tab=bureaux');
+            return;
+        }
+
+        if (!$bureauModel->deleteById($bid)) {
+            $this->setFlash('error', 'Suppression impossible.');
+            $this->redirect('/rendezvous?tab=bureaux');
+            return;
+        }
+
+        $this->setFlash('success', 'Bureau supprimé.');
+        $this->redirect('/rendezvous?tab=bureaux');
     }
 
     public function createForm(): void
@@ -115,7 +138,7 @@ class BureauxController extends Controller
 
         (new Bureau())->create($payload);
         $this->setFlash('success', 'Bureau créé.');
-        $this->redirect('/bureaux');
+        $this->redirect('/rendezvous?tab=bureaux');
     }
 
     public function editForm(int|string $id): void
@@ -127,7 +150,7 @@ class BureauxController extends Controller
         $row = (new Bureau())->findById($bid);
         if ($row === null) {
             $this->setFlash('error', 'Bureau introuvable.');
-            $this->redirect('/bureaux');
+            $this->redirect('/rendezvous?tab=bureaux');
             return;
         }
 
@@ -148,7 +171,7 @@ class BureauxController extends Controller
         $row = $bureauModel->findById($bid);
         if ($row === null) {
             $this->setFlash('error', 'Bureau introuvable.');
-            $this->redirect('/bureaux');
+            $this->redirect('/rendezvous?tab=bureaux');
             return;
         }
 
@@ -174,6 +197,6 @@ class BureauxController extends Controller
 
         $bureauModel->update($bid, $payload);
         $this->setFlash('success', 'Bureau mis à jour.');
-        $this->redirect('/bureaux');
+        $this->redirect('/rendezvous?tab=bureaux');
     }
 }

@@ -1,8 +1,6 @@
--- UniServe — single canonical database dump (schema + seed)
--- Includes core UniServe tables, login risk / password reset, calendar demo, notifications,
--- DOCAC certification tables (cours, certificats, demandes_certification, quizzes), and
--- evenements.prix_ticket + calendar_demo_items.source_type certifications (Stripe-ready).
--- Import in phpMyAdmin / HeidiSQL (creates `uniserve`). No separate migration SQL files required.
+-- UniServe — base unique (schéma + données de démonstration)
+-- Tables principales, sécurité connexion (OTP / appareils de confiance), notifications, DOCAC (certifications / quiz),
+-- agenda démo, colonne evenements.prix_ticket (billets). Réimport : exécuter ce script sur une base vide ou sauvegardée.
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET NAMES utf8 */;
@@ -281,13 +279,6 @@ INSERT INTO `calendar_demo_items` (`id`, `user_id`, `source_type`, `title`, `sta
 	(4, 2, 'events_registered', 'Conférence orientation', '2026-05-10 11:00:00', '2026-05-10 12:00:00', 'Salle polyvalente', 'planifie', 'Club Culturel', '#7056d8', '/evenements', 1, 3, 1, '2026-05-07 12:55:13'),
 	(5, 2, 'events_public', 'Forum des associations', '2026-05-11 09:30:00', '2026-05-11 11:30:00', 'Cour centrale', 'ouvert', 'Club Informatique', '#1fa971', '/evenements', 1, 4, 1, '2026-05-07 12:55:13'),
 	(6, 2, 'events_public', 'Soirée campus', '2026-05-12 18:00:00', '2026-05-12 20:00:00', 'Espaces extérieurs', 'complet', 'Club Sportif', '#8d6df2', '/evenements', 1, 5, 1, '2026-05-07 12:55:13');
-
-CREATE TABLE `jc-postal` (
-  `data` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-INSERT INTO `jc-postal` (`data`) VALUES
-	('{"box_border":"6","x":530,"y":1042,"background":"#000000","box_padding":"6","text_size":"18","text":"#fafafa","opacity":"0.7"}');
 
 CREATE TABLE `login_failure_events` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,

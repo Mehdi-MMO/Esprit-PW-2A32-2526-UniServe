@@ -3,6 +3,7 @@
         <div class="row align-items-center g-4 g-lg-5">
             <div class="col-lg-7">
                 <span class="us-badge mb-3 d-inline-flex">Plateforme officielle</span>
+                <div class="mb-3"><?= us_brand_logo_html($this, 'us-brand-logo--hero', true) ?></div>
                 <div class="us-kicker mb-2">Services universitaires</div>
                 <h1 class="us-hero-title mb-3">UniServe</h1>
                 <p class="lead text-muted us-landing-text-body mb-4">
@@ -58,7 +59,7 @@
             <article class="us-landing-feature-card">
                 <div class="us-feature-icon mb-3" aria-hidden="true"><i class="fa-solid fa-folder-open"></i></div>
                 <h3>Documents</h3>
-                <p>Demandes de documents académiques et traitement côté administration.</p>
+                <p>Documents académiques (attestations, relevés) et parcours de certifications ; traitement côté administration.</p>
             </article>
         </div>
         <div class="col-md-6 col-lg-4">

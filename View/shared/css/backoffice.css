@@ -146,8 +146,8 @@
 }
 
 .nav-tab.active {
-    color: #0d6efd;
-    border-bottom-color: #0d6efd;
+    color: var(--accent-nav, var(--brand));
+    border-bottom-color: var(--accent-nav, var(--brand));
 }
 
 .nav-tab i {
@@ -227,17 +227,15 @@
 }
 
 .us-segment-nav__link:focus-visible {
-    outline: 2px solid rgba(13, 110, 253, 0.55);
+    outline: 2px solid rgba(11, 42, 90, 0.45);
     outline-offset: 2px;
 }
 
 .us-segment-nav__link.is-active {
     color: var(--brand);
     background: #fff;
-    box-shadow:
-        0 2px 8px rgba(11, 42, 90, 0.12),
-        0 1px 2px rgba(11, 42, 90, 0.06);
-    transform: translateY(-1px);
+    box-shadow: var(--shadow-soft, 0 4px 12px rgba(16, 24, 40, 0.05));
+    transform: none;
 }
 
 .us-segment-nav__link .us-segment-nav__icon {
@@ -247,7 +245,7 @@
 }
 
 .us-segment-nav__link.is-active .us-segment-nav__icon {
-    color: #0d6efd;
+    color: var(--accent-nav, var(--brand));
     opacity: 1;
 }
 
@@ -266,7 +264,8 @@
     background: white;
     border-radius: 12px;
     padding: 1.75rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(10, 22, 40, 0.06);
+    box-shadow: var(--shadow-soft, 0 4px 12px rgba(16, 24, 40, 0.05));
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
@@ -285,12 +284,12 @@
 }
 
 .stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm, 0 6px 16px rgba(16, 24, 40, 0.06));
 }
 
 .stat-card:hover .stat-card-icon-circle {
-    transform: scale(1.1) rotate(5deg);
+    transform: scale(1.02);
 }
 
 .stat-card-clickable {
@@ -353,20 +352,22 @@
 
 /* Stat card color variants - Primary */
 .stat-card-primary .stat-card-icon-circle {
-    background: linear-gradient(135deg, #0d6efd 0%, #0b5ff8 100%);
+    background: linear-gradient(135deg, var(--brand) 0%, #0a234c 100%);
     color: white;
-    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+    box-shadow: var(--shadow-sm, 0 6px 16px rgba(16, 24, 40, 0.06));
+    border: 1px solid rgba(11, 42, 90, 0.12);
 }
 
 .stat-card-primary .stat-card-value {
-    color: #0d6efd;
+    color: var(--brand);
 }
 
 /* Stat card color variants - Success */
 .stat-card-success .stat-card-icon-circle {
     background: linear-gradient(135deg, #198754 0%, #157347 100%);
     color: white;
-    box-shadow: 0 4px 15px rgba(25, 135, 84, 0.3);
+    box-shadow: var(--shadow-sm, 0 6px 16px rgba(16, 24, 40, 0.06));
+    border: 1px solid rgba(25, 135, 84, 0.15);
 }
 
 .stat-card-success .stat-card-value {
@@ -377,7 +378,8 @@
 .stat-card-warning .stat-card-icon-circle {
     background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
     color: #fff;
-    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    box-shadow: var(--shadow-sm, 0 6px 16px rgba(16, 24, 40, 0.06));
+    border: 1px solid rgba(255, 193, 7, 0.2);
 }
 
 .stat-card-warning .stat-card-value {
@@ -388,7 +390,8 @@
 .stat-card-danger .stat-card-icon-circle {
     background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
     color: white;
-    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    box-shadow: var(--shadow-sm, 0 6px 16px rgba(16, 24, 40, 0.06));
+    border: 1px solid rgba(220, 53, 69, 0.18);
 }
 
 .stat-card-danger .stat-card-value {
@@ -889,4 +892,94 @@
 .us-backoffice-layout .top-header .us-notifs-bell .us-nav-badge {
     border: 2px solid #fff;
     box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+/* Rendez-vous admin: tabs, avatars, bureau cards */
+.us-rdv-admin-tabs .nav-link {
+    border-radius: 999px;
+    padding: 0.45rem 1rem;
+    font-weight: 600;
+    color: #0b2a5a;
+    background: #fff;
+    border: 1px solid rgba(11, 42, 90, 0.12);
+}
+
+.us-rdv-admin-tabs .nav-link:hover {
+    background: rgba(11, 42, 90, 0.06);
+}
+
+.us-rdv-admin-tabs .nav-link.active {
+    background: #0b2a5a;
+    color: #fff;
+    border-color: #0b2a5a;
+}
+
+.us-tab-count {
+    display: inline-block;
+    margin-left: 0.25rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.us-rdv-admin-tabs .nav-link:not(.active) .us-tab-count {
+    background: rgba(11, 42, 90, 0.1);
+    color: inherit;
+}
+
+.us-rdv-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #0b2a5a, #1e5aa8);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.us-rdv-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+}
+
+.us-rdv-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.85;
+}
+
+.us-bureau-card {
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    border-radius: 14px;
+}
+
+.us-bureau-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 12px;
+    background: rgba(11, 42, 90, 0.08);
+    color: #0b2a5a;
+    flex-shrink: 0;
+}
+
+.us-rdv-admin-table thead th {
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: rgba(15, 23, 42, 0.55);
+    border-bottom-width: 1px;
 }

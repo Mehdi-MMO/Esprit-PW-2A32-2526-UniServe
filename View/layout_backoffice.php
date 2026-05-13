@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="<?= $this->asset('/View/shared/css/main.css') ?>">
     <link rel="stylesheet" href="<?= $this->asset('/View/shared/css/backoffice.css') ?>">
+    <link rel="icon" href="<?= $this->asset('/View/shared/assets/img/logo.png') ?>" type="image/png">
 </head>
 <body class="us-backoffice-layout">
     <?php
@@ -18,10 +19,10 @@
         return $currentPath === $prefix || str_starts_with($currentPath, $prefix . '/');
     };
     $dashboardActive = $pathStartsWith('backoffice') || $pathStartsWith('dashboard');
+    $rdvModuleActive = $pathStartsWith('rendezvous') || $pathStartsWith('bureaux');
     $clubsEventsNavActive = $pathStartsWith('evenements');
     $demandesQueueActive = $pathStartsWith('demandes');
     $typesDemandesActive = $pathStartsWith('services');
-    $bureauxNavActive = $pathStartsWith('bureaux');
     $documentsScolariteActive = $pathStartsWith('documents');
     $notifCount = 0;
     if (isset($_SESSION['user']['id'])) {
@@ -34,7 +35,7 @@
     ?>
     <aside class="sidebar d-flex flex-column shadow-sm">
         <div class="p-4 border-bottom border-secondary-subtle d-flex align-items-center gap-2 flex-shrink-0">
-            <span class="us-brand-mark" aria-hidden="true">U</span>
+            <?= us_brand_logo_html($this, 'us-brand-logo--sidebar', true) ?>
             <div class="lh-sm">
                 <div class="fw-bold">UniServe</div>
                 <div class="small text-white-50">BackOffice</div>
@@ -52,15 +53,14 @@
                    href="<?= $this->url('/services') ?>"
                    <?= $typesDemandesActive ? 'aria-current="page"' : '' ?>><i class="bi bi-grid me-2"></i>Types de demandes</a>
             </div>
-            <a class="nav-link <?= $pathStartsWith('rendezvous') ? 'active' : '' ?>" href="<?= $this->url('/rendezvous') ?>"><i class="bi bi-calendar-check me-2"></i>Rendez-vous</a>
             <div class="us-sidebar-nav-group">
-                <a class="nav-link <?= $bureauxNavActive ? 'active' : '' ?>"
-                   href="<?= $this->url('/bureaux') ?>"
-                   <?= $bureauxNavActive ? 'aria-current="page"' : '' ?>><i class="bi bi-building me-2"></i>Bureaux</a>
-                <a class="nav-link nav-link--sub <?= $documentsScolariteActive ? 'active' : '' ?>"
-                   href="<?= $this->url('/documents') ?>"
-                   <?= $documentsScolariteActive ? 'aria-current="page"' : '' ?>><i class="bi bi-file-earmark-text me-2"></i>Documents (scolarité)</a>
+                <a class="nav-link <?= $rdvModuleActive ? 'active' : '' ?>"
+                   href="<?= $this->url('/rendezvous') ?>"
+                   <?= $rdvModuleActive ? 'aria-current="page"' : '' ?>><i class="bi bi-calendar-check me-2"></i>Rendez-vous</a>
             </div>
+            <a class="nav-link <?= $documentsScolariteActive ? 'active' : '' ?>"
+               href="<?= $this->url('/documents') ?>"
+               <?= $documentsScolariteActive ? 'aria-current="page"' : '' ?>><i class="bi bi-file-earmark-text me-2"></i>Documents (scolarité)</a>
             <a class="nav-link <?= $pathStartsWith('certifications') ? 'active' : '' ?>" href="<?= $this->url('/certifications/manage') ?>"><i class="bi bi-mortarboard me-2"></i>Certifications (parcours)</a>
         </nav>
     </aside>

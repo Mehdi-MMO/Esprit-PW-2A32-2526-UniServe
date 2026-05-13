@@ -14,21 +14,109 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const chatRoot = document.querySelector('[data-ai-chat]');
     if (chatRoot) {
+        const CHAT_STORE_VER = 1;
+        const CHAT_STORE_MAX = 40;
+
         const toggleBtn = chatRoot.querySelector('[data-ai-chat-toggle]');
         const closeBtn = chatRoot.querySelector('[data-ai-chat-close]');
+        const resetBtn = chatRoot.querySelector('[data-ai-chat-reset]');
         const panel = chatRoot.querySelector('[data-ai-chat-panel]');
         const form = chatRoot.querySelector('[data-ai-chat-form]');
         const input = chatRoot.querySelector('[data-ai-chat-input]');
         const sendBtn = chatRoot.querySelector('[data-ai-chat-send]');
         const messages = chatRoot.querySelector('[data-ai-chat-messages]');
         const endpoint = chatRoot.getAttribute('data-ai-endpoint') || '';
-        const history = [];
+        const userId = String(chatRoot.getAttribute('data-ai-user-id') || '0');
+
+        const storageKey = function () {
+            return 'us_ai_chat_v' + CHAT_STORE_VER + '_' + userId;
+        };
+
+        const readTranscript = function () {
+            try {
+                const raw = localStorage.getItem(storageKey());
+                if (!raw) {
+                    return [];
+                }
+                const o = JSON.parse(raw);
+                if (!o || !Array.isArray(o.entries)) {
+                    return [];
+                }
+                return o.entries.filter(function (e) {
+                    return e && (e.role === 'user' || e.role === 'assistant') && typeof e.content === 'string';
+                });
+            } catch (_e) {
+                return [];
+            }
+        };
+
+        const sanitizeActions = function (actions) {
+            if (!Array.isArray(actions)) {
+                return [];
+            }
+            const out = [];
+            actions.forEach(function (a) {
+                if (!a || typeof a.href !== 'string' || typeof a.label !== 'string') {
+                    return;
+                }
+                out.push({ href: a.href.slice(0, 512), label: a.label.slice(0, 160) });
+            });
+            return out;
+        };
+
+        const writeTranscript = function (entries) {
+            try {
+                localStorage.setItem(
+                    storageKey(),
+                    JSON.stringify({ v: CHAT_STORE_VER, entries: entries.slice(-CHAT_STORE_MAX) })
+                );
+            } catch (_e) {
+                /* quota or private mode */
+            }
+        };
+
+        const transcript = readTranscript();
+
+        const apiHistoryPayload = function (entries) {
+            return entries.map(function (t) {
+                return { role: t.role, content: t.content };
+            });
+        };
 
         const appendMessage = function (text, who) {
             const div = document.createElement('div');
             div.className = 'us-ai-chat-message ' + who;
             div.textContent = text;
             messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        };
+
+        const appendBotReply = function (text, actions) {
+            const wrap = document.createElement('div');
+            wrap.className = 'us-ai-chat-message bot us-ai-chat-message--rich';
+            const body = document.createElement('div');
+            body.className = 'us-ai-chat-message-text';
+            body.textContent = text;
+            wrap.appendChild(body);
+            if (actions && actions.length) {
+                const row = document.createElement('div');
+                row.className = 'us-ai-chat-actions';
+                actions.forEach(function (a) {
+                    if (!a || !a.href) {
+                        return;
+                    }
+                    const link = document.createElement('a');
+                    link.className = 'btn btn-sm btn-outline-primary us-ai-chat-action';
+                    link.href = a.href;
+                    link.textContent = a.label || a.href;
+                    link.setAttribute('role', 'button');
+                    row.appendChild(link);
+                });
+                if (row.childNodes.length) {
+                    wrap.appendChild(row);
+                }
+            }
+            messages.appendChild(wrap);
             messages.scrollTop = messages.scrollHeight;
         };
 
@@ -39,6 +127,45 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         };
 
+        const clearWelcomeIfPresent = function () {
+            const w = messages.querySelector('[data-ai-chat-welcome]');
+            if (w) {
+                w.remove();
+            }
+        };
+
+        const replayTranscript = function (entries) {
+            messages.innerHTML = '';
+            entries.forEach(function (entry) {
+                if (entry.role === 'user') {
+                    appendMessage(entry.content, 'user');
+                } else {
+                    appendBotReply(entry.content, entry.actions || []);
+                }
+            });
+            messages.scrollTop = messages.scrollHeight;
+        };
+
+        const persist = function () {
+            writeTranscript(transcript);
+        };
+
+        const welcomeText =
+            chatRoot.getAttribute('data-ai-welcome') || 'Bonjour — posez votre question sur le portail.';
+
+        const showFreshWelcome = function () {
+            messages.innerHTML = '';
+            const div = document.createElement('div');
+            div.className = 'us-ai-chat-message bot';
+            div.setAttribute('data-ai-chat-welcome', '1');
+            div.textContent = welcomeText;
+            messages.appendChild(div);
+        };
+
+        if (transcript.length > 0) {
+            replayTranscript(transcript);
+        }
+
         toggleBtn.addEventListener('click', function () {
             const hidden = panel.classList.contains('d-none');
             setOpen(hidden);
@@ -47,6 +174,19 @@ document.addEventListener('DOMContentLoaded', function () {
         closeBtn.addEventListener('click', function () {
             setOpen(false);
         });
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function () {
+                transcript.length = 0;
+                try {
+                    localStorage.removeItem(storageKey());
+                } catch (_e) {
+                    /* ignore */
+                }
+                showFreshWelcome();
+                messages.scrollTop = 0;
+            });
+        }
 
         const setTyping = function (on) {
             let typing = messages.querySelector('[data-ai-typing]');
@@ -73,8 +213,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            const historyBefore = apiHistoryPayload(transcript).slice(-6);
+
+            clearWelcomeIfPresent();
             appendMessage(text, 'user');
-            history.push({ role: 'user', content: text });
+            transcript.push({ role: 'user', content: text });
+            persist();
+
             input.value = '';
             input.disabled = true;
             sendBtn.disabled = true;
@@ -84,19 +229,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text, history: history.slice(-6) })
+                    body: JSON.stringify({ message: text, history: historyBefore })
                 });
 
                 const payload = await response.json().catch(function () { return {}; });
                 if (!response.ok) {
-                    appendMessage(payload.error || 'Erreur du service IA.', 'bot');
+                    const err = payload.error || 'Erreur du service IA.';
+                    appendMessage(err, 'bot');
+                    transcript.push({ role: 'assistant', content: err, actions: [] });
+                    persist();
                 } else {
                     const reply = payload.reply || 'Pas de reponse recue.';
-                    appendMessage(reply, 'bot');
-                    history.push({ role: 'assistant', content: reply });
+                    const actions = Array.isArray(payload.actions) ? payload.actions : [];
+                    appendBotReply(reply, actions);
+                    transcript.push({ role: 'assistant', content: reply, actions: sanitizeActions(actions) });
+                    persist();
                 }
             } catch (_err) {
-                appendMessage('Erreur reseau. Reessayez dans un instant.', 'bot');
+                const err = 'Erreur reseau. Reessayez dans un instant.';
+                appendMessage(err, 'bot');
+                transcript.push({ role: 'assistant', content: err, actions: [] });
+                persist();
             } finally {
                 setTyping(false);
                 input.disabled = false;

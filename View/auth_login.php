@@ -4,7 +4,7 @@
             <div class="col-lg-5 d-none d-lg-flex flex-column">
                 <div class="us-login-brand h-100 d-flex flex-column">
                     <div class="d-flex align-items-center gap-3 mb-4">
-                        <span class="us-brand-mark" aria-hidden="true">U</span>
+                        <?= us_brand_logo_html($this, '', true) ?>
                         <div class="text-start">
                             <div class="fw-bold fs-5">UniServe</div>
                             <div class="small us-login-brand-tagline">Portail des services universitaires</div>
@@ -43,7 +43,7 @@
             <div class="col-12 col-lg-7 us-login-form-col">
                 <div class="d-lg-none us-login-brand py-4 mb-0 rounded-0 border-0">
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        <span class="us-brand-mark" aria-hidden="true">U</span>
+                        <?= us_brand_logo_html($this, '', true) ?>
                         <div class="text-start">
                             <div class="fw-bold fs-5">UniServe</div>
                             <div class="small us-login-brand-tagline">Connexion sécurisée</div>

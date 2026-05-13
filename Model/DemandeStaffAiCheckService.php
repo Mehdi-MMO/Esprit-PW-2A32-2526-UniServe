@@ -61,7 +61,7 @@ class DemandeStaffAiCheckService
                         . 'Réponds uniquement avec un JSON valide aux clés : '
                         . '"verdict" (une des valeurs : clair, a_preciser, insuffisant), '
                         . '"points_cles" (court paragraphe en français), '
-                        . '"elements_manquants" (liste courte ou « aucun »), '
+                        . '"elements_manquants" (texte court : puces ou phrases, ou « aucun » — une seule chaîne, pas un tableau JSON), '
                         . '"suggestion_prochaine_etape" (pour le traitement humain : quoi demander / vérifier / classer). '
                         . 'Pas de markdown. Ne pas inventer de pièces ou de faits absents du texte.',
                 ],
@@ -89,17 +89,59 @@ class DemandeStaffAiCheckService
             return null;
         }
 
-        $verdict = trim((string) ($obj['verdict'] ?? ''));
+        $verdictRaw = $obj['verdict'] ?? '';
+        if (is_array($verdictRaw)) {
+            $verdictRaw = reset($verdictRaw);
+        }
+        $verdict = trim((string) $verdictRaw);
         if ($verdict === '') {
             $verdict = 'a_preciser';
         }
 
         return [
             'verdict' => $verdict,
-            'points_cles' => trim((string) ($obj['points_cles'] ?? '')),
-            'elements_manquants' => trim((string) ($obj['elements_manquants'] ?? '')),
-            'suggestion_prochaine_etape' => trim((string) ($obj['suggestion_prochaine_etape'] ?? '')),
+            'points_cles' => self::normalizeAiTextField($obj['points_cles'] ?? null),
+            'elements_manquants' => self::normalizeAiTextField($obj['elements_manquants'] ?? null),
+            'suggestion_prochaine_etape' => self::normalizeAiTextField($obj['suggestion_prochaine_etape'] ?? null),
         ];
+    }
+
+    /**
+     * Le modèle renvoie parfois une liste JSON au lieu d'une chaîne ; éviter le cast PHP « Array ».
+     */
+    private static function normalizeAiTextField(mixed $v): string
+    {
+        if ($v === null) {
+            return '';
+        }
+        if (is_string($v)) {
+            return trim($v);
+        }
+        if (is_int($v) || is_float($v)) {
+            return trim((string) $v);
+        }
+        if (is_array($v)) {
+            $parts = [];
+            foreach ($v as $item) {
+                if (is_string($item)) {
+                    $t = trim($item);
+                    if ($t !== '') {
+                        $parts[] = $t;
+                    }
+                } elseif (is_int($item) || is_float($item)) {
+                    $parts[] = (string) $item;
+                } elseif (is_array($item)) {
+                    $nested = self::normalizeAiTextField($item);
+                    if ($nested !== '') {
+                        $parts[] = $nested;
+                    }
+                }
+            }
+
+            return $parts === [] ? '' : implode("\n• ", $parts);
+        }
+
+        return trim((string) $v);
     }
 
     private static function clip(string $s, int $max): string

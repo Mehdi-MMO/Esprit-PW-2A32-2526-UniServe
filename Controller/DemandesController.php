@@ -248,15 +248,12 @@ class DemandesController extends Controller
             $stats = $this->statsFromRows($demandes);
             $stats['categories_actives'] = $catModel->countActive();
 
-            $staffList = (new User())->findStaffAndAdminsActifs();
-
             $this->render('backoffice/demandes/index', [
                 'title' => 'Demandes de service',
                 'demandes' => $demandes,
                 'stats' => $stats,
                 'statut_filter' => $statut,
                 'q' => $q,
-                'staff_list' => $staffList,
                 'statut_labels' => $this->statutLabels(),
                 'pieces_by_demande' => $this->piecesByDemandeIds($demandes),
                 'demande_staff_ai_check_enabled' => DemandeStaffAiCheckService::isEnabled(),
@@ -741,61 +738,6 @@ class DemandesController extends Controller
         $this->redirect('/demandes');
     }
 
-    public function assign(int|string $id): void
-    {
-        $this->requireLogin();
-        $this->requireRole(['staff', 'admin']);
-
-        if (!$this->isPost()) {
-            $this->redirect('/demandes');
-            return;
-        }
-
-        $raw = trim((string) ($_POST['assigne_a'] ?? ''));
-        $assigneeId = $raw === '' ? null : (int) $raw;
-
-        if ($assigneeId !== null && $assigneeId <= 0) {
-            $this->setFlash('danger', 'Assignation invalide.');
-            $this->redirect('/demandes');
-            return;
-        }
-
-        if ($assigneeId !== null) {
-            $u = (new User())->findById($assigneeId);
-            if ($u === null) {
-                $this->setFlash('danger', 'Utilisateur staff/admin introuvable.');
-                $this->redirect('/demandes');
-                return;
-            }
-            $role = (string) ($u['role'] ?? '');
-            if (!in_array($role, ['staff', 'admin'], true)) {
-                $this->setFlash('danger', 'Utilisateur staff/admin introuvable.');
-                $this->redirect('/demandes');
-                return;
-            }
-        }
-
-        $demModel = new DemandeDeService();
-        $before = $demModel->findById((int) $id);
-        $ok = $demModel->updateAssignee((int) $id, $assigneeId);
-
-        if ($ok && is_array($before) && $assigneeId !== null) {
-            $oldAssign = (int) ($before['assigne_a'] ?? 0);
-            if ($oldAssign !== $assigneeId) {
-                $titre = (string) ($before['titre'] ?? '');
-                (new NotificationModel())->create(
-                    $assigneeId,
-                    'Demande de service assignée : « ' . $titre . ' ».',
-                    '/demandes'
-                );
-            }
-        }
-
-        $this->setFlash($ok ? 'success' : 'danger', $ok ? 'Assignation enregistrée.' : 'Assignation impossible.');
-
-        $this->redirect('/demandes');
-    }
-
     public function downloadPiece(int|string $id): void
     {
         $this->requireLogin();
@@ -919,42 +861,38 @@ class DemandesController extends Controller
         if (!$this->isPost()) {
             http_response_code(405);
             echo json_encode(['ok' => false, 'error' => 'Méthode non autorisée.'], $jf);
-
-            return;
+            exit;
         }
 
         if (!DemandeStaffAiCheckService::isEnabled()) {
             http_response_code(503);
             echo json_encode(['ok' => false, 'error' => 'Vérification IA non disponible (clé Groq ou option désactivée).'], $jf);
-
-            return;
+            exit;
         }
 
         $dem = (new DemandeDeService())->findById((int) $id);
         if ($dem === null) {
             http_response_code(404);
             echo json_encode(['ok' => false, 'error' => 'Demande introuvable.'], $jf);
-
-            return;
+            exit;
         }
 
         $result = DemandeStaffAiCheckService::analyze($dem);
         if ($result === null) {
             http_response_code(502);
             echo json_encode(['ok' => false, 'error' => 'Analyse IA impossible. Réessayez plus tard.'], $jf);
-
-            return;
+            exit;
         }
 
         $payload = json_encode(['ok' => true] + $result, $jf);
         if ($payload === false || $payload === '') {
             http_response_code(500);
             echo json_encode(['ok' => false, 'error' => 'Encodage de la réponse impossible.'], $jf);
-
-            return;
+            exit;
         }
 
         echo $payload;
+        exit;
     }
 
     public function adminDelete(int|string $id): void

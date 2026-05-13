@@ -84,4 +84,25 @@ class Bureau
             ]
         );
     }
+
+    public function countRendezVousForBureau(int $bureauId): int
+    {
+        $statement = $this->model->query(
+            'SELECT COUNT(*) AS n FROM rendez_vous WHERE bureau_id = ?',
+            [$bureauId]
+        );
+        $row = $statement->fetch();
+
+        return (int) ($row['n'] ?? 0);
+    }
+
+    public function deleteById(int $id): bool
+    {
+        $statement = $this->model->query(
+            'DELETE FROM bureaux WHERE id = ?',
+            [$id]
+        );
+
+        return $statement->rowCount() > 0;
+    }
 }

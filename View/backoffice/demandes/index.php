@@ -4,7 +4,6 @@ require_once __DIR__ . '/../../shared/helpers.php';
 $demandes = $demandes ?? [];
 $stats = $stats ?? [];
 $statut_labels = $statut_labels ?? [];
-$staff_list = $staff_list ?? [];
 $statut_filter = (string) ($statut_filter ?? '');
 $pieces_by_demande = $pieces_by_demande ?? [];
 $demande_staff_ai_check_enabled = !empty($demande_staff_ai_check_enabled ?? false);
@@ -85,7 +84,6 @@ echo '<div class="mb-4">' . renderStatGrid($statCards) . '</div>';
                         <th>Titre</th>
                         <th>Pièces</th>
                         <th>Statut</th>
-                        <th>Assigné</th>
                         <th>Soumise</th>
                         <th class="text-end">Actions</th>
                     </tr>
@@ -93,7 +91,7 @@ echo '<div class="mb-4">' . renderStatGrid($statCards) . '</div>';
                 <tbody>
                     <?php if (empty($demandes)): ?>
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-5">Aucune demande.</td>
+                            <td colspan="8" class="text-center text-muted py-5">Aucune demande.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($demandes as $row): ?>
@@ -129,7 +127,6 @@ echo '<div class="mb-4">' . renderStatGrid($statCards) . '</div>';
                                     <?php endif; ?>
                                 </td>
                                 <td><span class="badge text-bg-secondary"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span></td>
-                                <td class="small"><?= htmlspecialchars((string) ($row['assigne_nom'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="small text-muted"><?= htmlspecialchars((string) ($row['soumise_le'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="text-end">
                                     <form method="post" action="<?= $this->url('/demandes/updateStatut/' . $sid) ?>" class="d-flex flex-wrap gap-1 justify-content-end align-items-center mb-2">
@@ -139,18 +136,6 @@ echo '<div class="mb-4">' . renderStatGrid($statCards) . '</div>';
                                             <?php endforeach; ?>
                                         </select>
                                         <button type="submit" class="btn btn-sm btn-primary">Statut</button>
-                                    </form>
-                                    <form method="post" action="<?= $this->url('/demandes/assign/' . $sid) ?>" class="d-flex flex-wrap gap-1 justify-content-end align-items-center mb-2">
-                                        <select name="assigne_a" class="form-select form-select-sm" style="width: auto; max-width: 11rem;">
-                                            <option value="">Non assigné</option>
-                                            <?php foreach ($staff_list as $su): ?>
-                                                <?php $uid = (int) ($su['id'] ?? 0); ?>
-                                                <option value="<?= $uid ?>" <?= (int) ($row['assigne_a'] ?? 0) === $uid ? 'selected' : '' ?>>
-                                                    <?= htmlspecialchars(trim(($su['prenom'] ?? '') . ' ' . ($su['nom'] ?? '')), ENT_QUOTES, 'UTF-8') ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <button type="submit" class="btn btn-sm btn-outline-primary">Assigner</button>
                                     </form>
                                     <?php if ($demande_staff_ai_check_enabled): ?>
                                         <div class="d-flex justify-content-end mb-2">
@@ -193,11 +178,11 @@ echo '<div class="mb-4">' . renderStatGrid($statCards) . '</div>';
                 <div id="usDemandeStaffAiResult" class="d-none">
                     <div class="mb-3"><span class="badge" id="usDemandeStaffAiVerdict"></span></div>
                     <h3 class="h6">Points clés</h3>
-                    <p class="small" id="usDemandeStaffAiPoints"></p>
+                    <p class="small text-break" style="white-space: pre-line;" id="usDemandeStaffAiPoints"></p>
                     <h3 class="h6">Éléments manquants / à clarifier</h3>
-                    <p class="small" id="usDemandeStaffAiManquants"></p>
+                    <p class="small text-break" style="white-space: pre-line;" id="usDemandeStaffAiManquants"></p>
                     <h3 class="h6">Piste de traitement</h3>
-                    <p class="small mb-0" id="usDemandeStaffAiEtape"></p>
+                    <p class="small text-break mb-0" style="white-space: pre-line;" id="usDemandeStaffAiEtape"></p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -240,6 +225,19 @@ document.addEventListener('DOMContentLoaded', function () {
         return v || '—';
     }
 
+    function staffAiAsPlainText(v) {
+        if (v == null || v === '') {
+            return '—';
+        }
+        if (Array.isArray(v)) {
+            var lines = v.map(function (x) {
+                return (x == null) ? '' : String(x).trim();
+            }).filter(Boolean);
+            return lines.length ? lines.join('\n• ') : '—';
+        }
+        return String(v);
+    }
+
     document.querySelectorAll('.us-demande-staff-ai-check').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var url = btn.getAttribute('data-check-url');
@@ -254,20 +252,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
             fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 credentials: 'same-origin',
-                body: '{}'
+                body: new URLSearchParams()
             })
                 .then(function (r) {
                     return r.text().then(function (t) {
                         var t0 = (typeof t === 'string' ? t : '').replace(/^\uFEFF/, '');
+                        var brace = t0.indexOf('{');
+                        if (brace > 0) {
+                            t0 = t0.substring(brace);
+                        }
                         var j = null;
                         try {
                             j = t0 ? JSON.parse(t0) : null;
                         } catch (e) {
                             j = null;
                         }
-                        return { ok: r.ok, status: r.status, body: j, raw: t0 };
+                        return { ok: r.ok, status: r.status, body: j, raw: t };
                     });
                 })
                 .then(function (res) {
@@ -277,9 +282,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             verdictEl.textContent = verdictLabel(res.body.verdict);
                             verdictEl.className = 'badge ' + verdictBadgeClass(res.body.verdict);
                         }
-                        if (pointsEl) pointsEl.textContent = res.body.points_cles || '—';
-                        if (manquantsEl) manquantsEl.textContent = res.body.elements_manquants || '—';
-                        if (etapeEl) etapeEl.textContent = res.body.suggestion_prochaine_etape || '—';
+                        if (pointsEl) pointsEl.textContent = staffAiAsPlainText(res.body.points_cles);
+                        if (manquantsEl) manquantsEl.textContent = staffAiAsPlainText(res.body.elements_manquants);
+                        if (etapeEl) etapeEl.textContent = staffAiAsPlainText(res.body.suggestion_prochaine_etape);
                         result.classList.remove('d-none');
                     } else {
                         var msg;

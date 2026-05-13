@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 /**
- * Front controller: first URL segment selects Controller/<Segment>Controller.php.
- * MVC front controller: see README.md at repository root.
+ * Point d’entrée MVC : le premier segment d’URL choisit `Controller/<Segment>Controller.php`
+ * et la méthode correspondante. Voir README.md à la racine du dépôt.
  */
 class App
 {

@@ -20,8 +20,10 @@ body.us-landing {
     color: #4a5568;
 }
 
-.us-landing .us-landing-hero .lead.us-landing-text-body {
-    color: #3d4a5c;
+.us-landing-hero .us-brand-logo--hero {
+    height: clamp(40px, 5vw, 56px);
+    width: auto;
+    max-width: min(220px, 85vw);
 }
 
 .us-landing-glass .us-landing-glass-body {
@@ -228,13 +230,9 @@ body.us-landing {
     z-index: 1;
 }
 
-.us-login-brand .us-brand-mark {
-    width: 48px;
+.us-login-brand .us-brand-logo {
     height: 48px;
-    border-radius: 14px;
-    font-size: 1.35rem;
-    background: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.28);
+    max-width: 160px;
 }
 
 .us-login-brand h2 {

@@ -1,0 +1,218 @@
+/* Front office — module Rendez-vous (hub étudiant) */
+
+.us-rdv-hero {
+    position: relative;
+    border-radius: 20px;
+    padding: 2rem 1.75rem;
+    margin-bottom: 1.75rem;
+    overflow: hidden;
+    background: linear-gradient(125deg, #0b2a5a 0%, #1e5aa8 48%, #0d9488 100%);
+    color: #fff;
+    box-shadow: 0 18px 40px rgba(11, 42, 90, 0.22);
+}
+
+.us-rdv-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.18), transparent 45%);
+    pointer-events: none;
+}
+
+.us-rdv-hero-inner {
+    position: relative;
+    z-index: 1;
+}
+
+.us-rdv-hero h1 {
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+}
+
+.us-rdv-hero .lead {
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 1.05rem;
+}
+
+.us-rdv-hero .btn-light {
+    font-weight: 700;
+}
+
+.us-rdv-hero .btn-outline-light {
+    border-color: rgba(255, 255, 255, 0.55);
+    color: #fff;
+    font-weight: 600;
+}
+
+.us-rdv-hero .btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.us-rdv-kpi-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.us-rdv-kpi-card .us-rdv-kpi-value {
+    font-size: 1.65rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.us-rdv-kpi-card .us-rdv-kpi-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(15, 23, 42, 0.5);
+    font-weight: 700;
+}
+
+.us-rdv-kpi-card--total .us-rdv-kpi-value { color: #1e5aa8; }
+.us-rdv-kpi-card--ok .us-rdv-kpi-value { color: #198754; }
+.us-rdv-kpi-card--rate .us-rdv-kpi-value { color: #fd7e14; }
+.us-rdv-kpi-card--bureaux .us-rdv-kpi-value { color: #0d6efd; }
+
+.us-campus-map-wrap {
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.us-campus-map-head {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.us-campus-map {
+    position: relative;
+    height: 300px;
+    margin: 0 1rem 1rem;
+    border-radius: 14px;
+    background:
+        linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(34, 197, 94, 0.1) 55%, rgba(120, 113, 108, 0.14) 100%),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 48px),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 44px);
+    overflow: hidden;
+}
+
+.us-campus-map-pins {
+    position: absolute;
+    inset: 0;
+    transform-origin: center center;
+    transition: transform 0.2s ease;
+}
+
+.us-map-pin {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    border: 2px solid #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.us-map-pin:hover,
+.us-map-pin.is-active {
+    transform: translate(-50%, -50%) scale(1.12);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+    z-index: 2;
+}
+
+.us-map-pin--0 { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.us-map-pin--1 { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+.us-map-pin--2 { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+.us-map-pin--3 { background: linear-gradient(135deg, #eab308, #ca8a04); }
+.us-map-pin--4 { background: linear-gradient(135deg, #a855f7, #7e22ce); }
+.us-map-pin--5 { background: linear-gradient(135deg, #f43f5e, #be123c); }
+
+.us-hub-toolbar {
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+}
+
+.us-hub-bureau-card {
+    border-radius: 16px;
+    border: 1px solid rgba(15, 23, 42, 0.07) !important;
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.us-hub-bureau-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.1) !important;
+}
+
+.us-hub-bureau-card.is-highlight {
+    outline: 3px solid rgba(13, 110, 253, 0.45);
+    outline-offset: 2px;
+}
+
+.us-hub-card-top {
+    padding: 1rem 1.1rem 0.75rem;
+    color: #fff;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.us-hub-card-top h3 {
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.us-hub-card-body {
+    padding: 1rem 1.1rem 1.1rem;
+    background: #fff;
+}
+
+.us-hub-card-top--0 { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.us-hub-card-top--1 { background: linear-gradient(135deg, #0d9488, #0f766e); }
+.us-hub-card-top--2 { background: linear-gradient(135deg, #b45309, #92400e); }
+.us-hub-card-top--3 { background: linear-gradient(135deg, #7c3aed, #5b21b6); }
+.us-hub-card-top--4 { background: linear-gradient(135deg, #dc2626, #991b1b); }
+.us-hub-card-top--5 { background: linear-gradient(135deg, #166534, #14532d); }
+
+.us-hub-meta-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(15, 23, 42, 0.45);
+    font-weight: 800;
+}
+
+.us-hub-disponible {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    white-space: nowrap;
+}
+
+#mes-rendez-vous {
+    scroll-margin-top: 96px;
+}
+
+.us-hub-bureau-card {
+    scroll-margin-top: 100px;
+}

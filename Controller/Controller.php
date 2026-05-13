@@ -21,6 +21,35 @@ class Controller
     }
 
     /**
+     * URL absolue same-origin vers index.php?url=… pour les POST / fetch.
+     * Évite les résolutions relatives incorrectes (ex. …/demandes/ → …/demandes/index.php).
+     * Le paramètre url utilise des « / » littéraux (pas de %2F).
+     */
+    public function entryUrl(string $routePath): string
+    {
+        $routePath = trim($routePath, '/');
+        $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
+        $dir = dirname($scriptName);
+        if ($dir === '/' || $dir === '.') {
+            $dir = '';
+        } else {
+            $dir = rtrim($dir, '/');
+        }
+        $path = ($dir === '' ? '' : $dir) . '/index.php';
+        $query = $routePath === '' ? '' : ('?url=' . $routePath);
+
+        $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
+        $scheme = $https ? 'https' : 'http';
+        $host = trim((string) ($_SERVER['HTTP_HOST'] ?? ''));
+        if ($host === '') {
+            return $path . $query;
+        }
+
+        return $scheme . '://' . $host . $path . $query;
+    }
+
+    /**
      * Like url(), but appends `?v=<filemtime>` for local static assets so browsers
      * pick up CSS/JS changes immediately without manual hard-refresh.
      */
@@ -48,6 +77,8 @@ class Controller
         }
 
         extract($data, EXTR_SKIP);
+
+        require_once __DIR__ . '/../View/shared/helpers.php';
 
         ob_start();
         require $viewPath;

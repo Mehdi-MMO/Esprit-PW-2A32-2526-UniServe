@@ -18,7 +18,7 @@
     $eventsNavActive = ($pathStartsWith('evenements') || $pathStartsWith('events')) && !$clubsNavActive;
     $clubsEventsNavActive = $clubsNavActive || $eventsNavActive;
     ?>
-    <meta name="description" content="Portail UniServe — services universitaires, demandes, rendez-vous, documents, vie associative.">
+    <meta name="description" content="Portail UniServe — demandes de service, rendez-vous, documents, certifications, clubs, événements et notifications.">
     <title><?= htmlspecialchars(isset($title) && $title !== '' ? (string) $title . ' · UniServe' : 'UniServe', ENT_QUOTES, 'UTF-8') ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -27,6 +27,10 @@
     <?php endif; ?>
     <link rel="stylesheet" href="<?= $this->asset('/View/shared/css/main.css') ?>">
     <link rel="stylesheet" href="<?= $this->asset('/View/shared/css/frontoffice.css') ?>">
+    <link rel="icon" href="<?= $this->asset('/View/shared/assets/img/logo.png') ?>" type="image/png">
+    <?php if ($pathStartsWith('rendezvous')): ?>
+        <link rel="stylesheet" href="<?= $this->asset('/View/shared/css/rendezvous-hub.css') ?>">
+    <?php endif; ?>
 </head>
 <body class="us-frontoffice-layout">
     <a class="visually-hidden-focusable btn btn-sm btn-outline-secondary position-fixed top-0 start-0 m-2 z-3" href="#contenu-principal" style="background: var(--surface);">Aller au contenu</a>
@@ -58,7 +62,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top us-topbar shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= $this->url('/') ?>">
-                <span class="us-brand-mark" aria-hidden="true">U</span>
+                <?= us_brand_logo_html($this, 'us-brand-logo--nav', true) ?>
                 <span>UniServe</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#frontNav" aria-controls="frontNav" aria-expanded="false" aria-label="Basculer la navigation">

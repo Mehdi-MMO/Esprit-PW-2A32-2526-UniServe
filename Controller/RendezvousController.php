@@ -70,7 +70,7 @@ class RendezvousController extends Controller
     private function statutLabels(): array
     {
         return [
-            'reserve' => 'Réservé',
+            'reserve' => 'En attente',
             'confirme' => 'Confirmé',
             'annule' => 'Annulé',
             'termine' => 'Terminé',
@@ -136,8 +136,18 @@ class RendezvousController extends Controller
         $rdvModel = new RendezVous();
 
         if ($this->isStaffOrAdmin()) {
+            $tab = trim((string) ($_GET['tab'] ?? 'rdv'));
+            if (!in_array($tab, ['rdv', 'bureaux'], true)) {
+                $tab = 'rdv';
+            }
+
             $statut = trim((string) ($_GET['statut'] ?? ''));
             $q = trim((string) ($_GET['q'] ?? ''));
+            $sort = trim((string) ($_GET['sort'] ?? 'date_desc'));
+            if (!in_array($sort, ['date_desc', 'date_asc'], true)) {
+                $sort = 'date_desc';
+            }
+
             $filters = [];
             if ($statut !== '') {
                 $filters['statut'] = $statut;
@@ -146,18 +156,63 @@ class RendezvousController extends Controller
                 $filters['q'] = $q;
             }
 
-            $rdvs = $rdvModel->findAllForAdmin($filters);
-            $stats = $this->statsFromRows($rdvs);
-            $stats['bureaux_actifs'] = count($bureauModel->findAllActive());
+            $dashboardStats = $rdvModel->adminDashboardStats();
+            $bureauxAll = $bureauModel->findAllOrdered();
+            $nbBureaux = count($bureauxAll);
+            $nbRdvs = (int) ($dashboardStats['total'] ?? 0);
+
+            $perPage = 10;
+            $page = max(1, (int) ($_GET['page'] ?? 1));
+            $totalFiltered = $rdvModel->countForAdmin($filters);
+            $totalPages = max(1, (int) ceil($totalFiltered / $perPage));
+            if ($page > $totalPages) {
+                $page = $totalPages;
+            }
+            $offset = ($page - 1) * $perPage;
+            $rdvs = $rdvModel->findAllForAdmin($filters, $sort, $perPage, $offset);
+
+            $bureauPerPage = 8;
+            $bureauPage = max(1, (int) ($_GET['bpage'] ?? 1));
+            $bureauTotalPages = max(1, (int) ceil($nbBureaux / $bureauPerPage));
+            if ($bureauPage > $bureauTotalPages) {
+                $bureauPage = $bureauTotalPages;
+            }
+            $bureauOffset = ($bureauPage - 1) * $bureauPerPage;
+            $bureauxPaged = array_slice($bureauxAll, $bureauOffset, $bureauPerPage);
+            $bureauFrom = $nbBureaux === 0 ? 0 : $bureauOffset + 1;
+            $bureauTo = min($nbBureaux, $bureauOffset + count($bureauxPaged));
+
+            $flash = null;
+            if (isset($_SESSION['flash'])) {
+                $flash = $_SESSION['flash'];
+                unset($_SESSION['flash']);
+            }
 
             $this->render('backoffice/rendezvous/index', [
                 'title' => 'Rendez-vous',
+                'tab' => $tab,
                 'rdvs' => $rdvs,
-                'stats' => $stats,
+                'dashboard_stats' => $dashboardStats,
+                'nb_rdvs' => $nbRdvs,
+                'nb_bureaux' => $nbBureaux,
+                'bureaux' => $bureauxPaged,
+                'bureau_page' => $bureauPage,
+                'bureau_total_pages' => $bureauTotalPages,
+                'bureau_from' => $bureauFrom,
+                'bureau_to' => $bureauTo,
                 'statut_filter' => $statut,
                 'q' => $q,
+                'sort' => $sort,
                 'statut_labels' => $this->statutLabels(),
+                'pagination' => [
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $totalFiltered,
+                    'total_pages' => $totalPages,
+                ],
+                'flash' => $flash,
             ]);
+
             return;
         }
 
@@ -165,16 +220,85 @@ class RendezvousController extends Controller
             $uid = $this->currentUserId();
             $rdvs = $rdvModel->findAllForStudent($uid);
             $stats = $this->statsFromRows($rdvs);
-            $stats['bureaux_actifs'] = count($bureauModel->findAllActive());
+            $bureauxActifs = $bureauModel->findAllActive();
+            $stats['bureaux_actifs'] = count($bureauxActifs);
+
+            $bq = trim((string) ($_GET['bq'] ?? ''));
+            $bFiltered = array_values(array_filter($bureauxActifs, static function (array $b) use ($bq): bool {
+                if ($bq === '') {
+                    return true;
+                }
+                $hay = mb_strtolower(
+                    trim((string) ($b['nom'] ?? '')) . ' ' .
+                    trim((string) ($b['localisation'] ?? '')) . ' ' .
+                    trim((string) ($b['type_service'] ?? '')),
+                    'UTF-8'
+                );
+
+                return str_contains($hay, mb_strtolower($bq, 'UTF-8'));
+            }));
+
+            $bPerPage = 6;
+            $bPage = max(1, (int) ($_GET['bpage'] ?? 1));
+            $bTotalFiltered = count($bFiltered);
+            $bTotalPages = max(1, (int) ceil($bTotalFiltered / $bPerPage));
+            if ($bPage > $bTotalPages) {
+                $bPage = $bTotalPages;
+            }
+            $bOff = ($bPage - 1) * $bPerPage;
+            $bureauxHub = array_slice($bFiltered, $bOff, $bPerPage);
+            $bureauFrom = $bTotalFiltered === 0 ? 0 : $bOff + 1;
+            $bureauTo = min($bTotalFiltered, $bOff + count($bureauxHub));
+
+            $nonAnnules = max(1, (int) $stats['total'] - (int) $stats['annule']);
+            $tauxSucces = (int) min(100, (int) round(100 * ((int) $stats['confirme'] + (int) $stats['termine']) / $nonAnnules));
+
+            $campusPins = [];
+            foreach ($bureauxActifs as $b) {
+                $bid = (int) ($b['id'] ?? 0);
+                if ($bid <= 0) {
+                    continue;
+                }
+                $campusPins[] = [
+                    'id' => $bid,
+                    'nom' => (string) ($b['nom'] ?? ''),
+                    'x' => (($bid * 61) % 78) + 8,
+                    'y' => (($bid * 47) % 65) + 12,
+                    'tone' => $bid % 6,
+                ];
+            }
+
+            $flash = null;
+            if (isset($_SESSION['flash'])) {
+                $flash = $_SESSION['flash'];
+                unset($_SESSION['flash']);
+            }
 
             $this->render('frontoffice/rendezvous/index', [
-                'title' => 'Mes rendez-vous',
+                'title' => 'Rendez-vous',
                 'rdvs' => $rdvs,
                 'stats' => $stats,
                 'statut_labels' => $this->statutLabels(),
                 'teacher_notice' => false,
+                'flash' => $flash,
+                'hub_bq' => $bq,
+                'hub_bpage' => $bPage,
+                'hub_bureaux' => $bureauxHub,
+                'hub_bureau_total_filtered' => $bTotalFiltered,
+                'hub_bureau_total_pages' => $bTotalPages,
+                'hub_bureau_from' => $bureauFrom,
+                'hub_bureau_to' => $bureauTo,
+                'hub_taux_succes' => $tauxSucces,
+                'hub_campus_pins' => $campusPins,
             ]);
+
             return;
+        }
+
+        $flash = null;
+        if (isset($_SESSION['flash'])) {
+            $flash = $_SESSION['flash'];
+            unset($_SESSION['flash']);
         }
 
         $this->render('frontoffice/rendezvous/index', [
@@ -183,7 +307,63 @@ class RendezvousController extends Controller
             'stats' => ['total' => 0, 'reserve' => 0, 'confirme' => 0, 'annule' => 0, 'termine' => 0, 'bureaux_actifs' => count($bureauModel->findAllActive())],
             'statut_labels' => $this->statutLabels(),
             'teacher_notice' => true,
+            'flash' => $flash,
         ]);
+    }
+
+    /**
+     * Printable list (same filters as admin index) — use the browser’s « Enregistrer au format PDF ».
+     */
+    public function exportPrint(): void
+    {
+        $this->requireLogin();
+        $this->requireRole(['staff', 'admin']);
+
+        $rdvModel = new RendezVous();
+        $statut = trim((string) ($_GET['statut'] ?? ''));
+        $q = trim((string) ($_GET['q'] ?? ''));
+        $sort = trim((string) ($_GET['sort'] ?? 'date_desc'));
+        if (!in_array($sort, ['date_desc', 'date_asc'], true)) {
+            $sort = 'date_desc';
+        }
+
+        $filters = [];
+        if ($statut !== '') {
+            $filters['statut'] = $statut;
+        }
+        if ($q !== '') {
+            $filters['q'] = $q;
+        }
+
+        $rows = $rdvModel->findAllForAdmin($filters, $sort, null, 0);
+
+        $this->render('backoffice/rendezvous/export_print', [
+            'title' => 'Export rendez-vous',
+            'rdvs' => $rows,
+            'statut_labels' => $this->statutLabels(),
+            'generated_at' => (new \DateTimeImmutable('now'))->format('d/m/Y H:i'),
+        ], 'print');
+    }
+
+    /**
+     * Étudiant : liste imprimable de ses propres rendez-vous (PDF via navigateur).
+     */
+    public function exportMesPrint(): void
+    {
+        $this->requireLogin();
+        if (!$this->isEtudiant()) {
+            $this->redirectByUserRole($this->currentRole());
+            return;
+        }
+
+        $rows = (new RendezVous())->findAllForStudent($this->currentUserId());
+
+        $this->render('frontoffice/rendezvous/export_mes_print', [
+            'title' => 'Mes rendez-vous — export',
+            'rdvs' => $rows,
+            'statut_labels' => $this->statutLabels(),
+            'generated_at' => (new \DateTimeImmutable('now'))->format('d/m/Y H:i'),
+        ], 'print');
     }
 
     public function createForm(): void
@@ -196,11 +376,17 @@ class RendezvousController extends Controller
 
         $bureaux = (new Bureau())->findAllActive();
 
+        $preBureau = (int) ($_GET['bureau_id'] ?? $_GET['bureau'] ?? 0);
+        $validIds = array_map(static fn (array $b): int => (int) ($b['id'] ?? 0), $bureaux);
+        if ($preBureau > 0 && !in_array($preBureau, $validIds, true)) {
+            $preBureau = 0;
+        }
+
         $this->render('frontoffice/rendezvous/create', [
             'title' => 'Réserver un créneau',
             'bureaux' => $bureaux,
             'old' => [
-                'bureau_id' => '',
+                'bureau_id' => $preBureau > 0 ? (string) $preBureau : '',
                 'motif' => '',
                 'date_debut' => '',
                 'date_fin' => '',
@@ -403,21 +589,21 @@ class RendezvousController extends Controller
         $this->requireRole(['staff', 'admin']);
 
         if (!$this->isPost()) {
-            $this->redirect('/rendezvous');
+            $this->redirect('/rendezvous?tab=rdv');
             return;
         }
 
         $statut = trim((string) ($_POST['statut'] ?? ''));
         if (!in_array($statut, RendezVous::allowedStatuts(), true)) {
             $this->setFlash('danger', 'Statut invalide.');
-            $this->redirect('/rendezvous');
+            $this->redirect('/rendezvous?tab=rdv');
             return;
         }
 
         $ok = (new RendezVous())->updateStatut((int) $id, $statut);
         $this->setFlash($ok ? 'success' : 'danger', $ok ? 'Statut mis à jour.' : 'Mise à jour impossible.');
 
-        $this->redirect('/rendezvous');
+        $this->redirect('/rendezvous?tab=rdv');
     }
 
     public function adminDelete(int|string $id): void
@@ -426,13 +612,13 @@ class RendezvousController extends Controller
         $this->requireRole(['staff', 'admin']);
 
         if (!$this->isPost()) {
-            $this->redirect('/rendezvous');
+            $this->redirect('/rendezvous?tab=rdv');
             return;
         }
 
         $ok = (new RendezVous())->deleteByAdmin((int) $id);
         $this->setFlash($ok ? 'success' : 'danger', $ok ? 'Rendez-vous supprimé.' : 'Suppression impossible.');
 
-        $this->redirect('/rendezvous');
+        $this->redirect('/rendezvous?tab=rdv');
     }
 }

@@ -10,7 +10,7 @@ $error = $error ?? null;
         <div class="us-kicker mb-1">Bureaux</div>
         <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Nouveau bureau'), ENT_QUOTES, 'UTF-8') ?></h1>
     </div>
-    <a href="<?= $this->url('/bureaux') ?>" class="btn btn-outline-secondary">Retour à la liste</a>
+    <a href="<?= $this->url('/rendezvous?tab=bureaux') ?>" class="btn btn-outline-secondary">Retour à la liste</a>
 </div>
 
 <?php if ($error !== null && $error !== ''): ?>

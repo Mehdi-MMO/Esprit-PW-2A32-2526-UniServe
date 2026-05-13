@@ -390,3 +390,25 @@ function profile_avatar_initial(string $prenom, string $nom): string
 
     return strtoupper(substr($source, 0, 1));
 }
+
+/**
+ * UniServe logo image with versioned src via Controller::asset().
+ *
+ * @param object $controller Controller with asset(string)
+ * @param string $extraClasses Appended to "us-brand-logo"
+ * @param bool $decorative When true: empty alt and aria-hidden (use beside visible "UniServe" text)
+ */
+function us_brand_logo_html(object $controller, string $extraClasses = '', bool $decorative = false): string
+{
+    if (!method_exists($controller, 'asset')) {
+        return '';
+    }
+    $src = htmlspecialchars($controller->asset('/View/shared/assets/img/logo.png'), ENT_QUOTES, 'UTF-8');
+    $classes = trim('us-brand-logo ' . $extraClasses);
+    $classAttr = htmlspecialchars($classes, ENT_QUOTES, 'UTF-8');
+    if ($decorative) {
+        return '<img src="' . $src . '" alt="" class="' . $classAttr . '" width="120" height="40" decoding="async" aria-hidden="true">';
+    }
+
+    return '<img src="' . $src . '" alt="UniServe" class="' . $classAttr . '" decoding="async">';
+}

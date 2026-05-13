@@ -55,21 +55,34 @@ class RendezVous
     }
 
     /**
-     * @param array{statut?: string, q?: string} $filters
-     * @return list<array<string, mixed>>
+     * Counts all rendez-vous by status (admin dashboard cards).
+     *
+     * @return array{total: int, reserve: int, confirme: int, annule: int, termine: int}
      */
-    public function findAllForAdmin(array $filters = []): array
+    public function adminDashboardStats(): array
     {
-        $sql = 'SELECT r.id, r.etudiant_id, r.bureau_id, r.motif, r.date_debut, r.date_fin, r.statut,
-                       r.reserve_le, r.annule_le,
-                       b.nom AS bureau_nom, b.localisation AS bureau_localisation,
-                       CONCAT(u.prenom, " ", u.nom) AS etudiant_nom, u.email AS etudiant_email
-                FROM rendez_vous r
-                INNER JOIN utilisateurs u ON u.id = r.etudiant_id
-                INNER JOIN bureaux b ON b.id = r.bureau_id
-                WHERE 1=1';
-        $params = [];
+        $out = ['total' => 0, 'reserve' => 0, 'confirme' => 0, 'annule' => 0, 'termine' => 0];
+        $statement = $this->model->query(
+            'SELECT statut, COUNT(*) AS c FROM rendez_vous GROUP BY statut',
+            []
+        );
+        foreach ($statement->fetchAll() as $row) {
+            $st = (string) ($row['statut'] ?? '');
+            $n = (int) ($row['c'] ?? 0);
+            $out['total'] += $n;
+            if (array_key_exists($st, $out)) {
+                $out[$st] = $n;
+            }
+        }
 
+        return $out;
+    }
+
+    /**
+     * @param array{statut?: string, q?: string} $filters
+     */
+    private function appendAdminListFilters(string &$sql, array &$params, array $filters): void
+    {
         $statut = isset($filters['statut']) ? trim((string) $filters['statut']) : '';
         if ($statut !== '' && in_array($statut, self::STATUTS, true)) {
             $sql .= ' AND r.statut = ?';
@@ -86,8 +99,56 @@ class RendezVous
             )';
             array_push($params, $like, $like, $like, $like, $like, $like);
         }
+    }
 
-        $sql .= ' ORDER BY r.date_debut DESC';
+    /**
+     * @param array{statut?: string, q?: string} $filters
+     */
+    public function countForAdmin(array $filters = []): int
+    {
+        $sql = 'SELECT COUNT(*) AS n
+                FROM rendez_vous r
+                INNER JOIN utilisateurs u ON u.id = r.etudiant_id
+                INNER JOIN bureaux b ON b.id = r.bureau_id
+                WHERE 1=1';
+        $params = [];
+        $this->appendAdminListFilters($sql, $params, $filters);
+        $statement = $this->model->query($sql, $params);
+        $row = $statement->fetch();
+
+        return (int) ($row['n'] ?? 0);
+    }
+
+    /**
+     * @param array{statut?: string, q?: string} $filters
+     * @return list<array<string, mixed>>
+     */
+    public function findAllForAdmin(
+        array $filters = [],
+        string $sort = 'date_desc',
+        ?int $limit = null,
+        int $offset = 0
+    ): array {
+        $sql = 'SELECT r.id, r.etudiant_id, r.bureau_id, r.motif, r.date_debut, r.date_fin, r.statut,
+                       r.reserve_le, r.annule_le,
+                       b.nom AS bureau_nom, b.localisation AS bureau_localisation,
+                       u.prenom AS etudiant_prenom, u.nom AS etudiant_nom_seul,
+                       CONCAT(u.prenom, " ", u.nom) AS etudiant_nom, u.email AS etudiant_email
+                FROM rendez_vous r
+                INNER JOIN utilisateurs u ON u.id = r.etudiant_id
+                INNER JOIN bureaux b ON b.id = r.bureau_id
+                WHERE 1=1';
+        $params = [];
+        $this->appendAdminListFilters($sql, $params, $filters);
+
+        $dir = $sort === 'date_asc' ? 'ASC' : 'DESC';
+        $sql .= ' ORDER BY r.date_debut ' . $dir;
+
+        if ($limit !== null && $limit > 0) {
+            $lim = max(1, (int) $limit);
+            $off = max(0, (int) $offset);
+            $sql .= ' LIMIT ' . $lim . ' OFFSET ' . $off;
+        }
 
         $statement = $this->model->query($sql, $params);
 
