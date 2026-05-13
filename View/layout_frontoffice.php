@@ -59,13 +59,9 @@
         $navEmail = trim((string) ($_SESSION['user']['email'] ?? ''));
     }
     ?>
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top us-topbar shadow-sm">
-        <div class="container">
-            <a class="navbar-brand d-inline-flex align-items-center us-navbar-brand-logo" href="<?= $this->url('/') ?>" aria-label="UniServe — accueil"><?= us_brand_logo_html($this, 'us-brand-logo--nav us-brand-logo--on-dark', false) ?></a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#frontNav" aria-controls="frontNav" aria-expanded="false" aria-label="Basculer la navigation">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top us-topbar shadow-sm"><div class="container"><a class="navbar-brand d-inline-flex align-items-center us-navbar-brand-logo" href="<?= $this->url('/') ?>" aria-label="UniServe — accueil"><?= us_brand_logo_html($this, 'us-brand-logo--nav us-brand-logo--on-dark', false) ?></a><button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#frontNav" aria-controls="frontNav" aria-expanded="false" aria-label="Basculer la navigation">
                 <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="frontNav">
+            </button><div class="collapse navbar-collapse" id="frontNav">
                 <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-1 gap-xxl-2 us-front-nav-main">
                     <li class="nav-item"><a class="nav-link <?= $pathStartsWith('frontoffice') ? 'active' : '' ?>" href="<?= $this->url('/frontoffice/dashboard') ?>" title="Tableau de bord">Accueil</a></li>
                     <li class="nav-item"><a class="nav-link <?= ($pathStartsWith('demandes') || $pathStartsWith('services')) ? 'active' : '' ?>" href="<?= $this->url('/demandes') ?>" title="Demandes de service : vos dossiers, nouvelle demande, et catalogue des types"><span class="d-xl-none">Demandes</span><span class="d-none d-xl-inline">Mes demandes</span></a></li>
@@ -195,6 +191,23 @@
             </div>
         </div>
     </nav>
+    <?php
+    // #region agent log
+    @file_put_contents(
+        dirname(__DIR__) . DIRECTORY_SEPARATOR . 'debug-0d44c0.log',
+        json_encode([
+            'sessionId' => '0d44c0',
+            'runId' => 'post-abut',
+            'hypothesisId' => 'H-FO',
+            'location' => 'layout_frontoffice.php:afterNav',
+            'message' => 'front nav render marker',
+            'data' => ['containerAbutted' => true],
+            'timestamp' => (int) round(microtime(true) * 1000),
+        ], JSON_UNESCAPED_UNICODE) . "\n",
+        FILE_APPEND | LOCK_EX
+    );
+    // #endregion
+    ?>
 
     <main id="contenu-principal" class="container-fluid us-main-front px-3 px-sm-4 px-xl-5 mt-5 pt-4 pb-5">
         <?= $content ?>
@@ -222,5 +235,25 @@
     <?php if (isset($_SESSION['user']['id'])): ?>
         <script src="<?= $this->asset('/View/shared/js/notifications.js') ?>"></script>
     <?php endif; ?>
+    <script>
+    // #region agent log
+    (function () {
+        var endpoint = 'http://127.0.0.1:7546/ingest/be76f790-1465-45d3-88ba-1c2c0e433a93';
+        var c = document.querySelector('.us-topbar .navbar > .container');
+        if (!c) return;
+        var kids = [];
+        for (var i = 0; i < c.childNodes.length; i++) {
+            var n = c.childNodes[i];
+            if (n.nodeType === 3) {
+                var t = String(n.textContent || '');
+                kids.push({ t: 3, len: t.length, preview: t.slice(0, 40) });
+            } else {
+                kids.push({ t: n.nodeType, name: n.nodeName });
+            }
+        }
+        fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '0d44c0' }, body: JSON.stringify({ sessionId: '0d44c0', runId: 'post-abut', hypothesisId: 'H-FO-DOM', location: 'layout_frontoffice:inline', message: 'navbar container childNodes', data: { kids: kids }, timestamp: Date.now() }) }).catch(function () {});
+    })();
+    // #endregion
+    </script>
 </body>
 </html>

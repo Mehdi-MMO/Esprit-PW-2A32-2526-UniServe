@@ -22,10 +22,6 @@
     line-height: 1.25;
 }
 
-.sidebar .us-sidebar-brand-row .us-brand-logo--sidebar {
-    clip-path: inset(0 0 5px 0);
-}
-
 .ms-sidebar {
     margin-left: 250px;
     transition: margin-left 0.2s ease;

@@ -220,12 +220,6 @@ a {
     }
 }
 
-/* Some logo exports include a light strip under the navy bar — trim without hurting type */
-.us-topbar .navbar-brand img.us-brand-logo--nav,
-.us-landing .us-landing-nav .navbar-brand img.us-brand-logo--nav {
-    clip-path: inset(0 0 5px 0);
-}
-
 .us-brand-logo {
     display: block;
     height: 32px;
@@ -895,7 +889,7 @@ a {
     top: -4px;
     right: -4px;
     margin: 0;
-    border: 2px solid var(--brand, #0b2a5a);
+    border: 2px solid var(--brand);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
@@ -908,11 +902,11 @@ a {
     width: min(380px, calc(100vw - 1.5rem));
     padding: 0;
     margin-top: 0.6rem !important;
-    border: 1px solid var(--border, rgba(15, 23, 42, 0.08));
+    border: 1px solid var(--border);
     border-radius: 16px;
     box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12), 0 4px 10px rgba(15, 23, 42, 0.05);
     overflow: hidden;
-    background: var(--surface, #ffffff);
+    background: var(--surface);
 }
 
 .us-notifs-panel-head {
@@ -927,7 +921,7 @@ a {
 
 .us-notifs-panel-head .us-kicker {
     font-size: 0.7rem;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     letter-spacing: 0.095em;
     font-weight: 700;
     text-transform: uppercase;
@@ -947,7 +941,7 @@ a {
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     text-decoration: none;
     transition: background-color 0.18s ease, color 0.18s ease;
 }
@@ -955,7 +949,7 @@ a {
 .us-notifs-panel-link:hover,
 .us-notifs-panel-link:focus-visible {
     background: rgba(11, 42, 90, 0.08);
-    color: var(--brand, #0b2a5a);
+    color: var(--brand);
     outline: none;
 }
 
@@ -1028,7 +1022,7 @@ a {
 
 .us-notifs-row-time {
     font-size: 0.75rem;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     font-weight: 500;
 }
 
@@ -1036,7 +1030,7 @@ a {
     width: 8px;
     height: 8px;
     border-radius: 999px;
-    background: var(--accent, #f59f00);
+    background: var(--accent);
     box-shadow: 0 0 0 3px rgba(245, 159, 0, 0.18);
 }
 
@@ -1048,7 +1042,7 @@ a {
     border-radius: 10px;
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--brand, #0b2a5a);
+    color: var(--brand);
     text-decoration: none;
     background: rgba(11, 42, 90, 0.04);
     transition: background-color 0.18s ease;
@@ -1070,7 +1064,7 @@ a {
     flex-shrink: 0;
     font-size: 0.95rem;
     background: rgba(11, 42, 90, 0.08);
-    color: var(--brand, #0b2a5a);
+    color: var(--brand);
 }
 
 .us-notifs-icon--demandes {
@@ -1100,7 +1094,7 @@ a {
 
 .us-notifs-icon--default {
     background: rgba(11, 42, 90, 0.08);
-    color: var(--brand, #0b2a5a);
+    color: var(--brand);
 }
 
 .us-notifs-loading,
@@ -1110,7 +1104,7 @@ a {
     justify-content: center;
     gap: 0.5rem;
     padding: 1.2rem 0.6rem;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     font-size: 0.88rem;
     font-weight: 500;
 }
@@ -1126,7 +1120,7 @@ a {
     text-align: center;
     gap: 0.35rem;
     padding: 1.6rem 1rem;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
 }
 
 .us-notifs-empty-icon {
@@ -1137,7 +1131,7 @@ a {
     height: 44px;
     border-radius: 999px;
     background: rgba(11, 42, 90, 0.06);
-    color: var(--brand, #0b2a5a);
+    color: var(--brand);
     font-size: 1.05rem;
     margin-bottom: 0.25rem;
 }
@@ -1150,7 +1144,7 @@ a {
 
 .us-notifs-empty-sub {
     font-size: 0.82rem;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
 }
 
 /* ----- Page header (shared: notifications view on backoffice + frontoffice) ----- */
@@ -1234,7 +1228,7 @@ a {
     border-radius: 999px;
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     text-decoration: none;
     transition: background-color 0.18s ease, color 0.18s ease;
 }
@@ -1242,13 +1236,13 @@ a {
 .us-notifs-filter-chip:hover,
 .us-notifs-filter-chip:focus-visible {
     background: rgba(11, 42, 90, 0.08);
-    color: var(--brand, #0b2a5a);
+    color: var(--brand);
     text-decoration: none;
     outline: none;
 }
 
 .us-notifs-filter-chip.is-active {
-    background: var(--brand, #0b2a5a);
+    background: var(--brand);
     color: #ffffff;
     box-shadow: 0 4px 10px rgba(11, 42, 90, 0.18);
 }
@@ -1267,7 +1261,7 @@ a {
     padding: 0 0.4rem;
     border-radius: 999px;
     background: rgba(11, 42, 90, 0.1);
-    color: var(--brand, #0b2a5a);
+    color: var(--brand);
     font-size: 0.72rem;
     font-weight: 700;
 }
@@ -1282,7 +1276,7 @@ a {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     font-weight: 800;
     margin: 0 0 0.5rem;
 }
@@ -1300,8 +1294,8 @@ a {
     gap: 0.85rem;
     align-items: flex-start;
     padding: 1rem 1.1rem;
-    background: var(--surface, #ffffff);
-    border: 1px solid var(--border, rgba(15, 23, 42, 0.08));
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 14px;
     box-shadow: 0 2px 6px rgba(16, 24, 40, 0.04);
     transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
@@ -1316,7 +1310,7 @@ a {
 .us-notif-row.is-unread {
     border-color: rgba(245, 159, 0, 0.45);
     box-shadow: 0 10px 24px rgba(245, 159, 0, 0.1);
-    background: linear-gradient(180deg, rgba(245, 159, 0, 0.05), #ffffff 60%);
+    background: linear-gradient(180deg, rgba(245, 159, 0, 0.05), var(--surface) 60%);
 }
 
 .us-notif-row .us-notifs-icon {
@@ -1343,7 +1337,7 @@ a {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     font-weight: 700;
-    color: var(--brand, #0b2a5a);
+    color: var(--brand);
     padding: 0.15rem 0.55rem;
     border-radius: 999px;
     background: rgba(11, 42, 90, 0.08);
@@ -1351,7 +1345,7 @@ a {
 
 .us-notif-row-time {
     font-size: 0.78rem;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     font-weight: 500;
 }
 
@@ -1373,7 +1367,7 @@ a {
     display: inline-flex;
     align-items: center;
     font-size: 0.8rem;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     font-weight: 600;
 }
 
@@ -1384,13 +1378,13 @@ a {
     width: 10px;
     height: 10px;
     border-radius: 999px;
-    background: var(--accent, #f59f00);
+    background: var(--accent);
     box-shadow: 0 0 0 4px rgba(245, 159, 0, 0.18);
 }
 
 .us-notifs-empty--page {
     padding: 2.5rem 1.5rem;
-    background: var(--surface, #ffffff);
+    background: var(--surface);
     border: 1.5px dashed rgba(11, 42, 90, 0.18);
     border-radius: 18px;
 }

@@ -24,10 +24,7 @@
 <body class="us-landing">
     <?php $landingNav = $landingNav ?? null; ?>
     <a class="visually-hidden-focusable position-absolute top-0 start-0 m-2 btn btn-sm btn-primary z-3" href="#main-content">Aller au contenu</a>
-    <nav class="navbar navbar-expand-lg us-topbar us-landing-nav navbar-dark shadow-sm" aria-label="Navigation principale">
-        <div class="container">
-            <a class="navbar-brand d-inline-flex align-items-center us-navbar-brand-logo" href="<?= $this->url('/') ?>" aria-label="UniServe — accueil"<?= $landingNav === 'home' ? ' aria-current="page"' : '' ?>><?= us_brand_logo_html($this, 'us-brand-logo--nav us-brand-logo--on-dark', false) ?></a>
-            <a class="btn btn-outline-light btn-sm px-3" href="<?= $this->url('/auth/login') ?>"<?= $landingNav === 'login' ? ' aria-current="page"' : '' ?>>Se connecter</a>
+    <nav class="navbar navbar-expand-lg us-topbar us-landing-nav navbar-dark shadow-sm" aria-label="Navigation principale"><div class="container"><a class="navbar-brand d-inline-flex align-items-center us-navbar-brand-logo" href="<?= $this->url('/') ?>" aria-label="UniServe — accueil"<?= $landingNav === 'home' ? ' aria-current="page"' : '' ?>><?= us_brand_logo_html($this, 'us-brand-logo--nav us-brand-logo--on-dark', false) ?></a>
         </div>
     </nav>
     <main id="main-content" class="us-landing-main">

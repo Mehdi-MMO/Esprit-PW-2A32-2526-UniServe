@@ -17,7 +17,7 @@ body.us-landing {
 
 /* Stronger body copy contrast (WCAG-friendly on white / --bg) */
 .us-landing .us-landing-text-body {
-    color: #4a5568;
+    color: var(--text-muted);
 }
 
 .us-landing-hero .us-brand-logo--hero {
@@ -27,7 +27,7 @@ body.us-landing {
 }
 
 .us-landing-glass .us-landing-glass-body {
-    color: #3d4a5c;
+    color: var(--text);
 }
 
 .us-landing-main {
@@ -110,13 +110,13 @@ body.us-landing {
 .us-landing-features .us-landing-feature-card:hover {
     box-shadow: var(--shadow-sm);
     border-color: rgba(11, 42, 90, 0.16);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 .us-landing-features .us-feature-icon {
     width: 44px;
     height: 44px;
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     font-size: 1.05rem;
 }
 
@@ -131,7 +131,7 @@ body.us-landing {
     font-size: 0.875rem;
     line-height: 1.45;
     margin-bottom: 0;
-    color: #4a5568;
+    color: var(--text-muted);
 }
 
 .us-landing-features .us-section-heading {
@@ -148,14 +148,14 @@ body.us-landing {
     --bs-btn-hover-border-color: rgba(11, 42, 90, 0.5);
     --bs-btn-active-bg: rgba(11, 42, 90, 0.1);
     --bs-btn-active-border-color: var(--brand);
-    font-weight: var(--btn-font-weight, 500);
+    font-weight: var(--btn-font-weight);
     border-radius: var(--btn-radius);
 }
 
 .us-landing .btn-us-ghost:focus-visible {
     outline: 2px solid var(--brand);
     outline-offset: 3px;
-    box-shadow: 0 0 0 0.25rem rgba(11, 42, 90, 0.2);
+    box-shadow: var(--focus-ring);
 }
 
 .us-login-back:focus-visible,
@@ -209,7 +209,7 @@ body.us-landing {
 
 .us-login-brand {
     background: linear-gradient(155deg, #0a234c 0%, var(--brand) 42%, #123a72 100%);
-    color: #fff;
+    color: var(--brand-contrast);
     padding: clamp(1.75rem, 4vw, 2.75rem);
     position: relative;
     overflow: hidden;
@@ -276,7 +276,7 @@ body.us-landing {
 
 .us-login-brand .us-login-step-title {
     font-weight: 700;
-    color: #fff;
+    color: var(--brand-contrast);
     display: block;
     margin-bottom: 0.15rem;
 }
