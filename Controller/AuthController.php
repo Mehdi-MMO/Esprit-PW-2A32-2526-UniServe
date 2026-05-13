@@ -89,30 +89,34 @@ class AuthController extends Controller
             if (LoginRiskService::isStepUpEnabled()) {
                 $risk = new LoginRiskService();
                 $fp = $risk->fingerprintFromRequest();
-                $assessment = $risk->assessLogin($user, $email, $fp);
-                $level = (string) ($assessment['risk_level'] ?? 'low');
 
-                if (in_array($level, ['medium', 'high'], true)) {
-                    $challenge = $risk->createChallenge((int) ($user['id'] ?? 0), $email);
-                    $mailService = new MailService();
-                    $subject = 'UniServe — Vérification de connexion';
-                    $otp = (string) ($challenge['otp'] ?? '');
-                    $requestToken = (string) ($challenge['request_token'] ?? '');
-                    $htmlBody = '<p>Bonjour,</p><p>Un code de vérification a été demandé suite à une connexion inhabituelle.</p>'
-                        . '<p>Code : <strong>' . htmlspecialchars($otp, ENT_QUOTES, 'UTF-8') . '</strong></p>'
-                        . '<p>Ce code expire dans 10 minutes.</p>';
-                    $textBody = "Bonjour,\nCode de vérification : {$otp}\nExpire dans 10 minutes.";
-                    $sent = $mailService->send($email, $subject, $htmlBody, $textBody);
+                // Skip OTP for admin users
+                if ($role !== 'admin') {
+                    $assessment = $risk->assessLogin($user, $email, $fp);
+                    $level = (string) ($assessment['risk_level'] ?? 'low');
 
-                    if (!$sent) {
-                        $_SESSION['auth_login_success'] = 'Connexion autorisée (envoi du code de vérification impossible — vérifiez la configuration email).';
-                        $this->establishUserSession($user, $userModel, $risk, $fp);
-                        $this->redirectByUserRole($role);
+                    if (in_array($level, ['medium', 'high'], true)) {
+                        $challenge = $risk->createChallenge((int) ($user['id'] ?? 0), $email);
+                        $mailService = new MailService();
+                        $subject = 'UniServe — Vérification de connexion';
+                        $otp = (string) ($challenge['otp'] ?? '');
+                        $requestToken = (string) ($challenge['request_token'] ?? '');
+                        $htmlBody = '<p>Bonjour,</p><p>Un code de vérification a été demandé suite à une connexion inhabituelle.</p>'
+                            . '<p>Code : <strong>' . htmlspecialchars($otp, ENT_QUOTES, 'UTF-8') . '</strong></p>'
+                            . '<p>Ce code expire dans 10 minutes.</p>';
+                        $textBody = "Bonjour,\nCode de vérification : {$otp}\nExpire dans 10 minutes.";
+                        $sent = $mailService->send($email, $subject, $htmlBody, $textBody);
+
+                        if (!$sent) {
+                            $_SESSION['auth_login_success'] = 'Connexion autorisée (envoi du code de vérification impossible — vérifiez la configuration email).';
+                            $this->establishUserSession($user, $userModel, $risk, $fp);
+                            $this->redirectByUserRole($role);
+                            return;
+                        }
+
+                        $this->redirect('/auth/verifyLoginRisk/' . $requestToken);
                         return;
                     }
-
-                    $this->redirect('/auth/verifyLoginRisk/' . $requestToken);
-                    return;
                 }
 
                 $risk->trustDevice((int) ($user['id'] ?? 0), $fp);
