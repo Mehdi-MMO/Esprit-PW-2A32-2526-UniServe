@@ -2,6 +2,7 @@
 $categories = $categories ?? [];
 $demande = $demande ?? [];
 $error = $error ?? null;
+$pieces = $pieces ?? [];
 
 $cid = (int) ($demande['categorie_id'] ?? 0);
 $titre = (string) ($demande['titre'] ?? '');
@@ -24,7 +25,7 @@ $sid = (int) ($demande['id'] ?? 0);
 
 <div class="us-section-card" style="max-width: 720px;">
     <div class="card-body p-4">
-        <form method="post" action="<?= $this->url('/demandes/update/' . $sid) ?>">
+        <form method="post" action="<?= $this->url('/demandes/update/' . $sid) ?>" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="categorie_id" class="form-label">Catégorie <span class="text-danger">*</span></label>
                 <select class="form-select" id="categorie_id" name="categorie_id" required>
@@ -44,6 +45,30 @@ $sid = (int) ($demande['id'] ?? 0);
             <div class="mb-3">
                 <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
                 <textarea class="form-control" id="description" name="description" rows="5" required><?= htmlspecialchars($description, ENT_QUOTES, 'UTF-8') ?></textarea>
+                <?php if (!empty($demande_ai_description_enabled)) {
+                    include __DIR__ . '/../../shared/demande_description_ai.inc.php';
+                } ?>
+            </div>
+            <?php if ($pieces !== []): ?>
+                <div class="mb-3">
+                    <div class="form-label">Fichiers déjà joints</div>
+                    <ul class="list-group list-group-flush border rounded">
+                        <?php foreach ($pieces as $pj): ?>
+                            <?php $pid = (int) ($pj['id'] ?? 0); ?>
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                <a href="<?= $this->url('/demandes/downloadPiece/' . $pid) ?>"><?= htmlspecialchars((string) ($pj['nom_fichier'] ?? ''), ENT_QUOTES, 'UTF-8') ?></a>
+                                <form method="post" action="<?= $this->url('/demandes/deletePiece/' . $pid) ?>" class="mb-0" onsubmit="return confirm('Supprimer cette pièce ?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                                </form>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+            <div class="mb-3">
+                <label for="pieces" class="form-label">Ajouter des pièces jointes</label>
+                <input type="file" class="form-control" id="pieces" name="pieces[]" multiple accept=".pdf,.doc,.docx,image/jpeg,image/png">
+                <div class="form-text">PDF, Word ou images, 5 Mo max par fichier (12 fichiers max au total).</div>
             </div>
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Enregistrer</button>

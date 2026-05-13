@@ -19,7 +19,7 @@ $error = $error ?? null;
 
 <div class="us-section-card" style="max-width: 720px;">
     <div class="card-body p-4">
-        <form method="post" action="<?= $this->url('/demandes/create') ?>">
+        <form method="post" action="<?= $this->url('/demandes/create') ?>" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="categorie_id" class="form-label">Catégorie <span class="text-danger">*</span></label>
                 <select class="form-select" id="categorie_id" name="categorie_id" required>
@@ -39,6 +39,14 @@ $error = $error ?? null;
             <div class="mb-3">
                 <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
                 <textarea class="form-control" id="description" name="description" rows="5" required placeholder="Décrivez votre situation et ce dont vous avez besoin."><?= htmlspecialchars((string) $old['description'], ENT_QUOTES, 'UTF-8') ?></textarea>
+                <?php if (!empty($demande_ai_description_enabled)) {
+                    include __DIR__ . '/../../shared/demande_description_ai.inc.php';
+                } ?>
+            </div>
+            <div class="mb-3">
+                <label for="pieces" class="form-label">Pièces jointes <span class="text-muted fw-normal">(optionnel)</span></label>
+                <input type="file" class="form-control" id="pieces" name="pieces[]" multiple accept=".pdf,.doc,.docx,image/jpeg,image/png">
+                <div class="form-text">PDF, Word ou images (JPEG, PNG), jusqu’à 5 Mo par fichier, 12 fichiers max au total par demande.</div>
             </div>
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Envoyer la demande</button>

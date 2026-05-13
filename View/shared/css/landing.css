@@ -1,0 +1,345 @@
+/**
+ * Public landing / auth shell only (layout_landing.php).
+ * Loaded after main.css; uses tokens from :root there.
+ */
+
+body.us-landing {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg);
+    background-image:
+        radial-gradient(ellipse 900px 480px at 12% -8%, rgba(11, 42, 90, 0.09), transparent 55%),
+        radial-gradient(ellipse 800px 420px at 88% 0%, rgba(62, 207, 178, 0.08), transparent 50%),
+        radial-gradient(ellipse 600px 360px at 50% 100%, rgba(159, 122, 47, 0.06), transparent 45%);
+    background-attachment: fixed;
+}
+
+/* Stronger body copy contrast (WCAG-friendly on white / --bg) */
+.us-landing .us-landing-text-body {
+    color: #4a5568;
+}
+
+.us-landing .us-landing-hero .lead.us-landing-text-body {
+    color: #3d4a5c;
+}
+
+.us-landing-glass .us-landing-glass-body {
+    color: #3d4a5c;
+}
+
+.us-landing-main {
+    flex: 1 0 auto;
+    padding-bottom: 2.5rem;
+}
+
+.us-landing .us-landing-nav {
+    background: linear-gradient(180deg, #0d3166 0%, var(--brand) 100%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.us-landing-footer {
+    flex-shrink: 0;
+    background: var(--surface);
+    border-color: var(--border) !important;
+}
+
+/* —— Landing home —— */
+
+.us-landing-hero {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+    padding-top: clamp(2.25rem, 5vw, 3.75rem);
+    padding-bottom: clamp(2.5rem, 6vw, 4.25rem);
+}
+
+.us-landing-hero .us-hero-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    color: var(--text);
+    font-size: clamp(2.25rem, 4.5vw, 3.25rem);
+}
+
+.us-landing-hero .lead {
+    max-width: 34rem;
+    font-size: 1.05rem;
+    line-height: 1.55;
+}
+
+.us-landing-glass {
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: var(--shadow-md);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.us-landing-glass .us-landing-glass-inner {
+    padding: 1.35rem 1.5rem;
+}
+
+@media (min-width: 992px) {
+    .us-landing-glass .us-landing-glass-inner {
+        padding: 1.6rem 1.75rem;
+    }
+}
+
+.us-landing-features {
+    padding-top: clamp(1.5rem, 3vw, 2.25rem);
+    padding-bottom: 1rem;
+    margin-top: 0;
+    border-top: 1px solid rgba(11, 42, 90, 0.06);
+}
+
+.us-landing-features .us-landing-feature-card {
+    height: 100%;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow-soft);
+    padding: 1.35rem 1.25rem;
+    transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.us-landing-features .us-landing-feature-card:hover {
+    box-shadow: var(--shadow-sm);
+    border-color: rgba(11, 42, 90, 0.16);
+    transform: translateY(-2px);
+}
+
+.us-landing-features .us-feature-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 1.05rem;
+}
+
+.us-landing-features h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    color: var(--text);
+}
+
+.us-landing-features p {
+    font-size: 0.875rem;
+    line-height: 1.45;
+    margin-bottom: 0;
+    color: #4a5568;
+}
+
+.us-landing-features .us-section-heading {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text);
+}
+
+/* Ghost / outline CTA on hero */
+.us-landing .btn-us-ghost {
+    --bs-btn-color: var(--brand);
+    --bs-btn-border-color: rgba(11, 42, 90, 0.35);
+    --bs-btn-hover-bg: rgba(11, 42, 90, 0.06);
+    --bs-btn-hover-border-color: rgba(11, 42, 90, 0.5);
+    --bs-btn-active-bg: rgba(11, 42, 90, 0.1);
+    --bs-btn-active-border-color: var(--brand);
+    font-weight: 600;
+    border-radius: 999px;
+}
+
+.us-landing .btn-us-ghost:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 0.25rem rgba(11, 42, 90, 0.2);
+}
+
+.us-login-back:focus-visible,
+.us-landing .us-landing-link-focus:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.us-landing {
+        background-attachment: scroll;
+    }
+
+    .us-landing-features .us-landing-feature-card {
+        transition: none;
+    }
+
+    .us-landing-features .us-landing-feature-card:hover {
+        transform: none;
+    }
+}
+
+.us-login-brand-tagline {
+    opacity: 0.85;
+}
+
+.us-login-brand-lead {
+    opacity: 0.9;
+    line-height: 1.55;
+}
+
+/* —— Login page —— */
+
+.us-login-page {
+    padding-top: clamp(1.5rem, 4vw, 2.75rem);
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+.us-login-shell {
+    max-width: 1040px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.us-login-brand {
+    background: linear-gradient(155deg, #0a234c 0%, var(--brand) 42%, #123a72 100%);
+    color: #fff;
+    padding: clamp(1.75rem, 4vw, 2.75rem);
+    position: relative;
+    overflow: hidden;
+}
+
+.us-login-brand::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 420px 280px at 20% 20%, rgba(62, 207, 178, 0.22), transparent 55%),
+        radial-gradient(ellipse 360px 240px at 90% 80%, rgba(255, 255, 255, 0.08), transparent 50%);
+    pointer-events: none;
+}
+
+.us-login-brand > * {
+    position: relative;
+    z-index: 1;
+}
+
+.us-login-brand .us-brand-mark {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    font-size: 1.35rem;
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.28);
+}
+
+.us-login-brand h2 {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-size: clamp(1.35rem, 2.5vw, 1.6rem);
+}
+
+.us-login-brand .us-login-steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.us-login-brand .us-login-steps li {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.us-login-brand .us-login-steps li:last-child {
+    margin-bottom: 0;
+}
+
+.us-login-brand .us-login-step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.us-login-brand .us-login-step-title {
+    font-weight: 700;
+    color: #fff;
+    display: block;
+    margin-bottom: 0.15rem;
+}
+
+.us-login-form-col {
+    padding: clamp(1.5rem, 3.5vw, 2.5rem);
+    background: var(--surface);
+}
+
+.us-login-form-col .us-card {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+}
+
+.us-login-form-col .us-card > div {
+    padding: 0 !important;
+}
+
+.us-login-back {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.us-login-back:hover {
+    color: var(--brand);
+}
+
+.us-login-form-col .form-control:focus {
+    box-shadow: var(--focus-ring);
+}
+
+.us-login-form-meta {
+    margin-left: auto;
+}
+
+@media (max-width: 991.98px) {
+    .us-login-form-meta {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .us-login-brand {
+        text-align: center;
+    }
+
+    .us-login-brand .d-flex.align-items-center.gap-3 {
+        justify-content: center;
+    }
+
+    .us-login-brand .us-login-steps li {
+        text-align: left;
+    }
+}
+
+@media (max-width: 767.98px) {
+    body.us-landing {
+        background-attachment: scroll;
+    }
+}

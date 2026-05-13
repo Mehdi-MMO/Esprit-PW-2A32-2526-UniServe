@@ -4,6 +4,9 @@ $success = (string) ($success ?? '');
 $error = (string) ($error ?? '');
 $registrations = (int) ($registrations ?? 0);
 $isRegistered = (bool) ($isRegistered ?? false);
+$ticket_price = isset($ticket_price) ? (float) $ticket_price : round(max(0.0, (float) ($event['prix_ticket'] ?? 0)), 2);
+$stripe_ready = (bool) ($stripe_ready ?? false);
+$usd_to_tnd_rate = isset($usd_to_tnd_rate) ? (float) $usd_to_tnd_rate : 3.10;
 
 $status = (string) ($event['statut'] ?? 'planifie');
 $statusClass = match ($status) {
@@ -16,7 +19,11 @@ $statusClass = match ($status) {
 };
 $eventId = (int) ($event['id'] ?? 0);
 $capacite = isset($event['capacite']) ? (int) $event['capacite'] : 0;
-$canRegister = !$isRegistered && !in_array($status, ['annule', 'termine', 'complet'], true) && ($capacite <= 0 || $registrations < $capacite);
+$baseCanRegister = !$isRegistered && !in_array($status, ['annule', 'termine', 'complet'], true) && ($capacite <= 0 || $registrations < $capacite);
+$canRegister = $baseCanRegister && ($ticket_price <= 0 || $stripe_ready);
+$prixTicketTnd = $ticket_price > 0 ? round($ticket_price * $usd_to_tnd_rate, 2) : 0.0;
+$mapAddressRaw = trim((string) ($event['lieu'] ?? ''));
+$hasMapAddress = $mapAddressRaw !== '' && !preg_match('/^(à|a)\s*d[ée]finir\.?$/iu', $mapAddressRaw);
 ?>
 
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 us-page-header">
@@ -51,13 +58,29 @@ $canRegister = !$isRegistered && !in_array($status, ['annule', 'termine', 'compl
                 <p class="mb-4"><?= nl2br(htmlspecialchars((string) ($event['description'] ?? 'Aucune description disponible.'), ENT_QUOTES, 'UTF-8')) ?></p>
 
                 <div class="row g-2 text-muted small">
-                    <div class="col-md-6"><strong>Lieu:</strong> <?= htmlspecialchars((string) ($event['lieu'] ?? 'A definir'), ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="col-md-6">
+                        <div><strong>Lieu :</strong> <?= htmlspecialchars((string) ($event['lieu'] ?? 'À définir'), ENT_QUOTES, 'UTF-8') ?></div>
+                        <?php if ($hasMapAddress): ?>
+                            <?php $map_address = $mapAddressRaw;
+                            $map_actions_class = 'mt-2';
+                            require __DIR__ . '/../../shared/event_map_actions.php'; ?>
+                        <?php endif; ?>
+                    </div>
                     <div class="col-md-6"><strong>Debut:</strong> <?= htmlspecialchars((string) ($event['date_debut'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
                     <div class="col-md-6"><strong>Fin:</strong> <?= htmlspecialchars((string) ($event['date_fin'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
                     <div class="col-md-6">
                         <strong>Inscriptions:</strong> <?= $registrations ?>
                         <?php if ($capacite > 0): ?>
                             / <?= $capacite ?>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Ticket:</strong>
+                        <?php if ($ticket_price > 0): ?>
+                            $<?= htmlspecialchars(number_format($ticket_price, 2, '.', ' '), ENT_QUOTES, 'UTF-8') ?>
+                            (~ <?= htmlspecialchars(number_format($prixTicketTnd, 2, '.', ' '), ENT_QUOTES, 'UTF-8') ?> TND)
+                        <?php else: ?>
+                            Gratuit
                         <?php endif; ?>
                     </div>
                 </div>
@@ -70,13 +93,21 @@ $canRegister = !$isRegistered && !in_array($status, ['annule', 'termine', 'compl
             <div class="card-body p-3 p-md-4">
                 <h2 class="h6 mb-3">Action rapide</h2>
 
+                <?php if ($ticket_price > 0 && !$stripe_ready && $baseCanRegister): ?>
+                    <div class="alert alert-warning py-2 small mb-3" role="alert">
+                        Paiement indisponible : Stripe n’est pas configuré (<code>STRIPE_SECRET_KEY</code>). Contactez l’administration ou choisissez un événement gratuit.
+                    </div>
+                <?php endif; ?>
+
                 <?php if ($isRegistered): ?>
                     <form method="post" action="<?= $this->url('/evenements/unregister/' . $eventId) ?>">
                         <button type="submit" class="btn btn-outline-danger w-100 py-2">Annuler inscription</button>
                     </form>
                 <?php elseif ($canRegister): ?>
-                    <form method="post" action="<?= $this->url('/evenements/register/' . $eventId) ?>">
-                        <button type="submit" class="btn btn-success w-100 py-2">S inscrire</button>
+                    <form method="post"
+                          action="<?= $this->url('/evenements/register/' . $eventId) ?>"
+                          <?= $hasMapAddress ? ' data-register-route-form data-event-id="' . $eventId . '"' : '' ?>>
+                        <button type="submit" class="btn btn-success w-100 py-2"><?= $ticket_price > 0 ? 'Confirmer l’inscription et payer' : 'S’inscrire gratuitement' ?></button>
                     </form>
                 <?php else: ?>
                     <button type="button" class="btn btn-secondary w-100 py-2" disabled>Inscriptions indisponibles</button>
@@ -87,3 +118,11 @@ $canRegister = !$isRegistered && !in_array($status, ['annule', 'termine', 'compl
         </div>
     </div>
 </div>
+
+<?php if ($hasMapAddress): ?>
+    <div class="d-none"
+         data-map-route-context
+         data-map-event-id="<?= (int) $eventId ?>"
+         data-map-is-registered="<?= $isRegistered ? '1' : '0' ?>"
+         data-map-address="<?= htmlspecialchars($mapAddressRaw, ENT_QUOTES, 'UTF-8') ?>"></div>
+<?php endif; ?>

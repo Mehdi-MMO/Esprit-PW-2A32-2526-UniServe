@@ -65,6 +65,35 @@
     text-align: center;
 }
 
+/* Nested demandes: file d’attente vs types (catégories) */
+.sidebar .us-sidebar-nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.12rem;
+}
+
+.sidebar .nav-link.nav-link--sub {
+    margin-left: 0.65rem;
+    padding-left: 1.35rem;
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.74);
+}
+
+.sidebar .nav-link.nav-link--sub:hover,
+.sidebar .nav-link.nav-link--sub:focus {
+    color: #ffffff;
+}
+
+.sidebar .nav-link.nav-link--sub.active {
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.sidebar .nav-link.nav-link--sub.active::before {
+    left: 14px;
+}
+
 .top-header.bg-white {
     background: var(--surface) !important;
 }
@@ -831,4 +860,33 @@
     .us-chart-wrap--wide {
         height: 220px;
     }
+}
+
+/* Top bar: notification bell on light background (shared markup from main.css) */
+.us-backoffice-layout .top-header {
+    gap: 0.75rem;
+}
+
+.us-backoffice-layout .top-header .us-notifs-bell {
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: rgba(11, 42, 90, 0.06);
+    color: #0b2a5a;
+}
+
+.us-backoffice-layout .top-header .us-notifs-bell:hover,
+.us-backoffice-layout .top-header .us-notifs-bell:focus-visible {
+    background: rgba(11, 42, 90, 0.1);
+    border-color: rgba(11, 42, 90, 0.18);
+    box-shadow: 0 0 0 0.18rem rgba(11, 42, 90, 0.08);
+}
+
+.us-backoffice-layout .top-header .us-notifs-bell.is-active,
+.us-backoffice-layout .top-header .us-notifs-bell[aria-expanded="true"] {
+    background: rgba(11, 42, 90, 0.12);
+    border-color: rgba(11, 42, 90, 0.22);
+}
+
+.us-backoffice-layout .top-header .us-notifs-bell .us-nav-badge {
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
 }

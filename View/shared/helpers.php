@@ -180,7 +180,8 @@ function renderFormField(string $name, string $label, string $type = 'text', mix
     } else {
         $min_attr = isset($options['min']) ? " min=\"{$options['min']}\"" : '';
         $max_attr = isset($options['max']) ? " max=\"{$options['max']}\"" : '';
-        $fieldHtml = "<input type=\"{$type}\" class=\"{$class}\" name=\"{$name}\" id=\"{$name}\" value=\"" . htmlspecialchars((string) $value) . "\"{$required}{$placeholder_attr}{$min_attr}{$max_attr}>";
+        $step_attr = isset($options['step']) ? ' step="' . htmlspecialchars((string) $options['step'], ENT_QUOTES, 'UTF-8') . '"' : '';
+        $fieldHtml = "<input type=\"{$type}\" class=\"{$class}\" name=\"{$name}\" id=\"{$name}\" value=\"" . htmlspecialchars((string) $value) . "\"{$required}{$placeholder_attr}{$min_attr}{$max_attr}{$step_attr}>";
     }
 
     return <<<HTML
@@ -341,4 +342,51 @@ function renderActionButtons(array $actions): string
     }, $actions);
 
     return '<div class="btn-group btn-group-sm" role="group">' . implode(' ', $buttons) . '</div>';
+}
+
+/**
+ * Public URL for a stored profile photo path, or null.
+ * Supports Model/uploads/profile_pics/ (current) and View/shared/assets/profile-pics/ (legacy DB rows).
+ *
+ * @param object $controller Controller instance exposing url(string $path)
+ */
+function profile_photo_public_url(string $photoProfil, object $controller): ?string
+{
+    $p = trim($photoProfil);
+    $allowed = [
+        'Model/uploads/profile_pics/',
+        'View/shared/assets/profile-pics/',
+    ];
+    $ok = false;
+    foreach ($allowed as $prefix) {
+        if ($p !== '' && str_starts_with($p, $prefix)) {
+            $ok = true;
+            break;
+        }
+    }
+    if (!$ok) {
+        return null;
+    }
+    if (!method_exists($controller, 'url')) {
+        return null;
+    }
+
+    return $controller->url('/' . $p);
+}
+
+/**
+ * Single-letter avatar fallback (UTF-8 when mbstring is available).
+ */
+function profile_avatar_initial(string $prenom, string $nom): string
+{
+    $p = trim($prenom);
+    $n = trim($nom);
+    $source = $p !== '' ? $p : ($n !== '' ? $n : 'U');
+    if (function_exists('mb_substr')) {
+        $ch = mb_substr($source, 0, 1, 'UTF-8');
+
+        return function_exists('mb_strtoupper') ? mb_strtoupper($ch, 'UTF-8') : strtoupper($ch);
+    }
+
+    return strtoupper(substr($source, 0, 1));
 }

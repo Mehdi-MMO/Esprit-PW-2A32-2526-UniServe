@@ -20,6 +20,25 @@ class Controller
         return $this->basePath() . ($path === '/' ? '' : $path);
     }
 
+    /**
+     * Like url(), but appends `?v=<filemtime>` for local static assets so browsers
+     * pick up CSS/JS changes immediately without manual hard-refresh.
+     */
+    public function asset(string $path = ''): string
+    {
+        $relative = '/' . ltrim($path, '/');
+        $absoluteUrl = $this->basePath() . ($relative === '/' ? '' : $relative);
+        $filesystemPath = dirname(__DIR__) . $relative;
+        if (is_file($filesystemPath)) {
+            $mtime = @filemtime($filesystemPath);
+            if ($mtime !== false && $mtime > 0) {
+                $separator = strpos($absoluteUrl, '?') === false ? '?' : '&';
+                return $absoluteUrl . $separator . 'v=' . $mtime;
+            }
+        }
+        return $absoluteUrl;
+    }
+
     public function render(string $view, array $data = [], ?string $layoutOverride = null): void
     {
         $viewPath = __DIR__ . '/../View/' . $view . '.php';

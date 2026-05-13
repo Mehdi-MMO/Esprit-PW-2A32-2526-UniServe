@@ -2,6 +2,12 @@
 
 declare(strict_types=1);
 
+/**
+ * Demandes de documents académiques (attestations, etc.).
+ *
+ * Hors périmètre : le pipeline « certification / quiz » DOCAC est exposé sous `/certifications`
+ * (voir CertificationsController). Ce contrôleur couvre les demandes de documents académiques classiques.
+ */
 class DocumentsController extends Controller
 {
     private function isPost(): bool

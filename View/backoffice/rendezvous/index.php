@@ -131,4 +131,4 @@ echo '<div class="mb-4">' . renderStatGrid($statCards) . '</div>';
     </div>
 </div>
 
-<p class="text-muted small mt-3 mb-0">Les bureaux sont définis dans <code>bureaux</code> (voir <code>uniserve_full.sql</code>). Les chevauchements sur un même bureau sont refusés côté serveur.</p>
+<p class="text-muted small mt-3 mb-0">Les bureaux sont définis dans <code>bureaux</code> (voir <code>db/uniserve_full.sql</code>). Les chevauchements sur un même bureau sont refusés côté serveur.</p>

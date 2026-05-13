@@ -35,6 +35,10 @@ class CalendarService
             $events = array_merge($events, $this->mapPublicEventEvents($from, $to, $registeredEventIds));
         }
 
+        if (in_array('certifications', $activeFilters, true) && $this->hasDemandesCertificationTable()) {
+            $events = array_merge($events, $this->mapCertificationDemandeEvents($userId, $from, $to));
+        }
+
         if ($this->hasDemoAgendaTable()) {
             $events = array_merge($events, $this->mapDemoAgendaEvents($userId, $from, $to, $activeFilters));
         }
@@ -56,7 +60,7 @@ class CalendarService
 
     private function normalizeFilters(array $filters): array
     {
-        $allowed = ['rendezvous', 'events_registered', 'events_public'];
+        $allowed = ['rendezvous', 'events_registered', 'events_public', 'certifications'];
         if ($filters === []) {
             return $allowed;
         }
@@ -114,7 +118,7 @@ class CalendarService
         $where = ' WHERE user_id = ? AND start_at <= ? AND end_at >= ?';
         $params = [$userId, $to, $from];
 
-        $allowedSources = array_values(array_filter($activeFilters, static fn (string $filter): bool => in_array($filter, ['rendezvous', 'events_registered', 'events_public'], true)));
+        $allowedSources = array_values(array_filter($activeFilters, static fn (string $filter): bool => in_array($filter, ['rendezvous', 'events_registered', 'events_public', 'certifications'], true)));
         if ($allowedSources !== []) {
             $placeholders = implode(',', array_fill(0, count($allowedSources), '?'));
             $where .= ' AND source_type IN (' . $placeholders . ')';
@@ -254,6 +258,102 @@ class CalendarService
         return $events;
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function mapCertificationDemandeEvents(int $userId, string $from, string $to): array
+    {
+        $statement = $this->model->query(
+            'SELECT id, nom_certificat, statut, date_souhaitee, heure_preferee, organisation
+             FROM demandes_certification
+             WHERE utilisateur_id = ?
+               AND statut IN (\'en_attente\', \'quiz_envoye\')
+               AND date_souhaitee >= DATE(?)
+               AND date_souhaitee <= DATE(?)
+             ORDER BY date_souhaitee ASC, id ASC',
+            [$userId, $from, $to]
+        );
+
+        $rows = $statement->fetchAll();
+        $events = [];
+
+        foreach ($rows as $row) {
+            $cid = (int) ($row['id'] ?? 0);
+            $dateDay = (string) ($row['date_souhaitee'] ?? '');
+            if ($dateDay === '') {
+                continue;
+            }
+            [$startAt, $endAt] = $this->certificationSlotBounds($dateDay, (string) ($row['heure_preferee'] ?? ''));
+            $status = (string) ($row['statut'] ?? 'en_attente');
+            $nom = trim((string) ($row['nom_certificat'] ?? 'Certification'));
+            $title = 'Certification : ' . mb_substr($nom !== '' ? $nom : 'Demande', 0, 52);
+            $org = trim((string) ($row['organisation'] ?? ''));
+
+            $events[] = [
+                'id' => 'cert-' . $cid,
+                'source_type' => 'certifications',
+                'title' => $title,
+                'start' => $startAt,
+                'end' => $endAt,
+                'status' => $status,
+                'location' => $org,
+                'owner_label' => 'Certification',
+                'url' => '/certifications#mes-demandes',
+                'color' => $this->statusColor('certifications', $status),
+                'is_readonly' => true,
+                'metadata' => [
+                    'source_id' => $cid,
+                ],
+            ];
+        }
+
+        return $events;
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function certificationSlotBounds(string $dateYmd, string $heurePreferee): array
+    {
+        $time = '09:00:00';
+        $hp = trim($heurePreferee);
+        if ($hp !== '' && preg_match('/(\d{1,2})[\s:hH](\d{2})/u', $hp, $m) === 1) {
+            $hi = min(23, max(0, (int) $m[1]));
+            $mi = min(59, max(0, (int) $m[2]));
+            $time = sprintf('%02d:%02d:00', $hi, $mi);
+        } elseif ($hp !== '' && preg_match('/(\d{1,2}):(\d{2})/', $hp, $m) === 1) {
+            $hi = min(23, max(0, (int) $m[1]));
+            $mi = min(59, max(0, (int) $m[2]));
+            $time = sprintf('%02d:%02d:00', $hi, $mi);
+        }
+
+        $startTs = strtotime($dateYmd . ' ' . $time);
+        if ($startTs === false) {
+            $startTs = strtotime($dateYmd . ' 09:00:00') ?: time();
+        }
+        $endTs = $startTs + 3600;
+
+        return [date('Y-m-d H:i:s', $startTs), date('Y-m-d H:i:s', $endTs)];
+    }
+
+    private function hasDemandesCertificationTable(): bool
+    {
+        try {
+            $statement = $this->model->query(
+                'SELECT COUNT(*) AS cnt
+                 FROM INFORMATION_SCHEMA.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = ?',
+                ['demandes_certification']
+            );
+            $row = $statement->fetch();
+
+            return (int) ($row['cnt'] ?? 0) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     private function buildRendezVousTitle(string $motif): string
     {
         $trimmed = trim($motif);
@@ -296,6 +396,11 @@ class CalendarService
                 'complet' => '#7056d8',
                 'termine' => '#7b8797',
                 'default' => '#1fa971',
+            ],
+            'certifications' => [
+                'en_attente' => '#e67e22',
+                'quiz_envoye' => '#8e44ad',
+                'default' => '#c0392b',
             ],
         ];
 
@@ -369,6 +474,10 @@ class CalendarService
             return '/evenements';
         }
 
+        if ($sourceType === 'certifications') {
+            return '/certifications#mes-demandes';
+        }
+
         return $path !== '' ? $path : '/';
     }
 
@@ -381,6 +490,9 @@ class CalendarService
             return true;
         }
         if ((bool) preg_match('#^/rendezvous\?focus=\d+$#', $path)) {
+            return true;
+        }
+        if ((bool) preg_match('#^/certifications(/manage)?(\#.*)?$#', $path)) {
             return true;
         }
 

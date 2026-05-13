@@ -118,6 +118,15 @@ $statusClass = static function (string $status): string {
                                 <?php endif; ?>
                             </li>
                         </ul>
+                        <?php
+                        $mapRaw = trim((string) ($event['lieu'] ?? ''));
+                        $mapOk = $mapRaw !== '' && !preg_match('/^(à|a)\s*d[ée]finir\.?$/iu', $mapRaw);
+                        if ($mapOk) {
+                            $map_address = $mapRaw;
+                            $map_actions_class = 'mb-2';
+                            require __DIR__ . '/../../shared/event_map_actions.php';
+                        }
+                        ?>
                         <div class="mt-auto">
                             <a class="btn btn-outline-primary w-100" href="<?= $this->url('/evenements/show/' . $eventId) ?>">Voir le détail</a>
                         </div>

@@ -25,7 +25,10 @@ if (isset($_SESSION['flash'])) {
         <?php endif; ?>
     </div>
     <?php if (!$teacher_notice): ?>
-        <a href="<?= $this->url('/documents/createForm') ?>" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Nouvelle demande</a>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <a href="<?= $this->url('/certifications') ?>" class="btn btn-outline-secondary"><i class="fa-solid fa-graduation-cap me-2" aria-hidden="true"></i>Certifications</a>
+            <a href="<?= $this->url('/documents/createForm') ?>" class="btn btn-primary"><i class="fa-solid fa-plus me-2" aria-hidden="true"></i>Nouvelle demande</a>
+        </div>
     <?php endif; ?>
 </div>
 

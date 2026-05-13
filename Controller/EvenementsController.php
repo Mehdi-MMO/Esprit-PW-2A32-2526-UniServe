@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../Model/Event.php';
 require_once __DIR__ . '/../Model/Club.php';
+require_once __DIR__ . '/../Model/NotificationModel.php';
+require_once __DIR__ . '/../Model/User.php';
+require_once __DIR__ . '/../Model/Database.php';
 
 class EvenementsController extends Controller
 {
@@ -27,6 +30,26 @@ class EvenementsController extends Controller
     private function currentUserId(): int
     {
         return (int) ($_SESSION['user']['id'] ?? 0);
+    }
+
+    private function notifyUser(int $userId, string $message, ?string $lien = null): void
+    {
+        if ($userId <= 0 || trim($message) === '') {
+            return;
+        }
+
+        (new NotificationModel())->create($userId, $message, $lien);
+    }
+
+    private function notifyAllStaff(string $message, ?string $lien = null): void
+    {
+        $notif = new NotificationModel();
+        foreach ((new User())->findStaffAndAdminsActifs() as $row) {
+            $uid = (int) ($row['id'] ?? 0);
+            if ($uid > 0) {
+                $notif->create($uid, $message, $lien);
+            }
+        }
     }
 
     private function canManageClub(int $clubId): bool
@@ -84,6 +107,7 @@ class EvenementsController extends Controller
             'date_debut' => $dateDebut ?? '',
             'date_fin' => $dateFin ?? '',
             'capacite' => $capaciteRaw === '' ? null : (int) $capaciteRaw,
+            'prix_ticket' => round(max(0.0, (float) ($source['prix_ticket'] ?? 0)), 2),
             'statut' => trim((string) ($source['statut'] ?? 'planifie')),
         ];
     }
@@ -168,6 +192,139 @@ class EvenementsController extends Controller
         if ($count < $capacite && $statut === 'complet') {
             $eventModel->update($eventId, ['statut' => 'ouvert']);
         }
+    }
+
+    private function absoluteUrl(string $path): string
+    {
+        $https = (string) ($_SERVER['HTTPS'] ?? '');
+        $forwardedProto = (string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '');
+        $isHttps = $https === 'on' || $https === '1' || strtolower($forwardedProto) === 'https';
+        $scheme = $isHttps ? 'https' : 'http';
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
+
+        return $scheme . '://' . $host . $this->url($path);
+    }
+
+    private function createStripeCheckoutSession(array $event, int $userId): ?string
+    {
+        Database::ensureEnvLoaded();
+        $secretKey = trim((string) (getenv('STRIPE_SECRET_KEY') ?: ''));
+        if ($secretKey === '') {
+            return null;
+        }
+
+        $eventId = (int) ($event['id'] ?? 0);
+        $eventTitle = trim((string) ($event['titre'] ?? 'Evenement UniServe'));
+        $eventModel = new Event();
+        $ticketPrice = $eventModel->ticketPrice($event);
+        $amount = (int) round($ticketPrice * 100);
+        if ($amount <= 0) {
+            return null;
+        }
+
+        $currency = strtolower(trim((string) (getenv('STRIPE_CURRENCY') ?: 'usd')));
+        if ($currency === '') {
+            $currency = 'usd';
+        }
+
+        $successUrl = $this->absoluteUrl(
+            '/evenements/paymentSuccess?event_id=' . $eventId . '&session_id={CHECKOUT_SESSION_ID}'
+        );
+        $cancelUrl = $this->absoluteUrl('/evenements/paymentCancel?event_id=' . $eventId);
+
+        $payload = http_build_query([
+            'mode' => 'payment',
+            'success_url' => $successUrl,
+            'cancel_url' => $cancelUrl,
+            'line_items[0][price_data][currency]' => $currency,
+            'line_items[0][price_data][product_data][name]' => 'Inscription - ' . $eventTitle,
+            'line_items[0][price_data][unit_amount]' => (string) $amount,
+            'line_items[0][quantity]' => '1',
+            'metadata[event_id]' => (string) $eventId,
+            'metadata[user_id]' => (string) $userId,
+        ]);
+
+        if (!function_exists('curl_init')) {
+            return null;
+        }
+
+        $ch = curl_init('https://api.stripe.com/v1/checkout/sessions');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $secretKey,
+                'Content-Type: application/x-www-form-urlencoded',
+            ],
+            CURLOPT_TIMEOUT => 25,
+        ]);
+        $response = curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
+        if (!is_string($response) || $response === '' || $status >= 400 || $curlErr !== '') {
+            return null;
+        }
+
+        $decoded = json_decode($response, true);
+        $checkoutUrl = (string) (is_array($decoded) ? ($decoded['url'] ?? '') : '');
+
+        return $checkoutUrl !== '' ? $checkoutUrl : null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function fetchStripeSession(string $sessionId): ?array
+    {
+        Database::ensureEnvLoaded();
+        $secretKey = trim((string) (getenv('STRIPE_SECRET_KEY') ?: ''));
+        if ($secretKey === '' || trim($sessionId) === '') {
+            return null;
+        }
+
+        if (!function_exists('curl_init')) {
+            return null;
+        }
+
+        $ch = curl_init('https://api.stripe.com/v1/checkout/sessions/' . rawurlencode($sessionId));
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPGET => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $secretKey,
+            ],
+            CURLOPT_TIMEOUT => 25,
+        ]);
+        $response = curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
+        if (!is_string($response) || $response === '' || $status >= 400 || $curlErr !== '') {
+            return null;
+        }
+
+        $decoded = json_decode($response, true);
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    private function notifyOrganizerOnRegistration(int $eventId, array $event, int $registrantUserId): void
+    {
+        $organizerId = (int) ($event['cree_par'] ?? 0);
+        if ($organizerId <= 0 || $organizerId === $registrantUserId) {
+            return;
+        }
+
+        $titreEvt = (string) ($event['titre'] ?? '');
+        $this->notifyUser(
+            $organizerId,
+            'Nouvelle inscription à votre événement « ' . $titreEvt . ' ».',
+            '/evenements/show/' . $eventId
+        );
     }
 
     /**
@@ -295,11 +452,19 @@ class EvenementsController extends Controller
         $isRegistered = $userId > 0 ? $eventModel->isUserRegistered($eventId, $userId) : false;
         $registrations = $eventModel->countInscriptions($eventId);
 
+        Database::ensureEnvLoaded();
+        $ticketPrice = $eventModel->ticketPrice($event);
+        $stripeReady = trim((string) (getenv('STRIPE_SECRET_KEY') ?: '')) !== '';
+        $usdToTndRate = max(0.0, (float) (getenv('USD_TO_TND_RATE') ?: 3.10));
+
         $this->render('frontoffice/evenements/show', [
             'title' => 'Détail de l’événement',
             'event' => $event,
             'registrations' => $registrations,
             'isRegistered' => $isRegistered,
+            'ticket_price' => $ticketPrice,
+            'stripe_ready' => $stripeReady,
+            'usd_to_tnd_rate' => $usdToTndRate,
             'success' => (string) ($_GET['success'] ?? ''),
             'error' => (string) ($_GET['error'] ?? ''),
         ]);
@@ -353,14 +518,106 @@ class EvenementsController extends Controller
             return;
         }
 
+        $ticketPrice = $eventModel->ticketPrice($event);
+        if ($ticketPrice > 0) {
+            Database::ensureEnvLoaded();
+            if (trim((string) (getenv('STRIPE_SECRET_KEY') ?: '')) === '') {
+                $this->redirect(
+                    '/evenements/show/' . $eventId . '?error=' . urlencode(
+                        'Paiement indisponible. Verifiez STRIPE_SECRET_KEY dans .env ou mettez le prix du ticket a 0.'
+                    )
+                );
+                return;
+            }
+
+            $checkoutUrl = $this->createStripeCheckoutSession($event, $userId);
+            if ($checkoutUrl === null) {
+                $this->redirect(
+                    '/evenements/show/' . $eventId . '?error=' . urlencode('Paiement indisponible (Stripe ou reseau).')
+                );
+                return;
+            }
+
+            $this->redirect($checkoutUrl);
+            return;
+        }
+
         $registered = $eventModel->register($eventId, $userId);
         if (!$registered) {
             $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Inscription impossible.'));
             return;
         }
 
+        $this->notifyOrganizerOnRegistration($eventId, $event, $userId);
+
         $this->applyCapacityStatus($eventModel, $eventId);
         $this->redirect('/evenements/show/' . $eventId . '?success=' . urlencode('Inscription confirmee.'));
+    }
+
+    public function paymentSuccess(): void
+    {
+        $this->requireLogin();
+
+        $eventId = (int) ($_GET['event_id'] ?? 0);
+        $sessionId = trim((string) ($_GET['session_id'] ?? ''));
+        if ($eventId <= 0 || $sessionId === '') {
+            $this->redirect('/evenements?error=' . urlencode('Retour paiement invalide.'));
+            return;
+        }
+
+        $currentUser = $this->currentUser();
+        $userId = (int) ($currentUser['id'] ?? 0);
+        if ($userId <= 0) {
+            $this->redirect('/auth/login');
+            return;
+        }
+
+        $stripeSession = $this->fetchStripeSession($sessionId);
+        if ($stripeSession === null) {
+            $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Verification paiement impossible.'));
+            return;
+        }
+
+        $paymentStatus = (string) ($stripeSession['payment_status'] ?? '');
+        $metaUserId = (int) ($stripeSession['metadata']['user_id'] ?? 0);
+        $metaEventId = (int) ($stripeSession['metadata']['event_id'] ?? 0);
+        if ($paymentStatus !== 'paid' || $metaUserId !== $userId || $metaEventId !== $eventId) {
+            $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Paiement non valide.'));
+            return;
+        }
+
+        $eventModel = new Event();
+        $event = $eventModel->findById($eventId);
+        if ($event === null) {
+            $this->redirect('/evenements?error=' . urlencode('Evenement introuvable.'));
+            return;
+        }
+
+        if (!$eventModel->isUserRegistered($eventId, $userId)) {
+            $ok = $eventModel->register($eventId, $userId);
+            if (!$ok) {
+                $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Inscription impossible apres paiement.'));
+                return;
+            }
+            $event = $eventModel->findById($eventId) ?? $event;
+            $this->notifyOrganizerOnRegistration($eventId, $event, $userId);
+        }
+
+        $this->applyCapacityStatus($eventModel, $eventId);
+        $this->redirect('/evenements/show/' . $eventId . '?success=' . urlencode('Paiement confirme. Inscription validee.'));
+    }
+
+    public function paymentCancel(): void
+    {
+        $this->requireLogin();
+
+        $eventId = (int) ($_GET['event_id'] ?? 0);
+        if ($eventId <= 0) {
+            $this->redirect('/evenements?error=' . urlencode('Paiement annule.'));
+            return;
+        }
+
+        $this->redirect('/evenements/show/' . $eventId . '?error=' . urlencode('Paiement annule. Inscription non effectuee.'));
     }
 
     public function unregister(int|string $id): void
@@ -539,6 +796,7 @@ class EvenementsController extends Controller
                 'date_debut' => '',
                 'date_fin' => '',
                 'capacite' => null,
+                'prix_ticket' => 0.0,
                 'statut' => 'planifie',
             ],
             'error' => null,
@@ -817,6 +1075,7 @@ class EvenementsController extends Controller
         ));
         $payload = $this->parseEventPayload($_POST);
         $payload['statut'] = 'planifie';
+        $payload['prix_ticket'] = 0.0;
         $error = $this->validateEventPayload($payload, $clubModel);
 
         if ($error !== null) {
@@ -841,6 +1100,12 @@ class EvenementsController extends Controller
             return;
         }
 
+        $titre = (string) ($payload['titre'] ?? '');
+        $this->notifyAllStaff(
+            'Nouvelle demande d’événement à valider : « ' . $titre . ' ».',
+            '/evenements/manage'
+        );
+
         $this->redirect('/evenements?success=' . urlencode('Demande d evenement envoyee pour validation.'));
     }
 
@@ -861,7 +1126,17 @@ class EvenementsController extends Controller
         }
 
         $eventModel = new Event();
+        $event = $eventModel->findById($eventId);
         $eventModel->approve($eventId, $this->currentUserId());
+        if (is_array($event)) {
+            $creatorId = (int) ($event['cree_par'] ?? 0);
+            $titreEvt = (string) ($event['titre'] ?? '');
+            $this->notifyUser(
+                $creatorId,
+                'Votre événement « ' . $titreEvt . ' » a été approuvé et est ouvert aux inscriptions.',
+                '/evenements/show/' . $eventId
+            );
+        }
         $this->redirect('/evenements/manage?success=' . urlencode('Evenement approuve.'));
     }
 
@@ -882,7 +1157,17 @@ class EvenementsController extends Controller
         }
 
         $eventModel = new Event();
+        $event = $eventModel->findById($eventId);
         $eventModel->reject($eventId, $this->currentUserId());
+        if (is_array($event)) {
+            $creatorId = (int) ($event['cree_par'] ?? 0);
+            $titreEvt = (string) ($event['titre'] ?? '');
+            $this->notifyUser(
+                $creatorId,
+                'Votre événement « ' . $titreEvt . ' » a été refusé (statut annulé).',
+                '/evenements'
+            );
+        }
         $this->redirect('/evenements/manage?success=' . urlencode('Evenement rejete.'));
     }
 
@@ -1041,6 +1326,11 @@ class EvenementsController extends Controller
             return;
         }
 
+        $this->notifyAllStaff(
+            'Nouvelle demande de club à valider : « ' . $payload['nom'] . ' ».',
+            '/evenements/manageClubs'
+        );
+
         $this->redirect('/evenements/clubs?success=' . urlencode('Demande de club envoyee pour validation.'));
     }
 
@@ -1061,7 +1351,17 @@ class EvenementsController extends Controller
         }
 
         $clubModel = new Club();
+        $club = $clubModel->findById($clubId);
         $clubModel->approve($clubId, $this->currentUserId());
+        if (is_array($club)) {
+            $ownerId = (int) ($club['cree_par'] ?? 0);
+            $nomClub = (string) ($club['nom'] ?? '');
+            $this->notifyUser(
+                $ownerId,
+                'Votre club « ' . $nomClub . ' » a été approuvé.',
+                '/evenements/clubs'
+            );
+        }
         $this->redirect('/evenements/manageClubs?success=' . urlencode('Club approuve.'));
     }
 
@@ -1082,7 +1382,17 @@ class EvenementsController extends Controller
         }
 
         $clubModel = new Club();
+        $club = $clubModel->findById($clubId);
         $clubModel->reject($clubId, $this->currentUserId());
+        if (is_array($club)) {
+            $ownerId = (int) ($club['cree_par'] ?? 0);
+            $nomClub = (string) ($club['nom'] ?? '');
+            $this->notifyUser(
+                $ownerId,
+                'Votre club « ' . $nomClub . ' » a été refusé.',
+                '/evenements/clubs'
+            );
+        }
         $this->redirect('/evenements/manageClubs?success=' . urlencode('Club rejete.'));
     }
 
@@ -1188,7 +1498,15 @@ class EvenementsController extends Controller
 
         if ($this->isPostRequest()) {
             $clubModel = new Club();
-            $clubModel->delete($clubId);
+            try {
+                if (!$clubModel->delete($clubId)) {
+                    $this->redirect($this->clubListPathForCurrentUser() . '?error=' . urlencode('Club introuvable ou deja supprime.'));
+                    return;
+                }
+            } catch (\Throwable $e) {
+                $this->redirect($this->clubListPathForCurrentUser() . '?error=' . urlencode('Suppression impossible : des donnees liees bloquent encore l operation.'));
+                return;
+            }
         }
 
         $this->redirect($this->clubListPathForCurrentUser());

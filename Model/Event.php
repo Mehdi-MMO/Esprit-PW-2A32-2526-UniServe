@@ -8,9 +8,52 @@ class Event
 
     private Model $model;
 
+    /** @var bool|null null = unknown */
+    private static ?bool $evenementsHasPrixTicketColumn = null;
+
     public function __construct()
     {
         $this->model = new Model();
+    }
+
+    /**
+     * Paid tickets column is optional on legacy DBs not yet migrated to db/uniserve_full.sql schema.
+     */
+    public static function evenementsTableHasPrixTicketColumn(): bool
+    {
+        if (self::$evenementsHasPrixTicketColumn !== null) {
+            return self::$evenementsHasPrixTicketColumn;
+        }
+
+        $probe = new Model();
+        try {
+            $statement = $probe->query(
+                'SELECT COUNT(*) AS cnt
+                 FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = ?
+                   AND COLUMN_NAME = ?',
+                ['evenements', 'prix_ticket']
+            );
+            $row = $statement->fetch();
+            self::$evenementsHasPrixTicketColumn = (int) ($row['cnt'] ?? 0) > 0;
+        } catch (\Throwable) {
+            self::$evenementsHasPrixTicketColumn = false;
+        }
+
+        return self::$evenementsHasPrixTicketColumn;
+    }
+
+    /**
+     * SQL SELECT fragment: real column or literal zero when the column is absent.
+     *
+     * @param non-empty-string $tableAlias
+     */
+    public static function sqlSelectPrixTicket(string $tableAlias = 'e'): string
+    {
+        $alias = preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $tableAlias) === 1 ? $tableAlias : 'e';
+
+        return self::evenementsTableHasPrixTicketColumn() ? "{$alias}.prix_ticket" : '0 AS prix_ticket';
     }
 
     private function normalizeNullableString(?string $value): ?string
@@ -38,6 +81,12 @@ class Event
         return self::ALLOWED_STATUSES;
     }
 
+    /** @param array<string, mixed> $event Row from findById / listings */
+    public function ticketPrice(array $event): float
+    {
+        return round(max(0.0, (float) ($event['prix_ticket'] ?? 0)), 2);
+    }
+
     public function getAllUpcoming(): array
     {
         $statement = $this->model->query(
@@ -51,6 +100,7 @@ class Event
                 e.date_debut,
                 e.date_fin,
                 e.capacite,
+                ' . self::sqlSelectPrixTicket('e') . ',
                 e.statut,
                 e.cree_le,
                 c.nom AS club_nom,
@@ -82,6 +132,7 @@ class Event
                 e.date_debut,
                 e.date_fin,
                 e.capacite,
+                ' . self::sqlSelectPrixTicket('e') . ',
                 e.statut,
                 e.cree_le,
                 c.nom AS club_nom,
@@ -112,6 +163,7 @@ class Event
                 e.date_debut,
                 e.date_fin,
                 e.capacite,
+                ' . self::sqlSelectPrixTicket('e') . ',
                 e.statut,
                 e.cree_le,
                 c.nom AS club_nom,
@@ -143,6 +195,7 @@ class Event
                 e.date_debut,
                 e.date_fin,
                 e.capacite,
+                ' . self::sqlSelectPrixTicket('e') . ',
                 e.statut,
                 e.cree_le,
                 c.nom AS club_nom,
@@ -177,6 +230,7 @@ class Event
                 e.date_debut,
                 e.date_fin,
                 e.capacite,
+                ' . self::sqlSelectPrixTicket('e') . ',
                 e.statut,
                 e.cree_le,
                 c.nom AS club_nom,
@@ -206,6 +260,7 @@ class Event
         $dateDebut = trim((string) ($data['date_debut'] ?? ''));
         $dateFin = trim((string) ($data['date_fin'] ?? ''));
         $capacite = $this->normalizeNullableInt($data['capacite'] ?? null);
+        $prixTicket = round(max(0.0, (float) ($data['prix_ticket'] ?? 0)), 2);
         $statut = (string) ($data['statut'] ?? 'planifie');
 
         if ($creePar <= 0 || $titre === '' || $dateDebut === '' || $dateFin === '') {
@@ -216,13 +271,23 @@ class Event
             $statut = 'planifie';
         }
 
-        $this->model->query(
-            'INSERT INTO evenements
-                (club_id, cree_par, titre, description, lieu, date_debut, date_fin, capacite, statut)
-             VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [$clubId, $creePar, $titre, $description, $lieu, $dateDebut, $dateFin, $capacite, $statut]
-        );
+        if (self::evenementsTableHasPrixTicketColumn()) {
+            $this->model->query(
+                'INSERT INTO evenements
+                    (club_id, cree_par, titre, description, lieu, date_debut, date_fin, capacite, prix_ticket, statut)
+                 VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [$clubId, $creePar, $titre, $description, $lieu, $dateDebut, $dateFin, $capacite, $prixTicket, $statut]
+            );
+        } else {
+            $this->model->query(
+                'INSERT INTO evenements
+                    (club_id, cree_par, titre, description, lieu, date_debut, date_fin, capacite, statut)
+                 VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [$clubId, $creePar, $titre, $description, $lieu, $dateDebut, $dateFin, $capacite, $statut]
+            );
+        }
 
         return (int) $this->model->lastInsertId();
     }
@@ -263,8 +328,12 @@ class Event
             'date_debut' => 'date_debut',
             'date_fin' => 'date_fin',
             'capacite' => 'capacite',
+            'prix_ticket' => 'prix_ticket',
             'statut' => 'statut',
         ];
+        if (!self::evenementsTableHasPrixTicketColumn()) {
+            unset($allowed['prix_ticket']);
+        }
 
         $sets = [];
         $params = [];
@@ -276,7 +345,9 @@ class Event
 
             $value = $data[$inputKey];
 
-            if ($inputKey === 'club_id' || $inputKey === 'capacite') {
+            if ($inputKey === 'prix_ticket') {
+                $value = round(max(0.0, (float) $value), 2);
+            } elseif ($inputKey === 'club_id' || $inputKey === 'capacite') {
                 $value = $this->normalizeNullableInt($value);
             } elseif ($inputKey === 'description' || $inputKey === 'lieu') {
                 $value = $this->normalizeNullableString(is_string($value) ? $value : null);

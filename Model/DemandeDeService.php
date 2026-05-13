@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/PieceJointeDemande.php';
+
 /**
  * Rows in demandes_service (student requests against categories_service).
  */
@@ -78,6 +80,49 @@ class DemandeDeService
              WHERE d.etudiant_id = ?
              ORDER BY d.soumise_le DESC',
             [$etudiantId]
+        );
+
+        return $statement->fetchAll();
+    }
+
+    /**
+     * Compte les demandes de service encore actives côté administration (file DEMANDE).
+     *
+     * @return array{en_attente: int, en_cours: int}
+     */
+    public function countOpenDemandesByStatut(): array
+    {
+        $out = ['en_attente' => 0, 'en_cours' => 0];
+        $statement = $this->model->query(
+            "SELECT statut, COUNT(*) AS n FROM demandes_service WHERE statut IN ('en_attente','en_cours') GROUP BY statut",
+            []
+        );
+        foreach ($statement->fetchAll() as $r) {
+            $s = (string) ($r['statut'] ?? '');
+            if ($s === 'en_attente' || $s === 'en_cours') {
+                $out[$s] = (int) ($r['n'] ?? 0);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Aperçu file traitement (staff) : les plus anciennes en attente d’abord, puis en cours.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findOpenQueueForStaffBrief(int $limit = 10): array
+    {
+        $limit = max(1, min(20, $limit));
+        $statement = $this->model->query(
+            'SELECT d.id, d.titre, d.statut, cat.nom AS categorie_nom
+             FROM demandes_service d
+             INNER JOIN categories_service cat ON cat.id = d.categorie_id
+             WHERE d.statut IN (\'en_attente\', \'en_cours\')
+             ORDER BY CASE WHEN d.statut = \'en_attente\' THEN 0 ELSE 1 END, d.soumise_le ASC
+             LIMIT ?',
+            [$limit]
         );
 
         return $statement->fetchAll();
@@ -181,6 +226,16 @@ class DemandeDeService
 
     public function deleteByStudent(int $id, int $etudiantId): bool
     {
+        $check = $this->model->query(
+            'SELECT id FROM demandes_service WHERE id = ? AND etudiant_id = ? AND statut = "en_attente" LIMIT 1',
+            [$id, $etudiantId]
+        );
+        if (!$check->fetch()) {
+            return false;
+        }
+
+        (new PieceJointeDemande())->deleteAllForDemandeWithFiles($id);
+
         $statement = $this->model->query(
             'DELETE FROM demandes_service WHERE id = ? AND etudiant_id = ? AND statut = "en_attente"',
             [$id, $etudiantId]
@@ -191,6 +246,8 @@ class DemandeDeService
 
     public function deleteByAdmin(int $id): bool
     {
+        (new PieceJointeDemande())->deleteAllForDemandeWithFiles($id);
+
         $statement = $this->model->query(
             'DELETE FROM demandes_service WHERE id = ?',
             [$id]

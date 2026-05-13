@@ -178,4 +178,14 @@ class EventsController extends Controller
     {
         (new EvenementsController())->rejectClub($id);
     }
+
+    public function paymentSuccess(): void
+    {
+        (new EvenementsController())->paymentSuccess();
+    }
+
+    public function paymentCancel(): void
+    {
+        (new EvenementsController())->paymentCancel();
+    }
 }

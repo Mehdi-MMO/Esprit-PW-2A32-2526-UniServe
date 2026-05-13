@@ -38,6 +38,10 @@ class ChatbotController extends Controller
         $model = trim((string) (getenv('GROQ_MODEL') ?: 'llama-3.3-70b-versatile'));
         $user = $this->currentUser();
         $role = (string) ($user['role'] ?? 'utilisateur');
+        $userId = (int) ($user['id'] ?? 0);
+        $snapshot = UserAiSnapshot::build($userId, $role);
+        $maxCtx = in_array($role, ['staff', 'admin'], true) ? 1800 : 1200;
+        $portalContext = UserAiSnapshot::toChatbotContext($snapshot, $maxCtx);
 
         $requestBody = [
             'model' => $model,
@@ -49,6 +53,10 @@ class ChatbotController extends Controller
                 [
                     'role' => 'system',
                     'content' => 'Contexte utilisateur : rôle=' . $role,
+                ],
+                [
+                    'role' => 'system',
+                    'content' => $portalContext,
                 ],
             ], array_values(array_filter((array) $history, static function ($item): bool {
                 if (!is_array($item)) {

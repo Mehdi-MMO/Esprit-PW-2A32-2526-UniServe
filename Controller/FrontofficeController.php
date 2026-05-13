@@ -30,12 +30,9 @@ class FrontofficeController extends Controller
         );
         $calendarFeed['events'] = $this->normalizeCalendarEventUrls($calendarFeed['events'] ?? []);
 
-        $briefService = new CalendarBriefService();
-        $aiBrief = $briefService->generateBrief(
-            is_array($calendarFeed['events'] ?? null) ? $calendarFeed['events'] : [],
-            0,
-            'all'
-        );
+        $events = is_array($calendarFeed['events'] ?? null) ? $calendarFeed['events'] : [];
+        $userSnapshot = UserAiSnapshot::build($userId, $role);
+        $aiBrief = $this->resolveCachedBrief($userId, 0, 'all', $events, false, $userSnapshot);
 
         $this->render('frontoffice/dashboard', [
             'title' => 'Accueil',
@@ -61,7 +58,7 @@ class FrontofficeController extends Controller
         }
 
         $activeFilter = strtolower(trim((string) ($_GET['filter'] ?? 'all')));
-        if (!in_array($activeFilter, ['all', 'rendezvous', 'events_registered', 'events_public'], true)) {
+        if (!in_array($activeFilter, ['all', 'rendezvous', 'events_registered', 'events_public', 'certifications'], true)) {
             $activeFilter = 'all';
         }
 
@@ -78,14 +75,50 @@ class FrontofficeController extends Controller
         );
         $calendarFeed['events'] = $this->normalizeCalendarEventUrls($calendarFeed['events'] ?? []);
 
-        $briefService = new CalendarBriefService();
-        $brief = $briefService->generateBrief(
-            is_array($calendarFeed['events'] ?? null) ? $calendarFeed['events'] : [],
-            $weekOffset,
-            $activeFilter
-        );
+        $forceRefresh = isset($_GET['refresh']) && in_array((string) $_GET['refresh'], ['1', 'true', 'yes'], true);
+        $events = is_array($calendarFeed['events'] ?? null) ? $calendarFeed['events'] : [];
+        $userSnapshot = UserAiSnapshot::build($userId, $role);
+        $brief = $this->resolveCachedBrief($userId, $weekOffset, $activeFilter, $events, $forceRefresh, $userSnapshot);
 
         $this->jsonResponse($brief);
+    }
+
+    /**
+     * Returns a brief either from the per-user cache (if the underlying agenda hasn't
+     * changed and the user didn't ask for a refresh) or by calling the brief service
+     * and storing the result. Keeps Groq API calls down to once per (user, week, filter,
+     * agenda fingerprint) combination.
+     *
+     * @param list<array<string, mixed>> $events
+     * @param array<string, mixed> $userSnapshot
+     * @return array<string, mixed>
+     */
+    private function resolveCachedBrief(
+        int $userId,
+        int $weekOffset,
+        string $activeFilter,
+        array $events,
+        bool $forceRefresh,
+        array $userSnapshot = []
+    ): array {
+        $cache = new CalendarBriefCache();
+        $snapDigest = UserAiSnapshot::digest($userSnapshot);
+        $fingerprint = $cache->fingerprint($events, $weekOffset, $activeFilter, $snapDigest);
+
+        if (!$forceRefresh && $userId > 0) {
+            $cached = $cache->get($userId, $weekOffset, $activeFilter, $fingerprint);
+            if ($cached !== null) {
+                return $cached;
+            }
+        }
+
+        $brief = (new CalendarBriefService())->generateBrief($events, $weekOffset, $activeFilter, $userSnapshot);
+
+        if ($userId > 0) {
+            $cache->put($userId, $weekOffset, $activeFilter, $fingerprint, $brief);
+        }
+
+        return $brief;
     }
 
     /**

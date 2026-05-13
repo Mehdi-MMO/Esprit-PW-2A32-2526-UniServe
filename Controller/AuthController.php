@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../Model/PasswordReset.php';
 require_once __DIR__ . '/../Model/MailService.php';
+require_once __DIR__ . '/../Model/LoginRiskService.php';
 
 class AuthController extends Controller
 {
@@ -19,6 +20,7 @@ class AuthController extends Controller
 
         $this->render('auth_landing', [
             'title' => 'Bienvenue sur UniServe',
+            'landingNav' => 'home',
         ], 'landing');
     }
 
@@ -38,7 +40,7 @@ class AuthController extends Controller
 
             if ($email === '' || $password === '') {
                 $error = 'Veuillez renseigner votre email et votre mot de passe.';
-                $this->render('auth_login', ['title' => 'Connexion', 'error' => $error, 'success' => $success], 'landing');
+                $this->render('auth_login', ['title' => 'Connexion', 'error' => $error, 'success' => $success, 'landingNav' => 'login'], 'landing');
                 return;
             }
 
@@ -49,9 +51,16 @@ class AuthController extends Controller
             $ok = !empty($user) && $hash !== '' && password_verify($password, $hash);
 
             if (!$ok) {
+                if (LoginRiskService::isStepUpEnabled()) {
+                    $risk = new LoginRiskService();
+                    $risk->recordFailedAttempt($email, $risk->fingerprintFromRequest());
+                }
+
                 $this->render('auth_login', [
+                    'title' => 'Connexion',
                     'error' => 'Identifiants invalides. Veuillez réessayer.',
                     'success' => null,
+                    'landingNav' => 'login',
                 ], 'landing');
                 return;
             }
@@ -61,6 +70,7 @@ class AuthController extends Controller
                     'title' => 'Connexion',
                     'error' => 'Ce compte est inactif. Contactez l’administration.',
                     'success' => null,
+                    'landingNav' => 'login',
                 ], 'landing');
                 return;
             }
@@ -71,22 +81,44 @@ class AuthController extends Controller
                     'title' => 'Connexion',
                     'error' => 'Rôle utilisateur non reconnu.',
                     'success' => null,
+                    'landingNav' => 'login',
                 ], 'landing');
                 return;
             }
 
-            session_regenerate_id(true);
+            if (LoginRiskService::isStepUpEnabled()) {
+                $risk = new LoginRiskService();
+                $fp = $risk->fingerprintFromRequest();
+                $assessment = $risk->assessLogin($user, $email, $fp);
+                $level = (string) ($assessment['risk_level'] ?? 'low');
 
-            $_SESSION['user'] = [
-                'id' => (int) ($user['id'] ?? 0),
-                'nom' => (string) ($user['nom'] ?? ''),
-                'prenom' => (string) ($user['prenom'] ?? ''),
-                'email' => (string) ($user['email'] ?? ''),
-                'role' => $role,
-                'matricule' => (string) ($user['matricule'] ?? ''),
-            ];
+                if (in_array($level, ['medium', 'high'], true)) {
+                    $challenge = $risk->createChallenge((int) ($user['id'] ?? 0), $email);
+                    $mailService = new MailService();
+                    $subject = 'UniServe — Vérification de connexion';
+                    $otp = (string) ($challenge['otp'] ?? '');
+                    $requestToken = (string) ($challenge['request_token'] ?? '');
+                    $htmlBody = '<p>Bonjour,</p><p>Un code de vérification a été demandé suite à une connexion inhabituelle.</p>'
+                        . '<p>Code : <strong>' . htmlspecialchars($otp, ENT_QUOTES, 'UTF-8') . '</strong></p>'
+                        . '<p>Ce code expire dans 10 minutes.</p>';
+                    $textBody = "Bonjour,\nCode de vérification : {$otp}\nExpire dans 10 minutes.";
+                    $sent = $mailService->send($email, $subject, $htmlBody, $textBody);
 
-            $userModel->touchLastLogin((int) ($user['id'] ?? 0));
+                    if (!$sent) {
+                        $_SESSION['auth_login_success'] = 'Connexion autorisée (envoi du code de vérification impossible — vérifiez la configuration email).';
+                        $this->establishUserSession($user, $userModel, $risk, $fp);
+                        $this->redirectByUserRole($role);
+                        return;
+                    }
+
+                    $this->redirect('/auth/verifyLoginRisk/' . $requestToken);
+                    return;
+                }
+
+                $risk->trustDevice((int) ($user['id'] ?? 0), $fp);
+            }
+
+            $this->establishUserSession($user, $userModel, null, null);
 
             $this->redirectByUserRole($role);
             return;
@@ -96,6 +128,85 @@ class AuthController extends Controller
             'title' => 'Connexion',
             'error' => $error,
             'success' => $success,
+            'landingNav' => 'login',
+        ], 'landing');
+    }
+
+    public function verifyLoginRisk(string $requestToken): void
+    {
+        if ($this->isLoggedIn()) {
+            $this->redirectByUserRole((string) ($_SESSION['user']['role'] ?? ''));
+            return;
+        }
+
+        if (!LoginRiskService::isStepUpEnabled()) {
+            $this->redirect('/auth/login');
+            return;
+        }
+
+        $risk = new LoginRiskService();
+        $entry = $risk->findActiveChallenge($requestToken);
+        if ($entry === null) {
+            $_SESSION['auth_login_success'] = 'Le lien de vérification est invalide ou expiré. Veuillez vous reconnecter.';
+            $this->redirect('/auth/login');
+            return;
+        }
+
+        $error = null;
+        $email = (string) ($entry['email'] ?? '');
+
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+            $otp = preg_replace('/\D+/', '', (string) ($_POST['otp'] ?? ''));
+
+            if ($otp === '' || strlen($otp) !== 6) {
+                $error = 'Saisissez le code à 6 chiffres.';
+            } elseif ((int) ($entry['attempts'] ?? 0) >= LoginRiskService::challengeMaxAttempts()) {
+                $risk->markChallengeUsed((int) ($entry['id'] ?? 0));
+                $_SESSION['auth_login_success'] = 'Nombre maximal de tentatives atteint. Veuillez vous reconnecter.';
+                $this->redirect('/auth/login');
+                return;
+            } elseif (!password_verify($otp, (string) ($entry['otp_hash'] ?? ''))) {
+                $attempts = $risk->incrementChallengeAttempts((int) ($entry['id'] ?? 0));
+                if ($attempts >= LoginRiskService::challengeMaxAttempts()) {
+                    $risk->markChallengeUsed((int) ($entry['id'] ?? 0));
+                    $_SESSION['auth_login_success'] = 'Nombre maximal de tentatives atteint. Veuillez vous reconnecter.';
+                    $this->redirect('/auth/login');
+                    return;
+                }
+
+                $remaining = LoginRiskService::challengeMaxAttempts() - $attempts;
+                $error = 'Code invalide. Tentatives restantes : ' . $remaining . '.';
+            } else {
+                $risk->markChallengeUsed((int) ($entry['id'] ?? 0));
+                $fp = $risk->fingerprintFromRequest();
+                $risk->trustDevice((int) ($entry['user_id'] ?? 0), $fp);
+
+                $userModel = new User();
+                $user = $userModel->findById((int) ($entry['user_id'] ?? 0));
+                if ($user === null || (string) ($user['statut_compte'] ?? 'inactif') !== 'actif') {
+                    $_SESSION['auth_login_success'] = 'Compte introuvable ou inactif.';
+                    $this->redirect('/auth/login');
+                    return;
+                }
+
+                $role = (string) ($user['role'] ?? '');
+                if (!in_array($role, User::allowedRoles(), true)) {
+                    $_SESSION['auth_login_success'] = 'Rôle utilisateur non reconnu.';
+                    $this->redirect('/auth/login');
+                    return;
+                }
+
+                $this->establishUserSession($user, $userModel, null, null);
+                $this->redirectByUserRole($role);
+                return;
+            }
+        }
+
+        $this->render('auth_verify_login_risk', [
+            'title' => 'Vérification de connexion',
+            'error' => $error,
+            'requestToken' => $requestToken,
+            'email' => $email,
         ], 'landing');
     }
 
@@ -304,6 +415,31 @@ class AuthController extends Controller
 
         session_destroy();
         $this->redirect('/');
+    }
+
+    /**
+     * @param array<string, mixed> $user
+     */
+    private function establishUserSession(array $user, User $userModel, ?LoginRiskService $risk, ?string $fingerprint): void
+    {
+        session_regenerate_id(true);
+
+        $role = (string) ($user['role'] ?? '');
+        $_SESSION['user'] = [
+            'id' => (int) ($user['id'] ?? 0),
+            'nom' => (string) ($user['nom'] ?? ''),
+            'prenom' => (string) ($user['prenom'] ?? ''),
+            'email' => (string) ($user['email'] ?? ''),
+            'role' => $role,
+            'matricule' => (string) ($user['matricule'] ?? ''),
+            'photo_profil' => (string) ($user['photo_profil'] ?? ''),
+        ];
+
+        $userModel->touchLastLogin((int) ($user['id'] ?? 0));
+
+        if ($risk !== null && $fingerprint !== null && $fingerprint !== '') {
+            $risk->trustDevice((int) ($user['id'] ?? 0), $fingerprint);
+        }
     }
 
     private function popFlash(string $key): ?string

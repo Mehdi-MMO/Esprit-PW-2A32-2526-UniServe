@@ -18,3 +18,11 @@ with data.sql
 
 # Local debug session logs
 debug-*.log
+
+# Legacy root folders (old calendar-brief cache paths; app uses Model/storage/ now)
+var/
+storage/
+
+# Runtime uploads (demandes pièces jointes, DOCAC fichiers, photos de profil)
+Model/uploads/
+

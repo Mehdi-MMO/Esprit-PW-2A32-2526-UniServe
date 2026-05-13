@@ -1,6 +1,8 @@
--- UniServe — full database (schema + seed)
--- Merged from HeidiSQL dump plus clubs/evenements DDL aligned with Model/Club.php and Model/Event.php.
--- Import in phpMyAdmin / HeidiSQL after CREATE DATABASE or use as-is (creates `uniserve`).
+-- UniServe — single canonical database dump (schema + seed)
+-- Includes core UniServe tables, login risk / password reset, calendar demo, notifications,
+-- DOCAC certification tables (cours, certificats, demandes_certification, quizzes), and
+-- evenements.prix_ticket + calendar_demo_items.source_type certifications (Stripe-ready).
+-- Import in phpMyAdmin / HeidiSQL (creates `uniserve`). No separate migration SQL files required.
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET NAMES utf8 */;
@@ -15,6 +17,11 @@ CREATE DATABASE IF NOT EXISTS `uniserve` /*!40100 DEFAULT CHARACTER SET utf8mb4 
 USE `uniserve`;
 
 -- Drop in dependency order (children before parents)
+DROP TABLE IF EXISTS `quizzes`;
+DROP TABLE IF EXISTS `demandes_certification`;
+DROP TABLE IF EXISTS `certificats`;
+DROP TABLE IF EXISTS `cours`;
+DROP TABLE IF EXISTS `notifications`;
 DROP TABLE IF EXISTS `calendar_demo_items`;
 DROP TABLE IF EXISTS `login_risk_challenges`;
 DROP TABLE IF EXISTS `password_reset_otps`;
@@ -207,6 +214,7 @@ CREATE TABLE `evenements` (
   `date_debut` datetime NOT NULL,
   `date_fin` datetime NOT NULL,
   `capacite` int(11) DEFAULT NULL,
+  `prix_ticket` decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT 'USD; 0 = free',
   `statut` enum('planifie','ouvert','complet','termine','annule') NOT NULL DEFAULT 'planifie',
   `valide_par` bigint(20) DEFAULT NULL,
   `valide_le` datetime DEFAULT NULL,
@@ -245,7 +253,7 @@ CREATE TABLE `inscriptions_evenement` (
 CREATE TABLE `calendar_demo_items` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `user_id` bigint(20) NOT NULL,
-  `source_type` enum('rendezvous','events_registered','events_public') NOT NULL,
+  `source_type` enum('rendezvous','events_registered','events_public','certifications') NOT NULL,
   `title` varchar(150) NOT NULL,
   `start_at` datetime NOT NULL,
   `end_at` datetime NOT NULL,
@@ -359,6 +367,81 @@ CREATE TABLE `trusted_devices` (
 INSERT INTO `trusted_devices` (`id`, `user_id`, `fingerprint_hash`, `first_seen`, `last_seen`) VALUES
 	(1, 2, '70e9b076e2579236897d0119e9120e77ed1a18119d45c505b72cf39e64b0db3f', '2026-05-07 13:22:51', '2026-05-07 14:04:57'),
 	(3, 1, '70e9b076e2579236897d0119e9120e77ed1a18119d45c505b72cf39e64b0db3f', '2026-05-07 13:50:12', '2026-05-07 14:06:40');
+
+-- ---------------------------------------------------------------------------
+-- Notifications (Model/NotificationModel.php)
+-- ---------------------------------------------------------------------------
+CREATE TABLE `notifications` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `utilisateur_id` bigint(20) NOT NULL,
+  `message` varchar(512) NOT NULL,
+  `lien` varchar(512) DEFAULT NULL,
+  `lu` tinyint(1) NOT NULL DEFAULT 0,
+  `cree_le` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_notif_user_lu` (`utilisateur_id`,`lu`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------------
+-- DOCAC / certifications (Model/DocacSchema.php, CertificationsController)
+-- ---------------------------------------------------------------------------
+CREATE TABLE `cours` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `titre` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `formateur` varchar(255) DEFAULT NULL,
+  `contenu` text DEFAULT NULL,
+  `image_path` varchar(512) DEFAULT NULL,
+  `fichiers_json` longtext DEFAULT NULL,
+  `cree_le` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_cours_titre` (`titre`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `certificats` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `nom_certificat` varchar(255) NOT NULL,
+  `date_obtention` date NOT NULL,
+  `organisation` varchar(255) NOT NULL,
+  `fichier_path` varchar(512) DEFAULT NULL,
+  `titre_cours` varchar(255) NOT NULL,
+  `cree_le` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `demandes_certification` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `utilisateur_id` bigint(20) NOT NULL,
+  `nom_certificat` varchar(255) NOT NULL,
+  `titre_cours` varchar(255) DEFAULT NULL,
+  `organisation` varchar(255) NOT NULL,
+  `date_souhaitee` date NOT NULL,
+  `heure_preferee` varchar(64) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `fichier_path` varchar(512) DEFAULT NULL,
+  `statut` enum('en_attente','quiz_envoye','accepte','refuse') NOT NULL DEFAULT 'en_attente',
+  `commentaire_admin` text DEFAULT NULL,
+  `soumise_le` timestamp NOT NULL DEFAULT current_timestamp(),
+  `traitee_le` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_demcert_user` (`utilisateur_id`),
+  KEY `idx_demcert_statut` (`statut`),
+  CONSTRAINT `demandes_certification_ibfk_user` FOREIGN KEY (`utilisateur_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `quizzes` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `demande_id` bigint(20) NOT NULL,
+  `cours_titre` varchar(255) NOT NULL,
+  `questions_json` longtext NOT NULL,
+  `statut` enum('en_attente','accepte','refuse') NOT NULL DEFAULT 'en_attente',
+  `score` tinyint(4) DEFAULT NULL,
+  `passe_le` datetime DEFAULT NULL,
+  `cree_le` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_quizzes_demande` (`demande_id`),
+  CONSTRAINT `quizzes_ibfk_demande` FOREIGN KEY (`demande_id`) REFERENCES `demandes_certification` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

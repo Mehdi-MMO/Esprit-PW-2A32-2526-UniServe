@@ -118,6 +118,27 @@ $eventId = (int) ($event['id'] ?? 0);
                     ?>
                 </div>
 
+                <div class="col-md-6">
+                    <?php
+                    $prixEv = $event['prix_ticket'] ?? 0;
+                    $prixStr = $prixEv === '' || $prixEv === null ? '' : (string) $prixEv;
+                    echo renderFormField(
+                        'prix_ticket',
+                        'Prix du ticket (USD, 0 = gratuit)',
+                        'number',
+                        $prixStr,
+                        [
+                            'required' => false,
+                            'placeholder' => '0.00',
+                            'min' => 0,
+                            'step' => '0.01',
+                        ],
+                        ''
+                    );
+                    ?>
+                    <p class="text-muted small mb-0">Stripe (<code>STRIPE_SECRET_KEY</code> dans <code>.env</code>) requis si le prix est supérieur à 0.</p>
+                </div>
+
                 <div class="col-12">
                     <?php 
                     echo renderFormField(

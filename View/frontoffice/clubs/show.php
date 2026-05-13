@@ -65,7 +65,21 @@ $statusClass = static function (string $status): string {
                                     <h3 class="h6 mb-0"><?= htmlspecialchars((string) ($event['titre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
                                     <span class="badge bg-<?= $statusClass($status) ?>"><?= htmlspecialchars(ucfirst($status), ENT_QUOTES, 'UTF-8') ?></span>
                                 </div>
-                                <p class="text-muted small mb-2"><?= htmlspecialchars((string) ($event['date_debut'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="text-muted small mb-2">
+                                    <i class="bi bi-calendar-event me-1"></i><?= htmlspecialchars((string) ($event['date_debut'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                    <?php if (trim((string) ($event['lieu'] ?? '')) !== ''): ?>
+                                        <br><i class="bi bi-geo-alt me-1"></i><?= htmlspecialchars((string) ($event['lieu'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                    <?php endif; ?>
+                                </p>
+                                <?php
+                                $mapRaw = trim((string) ($event['lieu'] ?? ''));
+                                $mapOk = $mapRaw !== '' && !preg_match('/^(à|a)\s*d[ée]finir\.?$/iu', $mapRaw);
+                                if ($mapOk) {
+                                    $map_address = $mapRaw;
+                                    $map_actions_class = 'mb-2';
+                                    require __DIR__ . '/../../shared/event_map_actions.php';
+                                }
+                                ?>
                                 <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/evenements/show/' . $eventId) ?>">Voir l’événement</a>
                             </div>
                         </div>

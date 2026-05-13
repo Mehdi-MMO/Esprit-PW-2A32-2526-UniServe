@@ -8,19 +8,20 @@ class CalendarBriefService
 
     /**
      * @param array<int, array<string, mixed>> $events
+     * @param array<string, mixed> $userSnapshot optional cross-module context (demandes, docs, certs, notifs)
      * @return array<string, mixed>
      */
-    public function generateBrief(array $events, int $weekOffset = 0, string $activeFilter = 'all'): array
+    public function generateBrief(array $events, int $weekOffset = 0, string $activeFilter = 'all', array $userSnapshot = []): array
     {
         $window = $this->weekWindow($weekOffset);
         $normalizedEvents = $this->normalizeEvents($events, $window, $activeFilter);
-        $fallback = $this->buildFallbackBrief($normalizedEvents, $window, $activeFilter, $weekOffset);
+        $fallback = $this->buildFallbackBrief($normalizedEvents, $window, $activeFilter, $weekOffset, $userSnapshot);
 
         if (!$this->isAiEnabled()) {
             return $fallback;
         }
 
-        $aiResult = $this->requestAiBrief($normalizedEvents, $fallback, $window, $activeFilter);
+        $aiResult = $this->requestAiBrief($normalizedEvents, $fallback, $window, $activeFilter, $userSnapshot);
         if ($aiResult === null) {
             return $fallback;
         }
@@ -122,6 +123,7 @@ class CalendarBriefService
         return match ($sourceType) {
             'rendezvous' => 'Rendez-vous',
             'events_registered' => 'Événement inscrit',
+            'certifications' => 'Certification',
             default => 'Événement public',
         };
     }
@@ -155,6 +157,9 @@ class CalendarBriefService
         } elseif ($sourceType === 'events_registered') {
             $score += 18;
             $reasons[] = 'engagement confirmé';
+        } elseif ($sourceType === 'certifications') {
+            $score += 28;
+            $reasons[] = 'parcours certification';
         } else {
             $score += 10;
         }
@@ -163,6 +168,10 @@ class CalendarBriefService
         if (in_array($status, ['complet', 'confirme'], true)) {
             $score += 8;
             $reasons[] = 'fenêtre de manœuvre réduite';
+        }
+        if ($sourceType === 'certifications' && $status === 'quiz_envoye') {
+            $score += 12;
+            $reasons[] = 'quiz à finaliser';
         }
 
         $title = strtolower((string) ($event['title'] ?? ''));
@@ -183,9 +192,10 @@ class CalendarBriefService
     /**
      * @param array<int, array<string, mixed>> $events
      * @param array{start: DateTimeImmutable, end: DateTimeImmutable} $window
+     * @param array<string, mixed> $userSnapshot
      * @return array<string, mixed>
      */
-    private function buildFallbackBrief(array $events, array $window, string $activeFilter, int $weekOffset): array
+    private function buildFallbackBrief(array $events, array $window, string $activeFilter, int $weekOffset, array $userSnapshot = []): array
     {
         $countsByDay = [];
         $minutesByDay = [];
@@ -208,6 +218,17 @@ class CalendarBriefService
             $summary .= ', pic de charge le ' . $busiestDayLabel . ' (' . $busiestDayCount . ').';
         } else {
             $summary .= ', agenda léger pour le moment.';
+        }
+
+        $portalCtx = trim(UserAiSnapshot::toFrenchBriefLines($userSnapshot));
+        if ($portalCtx !== '') {
+            if (count($events) === 0) {
+                $summary = 'Peu d’éléments calendaires cette semaine, mais le portail signale des suivis en cours.';
+            }
+            $summary .= ' Suivi portail : ' . mb_substr(trim(preg_replace('/\s+/', ' ', str_replace("\n", ' ', $portalCtx))), 0, 240);
+            if (mb_strlen($portalCtx) > 240) {
+                $summary .= '…';
+            }
         }
 
         $prioritiesPool = $events;
@@ -244,6 +265,9 @@ class CalendarBriefService
         }
         if ($rankedPriorities === []) {
             $risks[] = 'Aucun élément prioritaire trouvé. Profitez-en pour planifier vos travaux à venir.';
+        }
+        if ($portalCtx !== '' && count($risks) < 3) {
+            $risks[] = 'Pensez aux demandes et certifications listées dans le contexte portail.';
         }
 
         $nextActions = [];
@@ -302,7 +326,7 @@ class CalendarBriefService
      * @param array<string, mixed> $fallback
      * @param array{start: DateTimeImmutable, end: DateTimeImmutable} $window
      */
-    private function requestAiBrief(array $events, array $fallback, array $window, string $activeFilter): ?array
+    private function requestAiBrief(array $events, array $fallback, array $window, string $activeFilter, array $userSnapshot = []): ?array
     {
         $apiKey = trim((string) (getenv('GROQ_API_KEY') ?: ''));
         if ($apiKey === '') {
@@ -310,7 +334,7 @@ class CalendarBriefService
         }
 
         $model = trim((string) (getenv('CALENDAR_BRIEF_GROQ_MODEL') ?: getenv('GROQ_MODEL') ?: self::DEFAULT_MODEL));
-        $userPrompt = $this->buildPrompt($events, $fallback, $window, $activeFilter);
+        $userPrompt = $this->buildPrompt($events, $fallback, $window, $activeFilter, $userSnapshot);
 
         $systemInstruction = 'You reply with a single JSON object only (no markdown). '
             . 'Keys required: summary, ranked_priorities, risks, next_actions, daily_briefs. '
@@ -359,7 +383,7 @@ class CalendarBriefService
      * @param array{start: DateTimeImmutable, end: DateTimeImmutable} $window
      * @param array<string, mixed> $fallback
      */
-    private function buildPrompt(array $events, array $fallback, array $window, string $activeFilter): string
+    private function buildPrompt(array $events, array $fallback, array $window, string $activeFilter, array $userSnapshot = []): string
     {
         $compactEvents = array_map(static function (array $event): array {
             return [
@@ -386,6 +410,12 @@ class CalendarBriefService
             $fallbackJson = '{}';
         }
 
+        $portalBlock = trim(UserAiSnapshot::toFrenchBriefLines($userSnapshot));
+        $portalJson = '';
+        if ($portalBlock !== '') {
+            $portalJson = "\nContexte portail (hors calendrier ou récapitulatif, en français) :\n" . $portalBlock;
+        }
+
         return 'You are an AI planner for a university front-office dashboard. '
             . 'Return strict JSON only with keys: summary, ranked_priorities, risks, next_actions, daily_briefs. '
             . 'No markdown, no extra keys. '
@@ -398,7 +428,8 @@ class CalendarBriefService
             . 'Week window: ' . $window['start']->format('Y-m-d') . ' to ' . $window['end']->format('Y-m-d') . '. '
             . 'Active filter: ' . $activeFilter . '. '
             . 'Events: ' . $eventsJson . "\n"
-            . 'Deterministic baseline (reference only): ' . $fallbackJson;
+            . 'Deterministic baseline (reference only): ' . $fallbackJson
+            . $portalJson;
     }
 
     private function decodeAssistantJson(string $text): ?array

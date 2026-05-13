@@ -192,7 +192,7 @@ class CalendarDemoService
             'CREATE TABLE IF NOT EXISTS ' . self::TABLE_NAME . ' (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
                 user_id BIGINT NOT NULL,
-                source_type ENUM(\'rendezvous\', \'events_registered\', \'events_public\') NOT NULL,
+                source_type ENUM(\'rendezvous\', \'events_registered\', \'events_public\', \'certifications\') NOT NULL,
                 title VARCHAR(150) NOT NULL,
                 start_at DATETIME NOT NULL,
                 end_at DATETIME NOT NULL,
@@ -211,6 +211,32 @@ class CalendarDemoService
                 INDEX idx_demo_source (source_type)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
+        $this->upgradeDemoSourceEnumIfNeeded();
+    }
+
+    private function upgradeDemoSourceEnumIfNeeded(): void
+    {
+        try {
+            $statement = $this->model->query(
+                'SELECT COLUMN_TYPE
+                 FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = ?
+                   AND COLUMN_NAME = ?',
+                [self::TABLE_NAME, 'source_type']
+            );
+            $row = $statement->fetch();
+            $columnType = strtolower((string) ($row['COLUMN_TYPE'] ?? ''));
+            if ($columnType === '' || str_contains($columnType, 'certifications')) {
+                return;
+            }
+
+            $this->model->execSql(
+                'ALTER TABLE ' . self::TABLE_NAME . ' MODIFY COLUMN source_type ENUM(\'rendezvous\',\'events_registered\',\'events_public\',\'certifications\') NOT NULL'
+            );
+        } catch (\Throwable) {
+            // ignore: missing privileges, non-MySQL, or concurrent DDL
+        }
     }
 
     private function resolveSampleStudent(): ?array

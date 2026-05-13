@@ -63,6 +63,9 @@ $error = (string) ($error ?? '');
                 <div class="col-md-6">
                     <label class="form-label text-muted small" for="lieu">Lieu</label>
                     <input class="form-control" id="lieu" name="lieu" value="<?= e((string) ($old['lieu'] ?? '')) ?>">
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" data-map-picker-btn data-map-target-input="lieu">
+                        <i class="fa-solid fa-map-pin me-1" aria-hidden="true"></i>Choisir sur la carte
+                    </button>
                 </div>
 
                 <div class="col-md-3">

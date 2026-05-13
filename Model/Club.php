@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Event.php';
+
 class Club
 {
     public const VALIDATION_STATUSES = ['en_attente', 'approuve', 'rejete'];
@@ -118,6 +120,7 @@ class Club
                 e.date_debut,
                 e.date_fin,
                 e.capacite,
+                ' . Event::sqlSelectPrixTicket('e') . ',
                 e.statut,
                 e.cree_le,
                 (SELECT COUNT(*) FROM inscriptions_evenement ie WHERE ie.evenement_id = e.id) AS inscriptions_count
@@ -206,12 +209,32 @@ class Club
 
     public function delete(int|string $id): bool
     {
-        $statement = $this->model->query(
-            'DELETE FROM clubs WHERE id = ?',
-            [(int) $id]
-        );
+        $clubId = (int) $id;
+        if ($clubId <= 0) {
+            return false;
+        }
 
-        return $statement->rowCount() > 0;
+        $this->model->beginTransaction();
+        try {
+            $this->model->query(
+                'DELETE ie FROM inscriptions_evenement ie
+                 INNER JOIN evenements e ON e.id = ie.evenement_id
+                 WHERE e.club_id = ?',
+                [$clubId]
+            );
+
+            $this->model->query('DELETE FROM evenements WHERE club_id = ?', [$clubId]);
+
+            $statement = $this->model->query('DELETE FROM clubs WHERE id = ?', [$clubId]);
+            $deleted = $statement->rowCount() > 0;
+
+            $this->model->commit();
+
+            return $deleted;
+        } catch (\Throwable $e) {
+            $this->model->rollBack();
+            throw $e;
+        }
     }
 
     public function setActiveStatus(int|string $id, bool $active): bool

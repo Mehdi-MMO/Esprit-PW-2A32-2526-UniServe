@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../Model/User.php';
 require_once __DIR__ . '/../Model/ValidationService.php';
+require_once __DIR__ . '/../Model/AppUploads.php';
 
 class UsersController extends Controller
 {
     private const PROFILE_PHOTO_MAX_BYTES = 2097152;
-    private const PROFILE_PHOTO_SUBDIR = 'View/shared/assets/profile-pics';
+    /** DB path prefix; files on disk under Model/uploads/profile_pics/ */
+    private const PROFILE_PHOTO_SUBDIR = 'Model/uploads/profile_pics';
 
     public function landing(): void
     {
@@ -59,6 +61,11 @@ class UsersController extends Controller
             $this->redirect('/auth/logout');
             return;
         }
+
+        $_SESSION['user']['nom'] = (string) ($user['nom'] ?? '');
+        $_SESSION['user']['prenom'] = (string) ($user['prenom'] ?? '');
+        $_SESSION['user']['email'] = (string) ($user['email'] ?? '');
+        $_SESSION['user']['photo_profil'] = (string) ($user['photo_profil'] ?? '');
 
         $this->render('frontoffice/users/profile', [
             'title' => 'Mon profil',
@@ -271,10 +278,8 @@ class UsersController extends Controller
 
         $ext = $map[$mime];
         $root = dirname(__DIR__);
-        $baseDir = $root . '/' . self::PROFILE_PHOTO_SUBDIR;
-        if (!is_dir($baseDir) && !mkdir($baseDir, 0775, true) && !is_dir($baseDir)) {
-            return false;
-        }
+        require_once __DIR__ . '/../Model/AppUploads.php';
+        $baseDir = AppUploads::sub('profile_pics');
 
         $basename = 'user_' . $userId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
         $destFs = $baseDir . '/' . $basename;
@@ -285,14 +290,17 @@ class UsersController extends Controller
         }
 
         $old = trim((string) ($oldRelativePath ?? ''));
-        if (
-            $old !== '' &&
-            $old !== $relative &&
-            str_starts_with($old, self::PROFILE_PHOTO_SUBDIR . '/')
-        ) {
-            $oldAbs = $root . '/' . $old;
-            if (is_file($oldAbs)) {
-                @unlink($oldAbs);
+        if ($old !== '' && $old !== $relative) {
+            $legacyPrefix = 'View/shared/assets/profile-pics/';
+            $newPrefix = self::PROFILE_PHOTO_SUBDIR . '/';
+            if (
+                (str_starts_with($old, $newPrefix) || str_starts_with($old, $legacyPrefix))
+                && str_contains($old, 'user_' . $userId . '_')
+            ) {
+                $oldAbs = $root . '/' . str_replace('\\', '/', $old);
+                if (is_file($oldAbs)) {
+                    @unlink($oldAbs);
+                }
             }
         }
 

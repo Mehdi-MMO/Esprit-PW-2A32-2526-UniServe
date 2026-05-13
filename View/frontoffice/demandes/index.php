@@ -5,6 +5,7 @@ $demandes = $demandes ?? [];
 $stats = $stats ?? [];
 $statut_labels = $statut_labels ?? [];
 $teacher_notice = !empty($teacher_notice ?? false);
+$pieces_by_demande = $pieces_by_demande ?? [];
 
 if (isset($_SESSION['flash'])) {
     $flash = $_SESSION['flash'];
@@ -25,13 +26,21 @@ if (isset($_SESSION['flash'])) {
         <?php endif; ?>
     </div>
     <?php if (!$teacher_notice): ?>
-        <a href="<?= $this->url('/demandes/createForm') ?>" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Nouvelle demande</a>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <a href="<?= $this->url('/services') ?>" class="btn btn-outline-secondary"><i class="fa-solid fa-list-ul me-2" aria-hidden="true"></i>Types de demandes</a>
+            <a href="<?= $this->url('/demandes/createForm') ?>" class="btn btn-primary"><i class="fa-solid fa-plus me-2" aria-hidden="true"></i>Nouvelle demande</a>
+        </div>
     <?php endif; ?>
 </div>
 
 <?php if ($flash !== null): ?>
     <?php if (($flash['type'] ?? '') === 'success'): ?>
         <?= renderSuccessAlert((string) ($flash['message'] ?? '')) ?>
+    <?php elseif (($flash['type'] ?? '') === 'warning'): ?>
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <?= htmlspecialchars((string) ($flash['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        </div>
     <?php else: ?>
         <?= renderErrorAlert((string) ($flash['message'] ?? '')) ?>
     <?php endif; ?>
@@ -73,6 +82,7 @@ $kpi = [
                     <tr>
                         <th>Catégorie</th>
                         <th>Titre</th>
+                        <th>Pièces</th>
                         <th>Statut</th>
                         <th>Soumise</th>
                         <th class="text-end">Actions</th>
@@ -81,7 +91,7 @@ $kpi = [
                 <tbody>
                     <?php if (empty($demandes)): ?>
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-5">Aucune demande pour le moment.</td>
+                            <td colspan="6" class="text-center text-muted py-5">Aucune demande pour le moment.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($demandes as $row): ?>
@@ -93,6 +103,17 @@ $kpi = [
                             <tr>
                                 <td class="text-muted small"><?= htmlspecialchars((string) ($row['categorie_nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="fw-semibold"><?= htmlspecialchars((string) ($row['titre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="small">
+                                    <?php $pList = $pieces_by_demande[$sid] ?? []; ?>
+                                    <?php if ($pList === []): ?>
+                                        <span class="text-muted">—</span>
+                                    <?php else: ?>
+                                        <?php foreach ($pList as $pj): ?>
+                                            <?php $pid = (int) ($pj['id'] ?? 0); ?>
+                                            <div><a href="<?= $this->url('/demandes/downloadPiece/' . $pid) ?>"><?= htmlspecialchars((string) ($pj['nom_fichier'] ?? ''), ENT_QUOTES, 'UTF-8') ?></a></div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </td>
                                 <td><span class="badge text-bg-secondary"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span></td>
                                 <td class="small text-muted"><?= htmlspecialchars((string) ($row['soumise_le'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="text-end">

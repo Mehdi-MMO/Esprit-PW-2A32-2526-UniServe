@@ -20,6 +20,29 @@ class Model
         return $statement;
     }
 
+    /**
+     * Run SQL without bound parameters (DDL / maintenance). Prefer {@see query} for data statements.
+     */
+    public function execSql(string $sql): int|false
+    {
+        return self::$db->exec($sql);
+    }
+
+    public function beginTransaction(): void
+    {
+        self::$db->beginTransaction();
+    }
+
+    public function commit(): void
+    {
+        self::$db->commit();
+    }
+
+    public function rollBack(): void
+    {
+        self::$db->rollBack();
+    }
+
     public function lastInsertId(): string
     {
         return self::$db->lastInsertId();

@@ -13,6 +13,7 @@
         rendezvous: 'Rendez-vous',
         events_registered: 'Mes événements',
         events_public: 'Événements publics',
+        certifications: 'Certifications',
     };
 
     const slotStartHour = 7;
@@ -58,6 +59,9 @@
         }
         if (sourceType === 'events_registered' || sourceType === 'events_public') {
             return '/evenements';
+        }
+        if (sourceType === 'certifications') {
+            return '/certifications';
         }
         return '/';
     }
@@ -190,23 +194,45 @@
         node.innerHTML = rows.map(renderRow).join('');
     }
 
+    function renderCompactPriorities(node, rows) {
+        if (!node) {
+            return;
+        }
+        if (!Array.isArray(rows) || rows.length === 0) {
+            node.innerHTML = '<div class="us-ai-empty">Aucune priorité détectée pour cette semaine.</div>';
+            return;
+        }
+        node.innerHTML = rows.slice(0, 3).map((item, index) => `
+            <div class="us-ai-priority">
+                <div class="us-ai-priority-rank">${index + 1}</div>
+                <div class="us-ai-priority-body">
+                    <div class="us-ai-priority-label">${escapeHtml(item.label || 'Élément')}</div>
+                    ${item.reason ? `<div class="us-ai-priority-reason">${escapeHtml(item.reason)}</div>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
     function renderAiBrief() {
         const sourceNode = document.getElementById('us-ai-brief-source');
         const summaryNode = document.getElementById('us-ai-brief-summary');
         const freshnessNode = document.getElementById('us-ai-freshness');
         const prioritiesNode = document.getElementById('us-ai-priorities');
+        const inlineRiskNode = document.getElementById('us-ai-risks-inline');
         const risksNode = document.getElementById('us-ai-risks');
         const actionsNode = document.getElementById('us-ai-actions');
         const modalSummaryNode = document.getElementById('us-ai-modal-summary');
         const modalPrioritiesNode = document.getElementById('us-ai-modal-priorities');
         const modalActionsNode = document.getElementById('us-ai-modal-actions');
+        const modalRisksNode = document.getElementById('us-ai-modal-risks');
         const modalDailyNode = document.getElementById('us-ai-modal-daily');
         const errorNode = document.getElementById('us-ai-brief-error');
 
         if (sourceNode) {
-            sourceNode.textContent = aiBriefData.source === 'ai' ? 'Analyse enrichie' : 'Vue locale';
-            sourceNode.classList.remove('text-bg-primary', 'text-bg-secondary');
-            sourceNode.classList.add(aiBriefData.source === 'ai' ? 'text-bg-primary' : 'text-bg-secondary');
+            const isAi = aiBriefData.source === 'ai';
+            sourceNode.innerHTML = `<i class="fa-solid ${isAi ? 'fa-wand-magic-sparkles' : 'fa-list-check'}" aria-hidden="true"></i> ${isAi ? 'Analyse IA' : 'Vue locale'}`;
+            sourceNode.classList.remove('is-ai', 'is-local');
+            sourceNode.classList.add(isAi ? 'is-ai' : 'is-local');
         }
 
         const summary = aiBriefData.summary !== '' ? aiBriefData.summary : 'Résumé dérivé de votre agenda et des filtres sélectionnés.';
@@ -218,7 +244,8 @@
         }
 
         if (freshnessNode) {
-            freshnessNode.textContent = `Mis à jour: ${formatGeneratedAt(aiBriefData.generated_at)}`;
+            const generated = formatGeneratedAt(aiBriefData.generated_at);
+            freshnessNode.innerHTML = `<i class="fa-regular fa-clock me-1" aria-hidden="true"></i> ${generated === '--' ? 'Pas encore généré' : 'Mis à jour ' + escapeHtml(generated)}`;
         }
 
         if (errorNode) {
@@ -226,12 +253,23 @@
             errorNode.classList.add('d-none');
         }
 
-        renderBriefList(
-            prioritiesNode,
-            aiBriefData.ranked_priorities,
-            'Rien à signaler.',
-            (item) => `<li><span class="fw-semibold">${escapeHtml(item.label)}</span><small>${escapeHtml(item.reason || '')}</small></li>`
-        );
+        renderCompactPriorities(prioritiesNode, aiBriefData.ranked_priorities);
+
+        if (inlineRiskNode) {
+            const firstRisk = Array.isArray(aiBriefData.risks) && aiBriefData.risks.length > 0 ? aiBriefData.risks[0] : '';
+            if (firstRisk) {
+                inlineRiskNode.classList.remove('d-none');
+                const textSpan = inlineRiskNode.querySelector('span');
+                if (textSpan) {
+                    textSpan.textContent = firstRisk;
+                } else {
+                    inlineRiskNode.innerHTML = `<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span>${escapeHtml(firstRisk)}</span>`;
+                }
+            } else {
+                inlineRiskNode.classList.add('d-none');
+            }
+        }
+
         renderBriefList(
             modalPrioritiesNode,
             aiBriefData.ranked_priorities,
@@ -241,6 +279,12 @@
 
         renderBriefList(
             risksNode,
+            aiBriefData.risks,
+            'Rien à signaler.',
+            (item) => `<li>${escapeHtml(item)}</li>`
+        );
+        renderBriefList(
+            modalRisksNode,
             aiBriefData.risks,
             'Rien à signaler.',
             (item) => `<li>${escapeHtml(item)}</li>`
@@ -259,18 +303,20 @@
     }
 
     function setBriefLoading(loading) {
-        const refreshButtons = [
-            document.getElementById('us-ai-brief-refresh'),
-            document.getElementById('us-ai-brief-refresh-modal'),
-        ];
+        const iconButton = document.getElementById('us-ai-brief-refresh');
+        if (iconButton) {
+            iconButton.disabled = loading;
+            iconButton.innerHTML = loading
+                ? '<i class="fa-solid fa-arrows-rotate fa-spin" aria-hidden="true"></i>'
+                : '<i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>';
+            iconButton.setAttribute('aria-label', loading ? 'Mise à jour de la synthèse' : 'Actualiser la synthèse');
+        }
 
-        refreshButtons.forEach((button) => {
-            if (!button) {
-                return;
-            }
-            button.disabled = loading;
-            button.textContent = loading ? 'Mise à jour…' : 'Actualiser';
-        });
+        const modalButton = document.getElementById('us-ai-brief-refresh-modal');
+        if (modalButton) {
+            modalButton.disabled = loading;
+            modalButton.textContent = loading ? 'Mise à jour…' : 'Actualiser';
+        }
     }
 
     function showBriefError(message) {
@@ -393,12 +439,13 @@
             const dateText = formatUpcoming(event.start);
             const href = escapeHtml(resolveEventHref(event));
             return `
-                <a class="us-upcoming-item text-reset text-decoration-none" href="${href}">
-                    <div class="us-upcoming-dot" style="background:${event.color};"></div>
-                    <div>
-                        <div class="us-upcoming-title">${escapeHtml(event.title)}</div>
-                        <div class="us-upcoming-meta">${escapeHtml(dateText)}${event.ownerLabel ? ' · ' + escapeHtml(event.ownerLabel) : ''}</div>
-                    </div>
+                <a class="us-upcoming-item" href="${href}">
+                    <span class="us-upcoming-dot" style="background:${escapeHtml(event.color)};"></span>
+                    <span class="us-upcoming-body">
+                        <span class="us-upcoming-title">${escapeHtml(event.title)}</span>
+                        <span class="us-upcoming-meta">${escapeHtml(dateText)}${event.ownerLabel ? ' · ' + escapeHtml(event.ownerLabel) : ''}</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-right us-upcoming-chevron" aria-hidden="true"></i>
                 </a>
             `;
         }).join('');
@@ -408,14 +455,18 @@
         root.innerHTML = `
             <div class="us-calendar-empty-state us-calendar-empty-state--agenda">
                 <div class="us-calendar-empty-illustration">
-                    <i class="bi bi-calendar2-week"></i>
+                    <i class="fa-regular fa-calendar"></i>
                 </div>
                 <div>
                     <h3 class="h6 mb-1">${escapeHtml(message)}</h3>
-                    <p class="text-muted mb-3">Ajoutez des rendez-vous et événements depuis le backoffice pour remplir cette vue agenda.</p>
+                    <p class="text-muted mb-3">Aucun élément cette semaine. Demandez un rendez-vous ou inscrivez-vous à un événement.</p>
                     <div class="d-flex flex-wrap gap-2">
-                            <a href="${escapeHtml(absoluteAppPath('/rendezvous'))}" class="btn btn-primary btn-sm">Voir les rendez-vous</a>
-                            <a href="${escapeHtml(absoluteAppPath('/evenements'))}" class="btn btn-outline-primary btn-sm">Parcourir les événements</a>
+                        <a href="${escapeHtml(absoluteAppPath('/rendezvous/createForm'))}" class="btn btn-primary btn-sm">
+                            <i class="fa-solid fa-calendar-plus me-1" aria-hidden="true"></i> Nouveau rendez-vous
+                        </a>
+                        <a href="${escapeHtml(absoluteAppPath('/evenements'))}" class="btn btn-outline-primary btn-sm">
+                            <i class="fa-solid fa-arrow-right me-1" aria-hidden="true"></i> Parcourir les événements
+                        </a>
                     </div>
                 </div>
             </div>
@@ -476,8 +527,10 @@
             return `
                 <div class="us-agenda-day${isToday ? ' is-today' : ''}">
                     <div class="us-agenda-day-head">
-                        <div class="us-agenda-day-name">${escapeHtml(formatDayHeader(day))}</div>
-                        ${isToday ? '<span class="badge text-bg-primary-subtle text-primary-emphasis">Aujourd\'hui</span>' : ''}
+                        <div class="us-agenda-day-name">
+                            <span>${escapeHtml(formatDayHeader(day))}</span>
+                            ${isToday ? '<span class="us-today-pill" aria-label="Aujourd\'hui" title="Aujourd\'hui"></span>' : ''}
+                        </div>
                     </div>
                     <div class="us-agenda-day-grid" style="height:${totalSlots * slotHeight}px;">
                         ${Array.from({ length: totalSlots }).map((_, index) => `<div class="us-agenda-slot ${index % 2 === 0 ? 'is-hour' : ''}"></div>`).join('')}

@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../shared/helpers.php';
+
 $profile_identity_locked = !empty($profile_identity_locked ?? false);
 
 $fullName = trim(
@@ -19,10 +21,7 @@ $departement = $departement !== '' ? $departement : '—';
 $niveau = $niveau !== '' ? $niveau : '—';
 $telephone = $telephone !== '' ? $telephone : '—';
 $statutCompte = in_array($statutCompteRaw, ['actif', 'inactif'], true) ? $statutCompteRaw : 'actif';
-$photoProfilUrl = null;
-if ($photoProfil !== '' && str_starts_with($photoProfil, 'View/shared/assets/profile-pics/')) {
-    $photoProfilUrl = $this->url('/' . $photoProfil);
-}
+$photoProfilUrl = profile_photo_public_url($photoProfil, $this);
 ?>
 
 <div class="row justify-content-center">
