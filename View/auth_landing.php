@@ -3,9 +3,10 @@
         <div class="row align-items-center g-4 g-lg-5">
             <div class="col-lg-7">
                 <span class="us-badge mb-3 d-inline-flex">Plateforme officielle</span>
-                <div class="mb-3"><?= us_brand_logo_html($this, 'us-brand-logo--hero', true) ?></div>
                 <div class="us-kicker mb-2">Services universitaires</div>
-                <h1 class="us-hero-title mb-3">UniServe</h1>
+                <h1 class="us-hero-title mb-3">
+                    <?= us_brand_logo_html($this, 'us-brand-logo--hero us-brand-logo--on-light', false) ?>
+                </h1>
                 <p class="lead text-muted us-landing-text-body mb-4">
                     Accès aux demandes administratives, rendez-vous, documents, clubs et événements selon votre rôle.
                 </p>

@@ -14,6 +14,9 @@
     --bg: #f4f6f9;
     --surface: #ffffff;
     --surface-2: #fbfcfe;
+    /* Muted strips (tables, compact lists) — backoffice + shared */
+    --surface-muted: #f4f7fb;
+    --table-header-bg: rgba(11, 42, 90, 0.045);
     --border: rgba(10, 22, 40, 0.10);
 
     --text: #101828;
@@ -43,7 +46,7 @@
 body {
     margin: 0;
     font-family: var(--font-body);
-    background-color: #f4f6f9;
+    background-color: var(--bg);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -167,37 +170,100 @@ a {
     letter-spacing: 0.02em;
 }
 
+/* Whitespace/newlines inside a flex .navbar-brand become anonymous flex items and can
+   render as a pale strip (inherits navbar text color). Keep the lockup tight. */
+.us-topbar .navbar-brand.us-navbar-brand-logo {
+    gap: 0;
+    font-size: 0;
+    line-height: 0;
+    text-decoration: none;
+    color: inherit;
+}
+
+.us-topbar .navbar-brand.us-navbar-brand-logo:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.55);
+    outline-offset: 3px;
+    border-radius: 6px;
+}
+
+/* Same whitespace-between-flex-children issue as navbar-brand (anonymous items pick up text color). */
+.us-brand-lockup {
+    font-size: 0;
+    line-height: 0;
+}
+
+.us-brand-lockup > *:not(img) {
+    font-size: 0.875rem;
+    line-height: 1.25;
+}
+
+.us-brand-lockup strong {
+    font-size: 0.9375rem;
+    font-weight: 700;
+}
+
 .us-topbar {
     background: #0b2a5a;
+}
+
+/* Bootstrap’s .navbar uses flex-wrap: wrap; a tight row can push .navbar-collapse to a
+   second line — often reads as a pale band under the brand. Keep one row on desktop. */
+@media (min-width: 992px) {
+    .us-topbar.navbar > .container {
+        flex-wrap: nowrap !important;
+    }
+
+    .us-topbar .navbar-collapse {
+        flex-grow: 1;
+        flex-shrink: 1;
+        min-width: 0;
+    }
+}
+
+/* Some logo exports include a light strip under the navy bar — trim without hurting type */
+.us-topbar .navbar-brand img.us-brand-logo--nav,
+.us-landing .us-landing-nav .navbar-brand img.us-brand-logo--nav {
+    clip-path: inset(0 0 5px 0);
 }
 
 .us-brand-logo {
     display: block;
     height: 32px;
     width: auto;
-    max-width: 120px;
+    max-width: min(280px, 92vw);
     object-fit: contain;
     flex-shrink: 0;
 }
 
 .us-brand-logo--nav {
-    height: 30px;
-    max-width: 110px;
+    height: 32px;
+    max-width: min(220px, 52vw);
 }
 
 .us-brand-logo--chat {
-    height: 22px;
-    max-width: 88px;
+    height: 24px;
+    max-width: 140px;
 }
 
 .us-brand-logo--sidebar {
-    height: 34px;
-    max-width: 120px;
+    height: 36px;
+    max-width: 220px;
 }
 
 .us-brand-logo--verify {
-    height: 28px;
-    max-width: 100px;
+    height: 30px;
+    max-width: 180px;
+}
+
+/* Full lockup may include a solid brand bar: on light surfaces it reads as a chip; on dark nav it can sit flush */
+.us-brand-logo--on-light {
+    border-radius: 10px;
+    box-shadow: 0 1px 8px rgba(11, 42, 90, 0.12);
+}
+
+.us-brand-logo--on-dark {
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .us-hero {

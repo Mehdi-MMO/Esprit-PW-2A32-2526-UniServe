@@ -8,6 +8,9 @@ $tab = (string) ($tab ?? 'rdv');
 $dashboard_stats = $dashboard_stats ?? ['total' => 0, 'reserve' => 0, 'confirme' => 0, 'annule' => 0, 'termine' => 0];
 $nb_rdvs = (int) ($nb_rdvs ?? 0);
 $nb_bureaux = (int) ($nb_bureaux ?? 0);
+$nb_bureaux_filtered = (int) ($nb_bureaux_filtered ?? $nb_bureaux);
+$bureau_bq = (string) ($bureau_bq ?? '');
+$bureau_kpi = $bureau_kpi ?? ['total' => 0, 'actifs' => 0, 'inactifs' => 0, 'rdv_total' => 0];
 $bureaux = $bureaux ?? [];
 $bureau_page = (int) ($bureau_page ?? 1);
 $bureau_total_pages = (int) ($bureau_total_pages ?? 1);
@@ -50,9 +53,10 @@ $buildRdvQuery = static function (array $replace) use ($q, $statut_filter, $sort
     return http_build_query($filtered);
 };
 
-$buildBureauQuery = static function (array $replace) use ($bureau_page): string {
+$buildBureauQuery = static function (array $replace) use ($bureau_page, $bureau_bq): string {
     $base = array_merge([
         'tab' => 'bureaux',
+        'bq' => $bureau_bq,
         'bpage' => $bureau_page,
     ], $replace);
     $filtered = [];
@@ -80,6 +84,14 @@ if ($sort !== '') {
     $exportQs['sort'] = $sort;
 }
 $exportHref = $this->url('/rendezvous/exportPrint') . ($exportQs !== [] ? ('?' . http_build_query($exportQs)) : '');
+
+$exportBureauxQs = [];
+if ($bureau_bq !== '') {
+    $exportBureauxQs['bq'] = $bureau_bq;
+}
+$exportBureauxHref = $this->url('/rendezvous/exportBureauxPrint') . ($exportBureauxQs !== [] ? ('?' . http_build_query($exportBureauxQs)) : '');
+
+$bk = $bureau_kpi;
 
 $fmtRdv = static function (string $d): string {
     $dt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $d);
@@ -325,12 +337,44 @@ $badgeTone = static function (string $st): string {
     <?php endif; ?>
 
 <?php else: /* tab bureaux */ ?>
+    <?php
+    $bureauStatCards = [
+        ['title' => 'Bureaux', 'value' => $bk['total'] ?? 0, 'color' => 'primary', 'icon' => 'fa-solid fa-building'],
+        ['title' => 'Actifs', 'value' => $bk['actifs'] ?? 0, 'color' => 'success', 'icon' => 'fa-solid fa-circle-check'],
+        ['title' => 'Inactifs', 'value' => $bk['inactifs'] ?? 0, 'color' => 'secondary', 'icon' => 'fa-solid fa-circle-pause'],
+        ['title' => 'RDV (total)', 'value' => $bk['rdv_total'] ?? 0, 'color' => 'info', 'icon' => 'fa-solid fa-calendar-days'],
+    ];
+    ?>
+    <div class="mb-4"><?= renderStatGrid($bureauStatCards) ?></div>
+
+    <div class="us-section-card mb-4">
+        <div class="card-body p-3">
+            <form method="get" action="<?= $this->url('/rendezvous') ?>" class="row g-2 align-items-end">
+                <input type="hidden" name="tab" value="bureaux">
+                <div class="col-lg-6">
+                    <label class="form-label small text-muted mb-1" for="bbq">Recherche</label>
+                    <input type="text" class="form-control" id="bbq" name="bq" value="<?= htmlspecialchars($bureau_bq, ENT_QUOTES, 'UTF-8') ?>" placeholder="Nom, localisation ou type de service…">
+                </div>
+                <div class="col-lg-6 d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass me-2"></i>Rechercher</button>
+                    <a href="<?= $this->url('/rendezvous') ?>?tab=bureaux" class="btn btn-outline-secondary">Réinitialiser</a>
+                    <a class="btn btn-outline-danger" href="<?= htmlspecialchars($exportBureauxHref, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener">
+                        <i class="fa-regular fa-file-pdf me-2"></i>Export PDF
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <p class="text-muted small mb-0">
-            <?php if ($nb_bureaux > 0): ?>
-                Affichage <?= $bureau_from ?>-<?= $bureau_to ?> sur <?= $nb_bureaux ?> bureau(x)
+            <?php if ($nb_bureaux_filtered > 0): ?>
+                Affichage <?= $bureau_from ?>-<?= $bureau_to ?> sur <?= $nb_bureaux_filtered ?> bureau(x)<?= $bureau_bq !== '' ? ' (filtrés)' : '' ?>
+                <?php if ($nb_bureaux_filtered !== $nb_bureaux): ?>
+                    · <?= $nb_bureaux ?> au catalogue
+                <?php endif; ?>
             <?php else: ?>
-                Aucun bureau
+                Aucun bureau<?= $bureau_bq !== '' ? ' pour cette recherche' : '' ?>
             <?php endif; ?>
         </p>
         <a href="<?= $this->url('/bureaux/createForm') ?>" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-2"></i>Nouveau bureau</a>

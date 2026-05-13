@@ -407,7 +407,7 @@ function us_brand_logo_html(object $controller, string $extraClasses = '', bool 
     $classes = trim('us-brand-logo ' . $extraClasses);
     $classAttr = htmlspecialchars($classes, ENT_QUOTES, 'UTF-8');
     if ($decorative) {
-        return '<img src="' . $src . '" alt="" class="' . $classAttr . '" width="120" height="40" decoding="async" aria-hidden="true">';
+        return '<img src="' . $src . '" alt="" class="' . $classAttr . '" decoding="async" aria-hidden="true">';
     }
 
     return '<img src="' . $src . '" alt="UniServe" class="' . $classAttr . '" decoding="async">';

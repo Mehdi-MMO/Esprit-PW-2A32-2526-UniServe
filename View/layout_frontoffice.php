@@ -61,10 +61,7 @@
     ?>
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top us-topbar shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= $this->url('/') ?>">
-                <?= us_brand_logo_html($this, 'us-brand-logo--nav', true) ?>
-                <span>UniServe</span>
-            </a>
+            <a class="navbar-brand d-inline-flex align-items-center us-navbar-brand-logo" href="<?= $this->url('/') ?>" aria-label="UniServe — accueil"><?= us_brand_logo_html($this, 'us-brand-logo--nav us-brand-logo--on-dark', false) ?></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#frontNav" aria-controls="frontNav" aria-expanded="false" aria-label="Basculer la navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>

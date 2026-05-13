@@ -161,6 +161,34 @@ class RendezvousController extends Controller
             $nbBureaux = count($bureauxAll);
             $nbRdvs = (int) ($dashboardStats['total'] ?? 0);
 
+            $bureauBq = trim((string) ($_GET['bq'] ?? ''));
+            $bureauxFiltered = array_values(array_filter($bureauxAll, static function (array $b) use ($bureauBq): bool {
+                if ($bureauBq === '') {
+                    return true;
+                }
+                $hay = mb_strtolower(
+                    trim((string) ($b['nom'] ?? '')) . ' ' .
+                    trim((string) ($b['localisation'] ?? '')) . ' ' .
+                    trim((string) ($b['type_service'] ?? '')),
+                    'UTF-8'
+                );
+
+                return str_contains($hay, mb_strtolower($bureauBq, 'UTF-8'));
+            }));
+            $nbBureauxFiltered = count($bureauxFiltered);
+            $actifsCount = 0;
+            foreach ($bureauxAll as $bRow) {
+                if ((int) ($bRow['actif'] ?? 0) === 1) {
+                    $actifsCount++;
+                }
+            }
+            $bureauKpi = [
+                'total' => $nbBureaux,
+                'actifs' => $actifsCount,
+                'inactifs' => max(0, $nbBureaux - $actifsCount),
+                'rdv_total' => $nbRdvs,
+            ];
+
             $perPage = 10;
             $page = max(1, (int) ($_GET['page'] ?? 1));
             $totalFiltered = $rdvModel->countForAdmin($filters);
@@ -173,14 +201,14 @@ class RendezvousController extends Controller
 
             $bureauPerPage = 8;
             $bureauPage = max(1, (int) ($_GET['bpage'] ?? 1));
-            $bureauTotalPages = max(1, (int) ceil($nbBureaux / $bureauPerPage));
+            $bureauTotalPages = max(1, (int) ceil($nbBureauxFiltered / $bureauPerPage));
             if ($bureauPage > $bureauTotalPages) {
                 $bureauPage = $bureauTotalPages;
             }
             $bureauOffset = ($bureauPage - 1) * $bureauPerPage;
-            $bureauxPaged = array_slice($bureauxAll, $bureauOffset, $bureauPerPage);
-            $bureauFrom = $nbBureaux === 0 ? 0 : $bureauOffset + 1;
-            $bureauTo = min($nbBureaux, $bureauOffset + count($bureauxPaged));
+            $bureauxPaged = array_slice($bureauxFiltered, $bureauOffset, $bureauPerPage);
+            $bureauFrom = $nbBureauxFiltered === 0 ? 0 : $bureauOffset + 1;
+            $bureauTo = min($nbBureauxFiltered, $bureauOffset + count($bureauxPaged));
 
             $flash = null;
             if (isset($_SESSION['flash'])) {
@@ -195,6 +223,9 @@ class RendezvousController extends Controller
                 'dashboard_stats' => $dashboardStats,
                 'nb_rdvs' => $nbRdvs,
                 'nb_bureaux' => $nbBureaux,
+                'nb_bureaux_filtered' => $nbBureauxFiltered,
+                'bureau_bq' => $bureauBq,
+                'bureau_kpi' => $bureauKpi,
                 'bureaux' => $bureauxPaged,
                 'bureau_page' => $bureauPage,
                 'bureau_total_pages' => $bureauTotalPages,
@@ -341,6 +372,38 @@ class RendezvousController extends Controller
             'title' => 'Export rendez-vous',
             'rdvs' => $rows,
             'statut_labels' => $this->statutLabels(),
+            'generated_at' => (new \DateTimeImmutable('now'))->format('d/m/Y H:i'),
+        ], 'print');
+    }
+
+    /**
+     * Liste imprimable des bureaux (filtre recherche optionnel GET bq) — PDF via navigateur.
+     */
+    public function exportBureauxPrint(): void
+    {
+        $this->requireLogin();
+        $this->requireRole(['staff', 'admin']);
+
+        $bq = trim((string) ($_GET['bq'] ?? ''));
+        $all = (new Bureau())->findAllOrdered();
+        $filtered = array_values(array_filter($all, static function (array $b) use ($bq): bool {
+            if ($bq === '') {
+                return true;
+            }
+            $hay = mb_strtolower(
+                trim((string) ($b['nom'] ?? '')) . ' ' .
+                trim((string) ($b['localisation'] ?? '')) . ' ' .
+                trim((string) ($b['type_service'] ?? '')),
+                'UTF-8'
+            );
+
+            return str_contains($hay, mb_strtolower($bq, 'UTF-8'));
+        }));
+
+        $this->render('backoffice/rendezvous/export_bureaux_print', [
+            'title' => 'Export bureaux',
+            'bureaux' => $filtered,
+            'search_bq' => $bq,
             'generated_at' => (new \DateTimeImmutable('now'))->format('d/m/Y H:i'),
         ], 'print');
     }

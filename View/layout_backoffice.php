@@ -34,10 +34,7 @@
     }
     ?>
     <aside class="sidebar d-flex flex-column shadow-sm">
-        <div class="p-4 border-bottom border-secondary-subtle d-flex align-items-center gap-2 flex-shrink-0">
-            <?= us_brand_logo_html($this, 'us-brand-logo--sidebar', true) ?>
-            <div class="lh-sm">
-                <div class="fw-bold">UniServe</div>
+        <div class="p-4 border-bottom border-secondary-subtle d-flex align-items-center gap-3 flex-shrink-0 us-sidebar-brand-row"><?= us_brand_logo_html($this, 'us-brand-logo--sidebar us-brand-logo--on-dark', false) ?><div class="lh-sm">
                 <div class="small text-white-50">BackOffice</div>
             </div>
         </div>

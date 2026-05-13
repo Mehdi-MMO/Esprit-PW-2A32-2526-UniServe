@@ -12,9 +12,7 @@
 
     <div class="us-ai-chat-panel d-none" data-ai-chat-panel>
         <div class="us-ai-chat-header">
-            <div class="d-flex align-items-center gap-2">
-                <?= us_brand_logo_html($this, 'us-brand-logo--chat', true) ?>
-                <strong>Assistant UniServe</strong>
+            <div class="d-flex align-items-center gap-2 us-brand-lockup"><?= us_brand_logo_html($this, 'us-brand-logo--chat us-brand-logo--on-light', true) ?><strong>Assistant</strong>
             </div>
             <div class="us-ai-chat-header-actions">
                 <button type="button" class="btn btn-outline-secondary btn-sm us-ai-chat-reset" data-ai-chat-reset title="Effacer la conversation locale">
