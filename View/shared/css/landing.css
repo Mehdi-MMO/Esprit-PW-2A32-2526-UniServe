@@ -140,23 +140,7 @@ body.us-landing {
     color: var(--text);
 }
 
-/* Ghost / outline CTA on hero */
-.us-landing .btn-us-ghost {
-    --bs-btn-color: var(--brand);
-    --bs-btn-border-color: rgba(11, 42, 90, 0.35);
-    --bs-btn-hover-bg: rgba(11, 42, 90, 0.06);
-    --bs-btn-hover-border-color: rgba(11, 42, 90, 0.5);
-    --bs-btn-active-bg: rgba(11, 42, 90, 0.1);
-    --bs-btn-active-border-color: var(--brand);
-    font-weight: var(--btn-font-weight);
-    border-radius: var(--btn-radius);
-}
 
-.us-landing .btn-us-ghost:focus-visible {
-    outline: 2px solid var(--brand);
-    outline-offset: 3px;
-    box-shadow: var(--focus-ring);
-}
 
 .us-login-back:focus-visible,
 .us-landing .us-landing-link-focus:focus-visible {
@@ -185,6 +169,12 @@ body.us-landing {
 
 .us-login-brand-lead {
     opacity: 0.9;
+    line-height: 1.55;
+}
+
+.us-landing-hero .lead {
+    max-width: 34rem;
+    font-size: 1.05rem;
     line-height: 1.55;
 }
 
