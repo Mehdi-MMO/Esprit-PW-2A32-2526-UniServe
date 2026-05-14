@@ -1,40 +1,4 @@
-﻿<style>
-.frm-wrap { max-width:580px;margin:0 auto; }
-.frm-header { display:flex;align-items:center;gap:14px;margin-bottom:24px; }
-.frm-header-icon {
-    width:46px;height:46px;border-radius:13px;flex-shrink:0;
-    background:linear-gradient(135deg,#9f7a2f,#c89a3c);
-    display:grid;place-items:center;color:#fff;font-size:1.1rem;
-    box-shadow:0 4px 14px rgba(159,122,47,.28);
-}
-.frm-card {
-    background:#fff;border-radius:16px;border:1px solid var(--border);
-    box-shadow:0 1px 8px rgba(11,42,90,.06);overflow:hidden;
-}
-.frm-card-bar { height:4px;background:linear-gradient(90deg,var(--accent),var(--mint)); }
-.frm-preview {
-    background:linear-gradient(135deg,rgba(159,122,47,.06),rgba(159,122,47,.02));
-    border-bottom:1px solid var(--border);padding:16px 22px;
-    display:flex;align-items:center;gap:14px;
-}
-.frm-preview-icon {
-    width:44px;height:44px;border-radius:12px;flex-shrink:0;
-    background:rgba(159,122,47,.10);border:1px solid rgba(159,122,47,.22);
-    display:grid;place-items:center;font-size:1.1rem;color:var(--accent);
-}
-.frm-preview-id   { font-size:.68rem;font-weight:700;color:var(--text-muted);margin-bottom:2px; }
-.frm-preview-nom  { font-weight:800;color:var(--brand);font-size:.9rem; }
-.frm-preview-loc  { font-size:.76rem;color:var(--text-muted); }
-.frm-body { padding:24px; }
-.frm-label {
-    display:block;font-size:.72rem;font-weight:700;
-    text-transform:uppercase;letter-spacing:.06em;
-    color:var(--brand);margin-bottom:6px;
-}
-.frm-label i { margin-right:5px;opacity:.8; }
-.frm-divider { height:1px;background:var(--border);margin:20px 0; }
-.frm-actions { display:flex;align-items:center;gap:10px; }
-</style>
+
 
 <div class="frm-wrap">
 

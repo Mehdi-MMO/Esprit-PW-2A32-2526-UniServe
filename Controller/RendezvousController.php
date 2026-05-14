@@ -669,7 +669,7 @@ class RendezvousController extends Controller
         $this->redirect('/rendezvous?tab=rdv');
     }
 
-    public function adminDelete(int|string $id): void
+    public function delete(int|string $id): void
     {
         $this->requireLogin();
         $this->requireRole(['staff', 'admin']);

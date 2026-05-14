@@ -1,466 +1,547 @@
 <?php
-declare(strict_types=1);
+function getBureauIcon(string $nom): string {
+    $nom = mb_strtolower($nom);
+    if (str_contains($nom, 'scolar'))                                 return 'bi-mortarboard-fill';
+    if (str_contains($nom, 'finance') || str_contains($nom, 'compt')) return 'bi-cash-coin';
+    if (str_contains($nom, 'stage')   || str_contains($nom, 'intern'))return 'bi-briefcase-fill';
+    if (str_contains($nom, 'academ'))                                 return 'bi-book-fill';
+    if (str_contains($nom, 'registr'))                                return 'bi-file-earmark-text-fill';
+    if (str_contains($nom, 'biblio'))                                 return 'bi-journals';
+    if (str_contains($nom, 'sport'))                                  return 'bi-trophy-fill';
+    if (str_contains($nom, 'info')    || str_contains($nom, 'tech'))  return 'bi-pc-display';
+    if (str_contains($nom, 'rh')      || str_contains($nom, 'human')) return 'bi-people-fill';
+    if (str_contains($nom, 'droit')   || str_contains($nom, 'jurid')) return 'bi-shield-fill';
+    if (str_contains($nom, 'medecin') || str_contains($nom, 'sante')) return 'bi-heart-pulse-fill';
+    return 'bi-building-fill';
+}
 
-require_once __DIR__ . '/../../shared/helpers.php';
+$palettes = [
+    ['light'=>'#e8eef8','main'=>'var(--brand)','dark'=>'#07193a','bar'=>'var(--brand)','soft'=>'rgba(11,42,90,0.06)'],
+    ['light'=>'#e0f7f3','main'=>'#1a9e86','dark'=>'#127a68','bar'=>'#3ecfb2','soft'=>'rgba(62,207,178,0.08)'],
+    ['light'=>'#f7f0e0','main'=>'#9f7a2f','dark'=>'#7a5c1e','bar'=>'#c49a3c','soft'=>'rgba(159,122,47,0.07)'],
+    ['light'=>'#eeeef9','main'=>'#4f46e5','dark'=>'#3730a3','bar'=>'#6366f1','soft'=>'rgba(99,102,241,0.07)'],
+    ['light'=>'#fdeaea','main'=>'#dc2626','dark'=>'#b91c1c','bar'=>'#ef4444','soft'=>'rgba(239,68,68,0.06)'],
+    ['light'=>'#e0f5ec','main'=>'#065f46','dark'=>'#044034','bar'=>'#10b981','soft'=>'rgba(16,185,129,0.07)'],
+];
 
-$rdvs = $rdvs ?? [];
-$stats = $stats ?? [];
-$statut_labels = $statut_labels ?? [];
-$teacher_notice = !empty($teacher_notice ?? false);
-$flash = $flash ?? null;
+$statusConfig = [
+    'reserve'   => ['label'=>'En attente',  'icon'=>'bi-hourglass-split',  'bg'=>'#fff8e1','color'=>'#b45309','border'=>'#fde68a'],
+    'confirme'  => ['label'=>'Confirmé',    'icon'=>'bi-check-circle-fill','bg'=>'#dcfce7','color'=>'#166534','border'=>'#bbf7d0'],
+    'annule'    => ['label'=>'Annulé',      'icon'=>'bi-x-circle-fill',   'bg'=>'#fee2e2','color'=>'#991b1b','border'=>'#fecaca'],
+    'termine'   => ['label'=>'Terminé',     'icon'=>'bi-check-all',       'bg'=>'#f3f4f6','color'=>'#4b5563','border'=>'#e5e7eb'],
+];
 
-$hub_bq = (string) ($hub_bq ?? '');
-$hub_bpage = (int) ($hub_bpage ?? 1);
-$hub_bureaux = $hub_bureaux ?? [];
-$hub_bureau_total_filtered = (int) ($hub_bureau_total_filtered ?? 0);
-$hub_bureau_total_pages = (int) ($hub_bureau_total_pages ?? 1);
-$hub_bureau_from = (int) ($hub_bureau_from ?? 0);
-$hub_bureau_to = (int) ($hub_bureau_to ?? 0);
-$hub_taux_succes = (int) ($hub_taux_succes ?? 0);
-$hub_campus_pins = $hub_campus_pins ?? [];
+$statusPalettes = [
+    'confirme'  => ['light'=>'#dcfce7','main'=>'#166534','bar'=>'#22c55e','soft'=>'rgba(34,197,94,0.10)'],
+    'reserve'   => ['light'=>'#fef9c3','main'=>'#854d0e','bar'=>'#eab308','soft'=>'rgba(234,179,8,0.10)'],
+    'annule'    => ['light'=>'#fee2e2','main'=>'#991b1b','bar'=>'#ef4444','soft'=>'rgba(239,68,68,0.10)'],
+    'termine'   => ['light'=>'#f3f4f6','main'=>'#4b5563','bar'=>'#9ca3af','soft'=>'rgba(75,85,99,0.10)'],
+];
 
-$humanType = static function (string $typeService): string {
-    $t = trim(str_replace(['_', '-'], ' ', $typeService));
-
-    return $t !== '' ? $t : '—';
-};
-
-$bureauIcon = static function (string $typeService): string {
-    $t = strtolower($typeService);
-    if (str_contains($t, 'sport')) {
-        return 'fa-trophy';
+// Helper URL pour pagination locale
+function frontUrl(array $extra = []): string {
+    $param = (string)array_key_first($extra);
+    $base  = [];
+    if (!empty($_GET['bq'])) $base['bq'] = $_GET['bq'];
+    
+    if ($param === 'bpage' && isset($_GET['bpage'])) {
+        // rien à ajouter, sera dans $extra
+    } elseif ($param === 'rpage' && isset($_GET['rpage'])) {
+        // rien à ajouter
     }
-    if (str_contains($t, 'stage') || str_contains($t, 'intern')) {
-        return 'fa-briefcase';
+    
+    // Check if we need to keep the other param
+    if ($param === 'bpage' && isset($_GET['rpage'])) {
+        $base['rpage'] = $_GET['rpage'];
     }
-    if (str_contains($t, 'finan') || str_contains($t, 'aide_fin')) {
-        return 'fa-coins';
+    if ($param === 'rpage' && isset($_GET['bpage'])) {
+        $base['bpage'] = $_GET['bpage'];
     }
-    if (str_contains($t, 'psy') || str_contains($t, 'soutien')) {
-        return 'fa-heart-pulse';
-    }
-    if (str_contains($t, 'rh') || str_contains($t, 'personnel')) {
-        return 'fa-people-group';
-    }
+    
+    return '?' . http_build_query(array_merge($base, $extra));
+}
 
-    return 'fa-building';
-};
-
-$hubQuery = static function (array $replace) use ($hub_bq): string {
-    $base = array_merge(['bq' => $hub_bq, 'bpage' => 1], $replace);
-    $out = [];
-    foreach ($base as $k => $v) {
-        if ($v === '' || $v === null) {
+function frontPager(int $current, int $total, string $param): string {
+    if ($total <= 1) return '';
+    $h  = '<div class="front-pagination">';
+    $h .= '<a href="' . frontUrl([$param => max(1, $current - 1)]) . '" class="fp-btn' . ($current <= 1 ? ' disabled' : '') . '">'
+        . '<i class="bi bi-chevron-left"></i></a>';
+    for ($i = 1; $i <= $total; $i++) {
+        if ($total > 7 && abs($i - $current) > 2 && $i !== 1 && $i !== $total) {
+            if ($i === 2 || $i === $total - 1) { $h .= '<span class="fp-btn" style="pointer-events:none;border:none;color:#9ca3af;">…</span>'; }
             continue;
         }
-        if ($k === 'bpage' && (int) $v <= 1) {
-            continue;
-        }
-        $out[$k] = $v;
+        $h .= '<a href="' . frontUrl([$param => $i]) . '" class="fp-btn' . ($i === $current ? ' active' : '') . '">' . $i . '</a>';
     }
+    $h .= '<a href="' . frontUrl([$param => min($total, $current + 1)]) . '" class="fp-btn' . ($current >= $total ? ' disabled' : '') . '">'
+        . '<i class="bi bi-chevron-right"></i></a>';
+    $h .= '</div>';
+    return $h;
+}
 
-    return http_build_query($out);
-};
+// Stats from INTEG controller
+$statsTotal     = $stats['total'] ?? 0;
+$statsConfirmes = $stats['confirme'] ?? 0;
+$taux           = $hub_taux_succes ?? 0;
+$totalBureaux   = $stats['bureaux_actifs'] ?? 0;
 
-$fmtCell = static function (string $d): string {
-    $dt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $d);
-    if ($dt === false) {
-        $ts = strtotime($d);
+// Pagination pour les RDV (client ou server)
+// Puisque $rdvs contient tous les rdv dans INTEG, on pagine manuellement ici
+$perPageR  = 6;
+$pageR     = max(1, (int)($_GET['rpage'] ?? 1));
+$totalR    = count($rdvs);
+$totalPagesR = max(1, (int)ceil($totalR / $perPageR));
+$pageR       = min($pageR, $totalPagesR);
+$pagedRdv    = array_slice($rdvs, ($pageR - 1) * $perPageR, $perPageR);
 
-        return $ts !== false ? date('d/m/Y H:i', $ts) : htmlspecialchars($d, ENT_QUOTES, 'UTF-8');
-    }
-
-    return $dt->format('d/m/Y H:i');
-};
-
-$recentSlice = !$teacher_notice ? array_slice($rdvs, 0, 3) : [];
+// Fetch all active bureaux for the map (since $hub_bureaux is paginated)
+$allBureaux = (new Bureau())->findAllActive();
 ?>
 
+
+
 <?php if ($flash !== null): ?>
-    <?php if (($flash['type'] ?? '') === 'success'): ?>
-        <?= renderSuccessAlert((string) ($flash['message'] ?? '')) ?>
-    <?php else: ?>
-        <?= renderErrorAlert((string) ($flash['message'] ?? '')) ?>
-    <?php endif; ?>
+<div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'danger' ?> alert-dismissible fade show mb-4" role="alert"
+     style="border-left:4px solid <?= $flash['type'] === 'success' ? '#22c55e' : '#ef4444' ?>;border-radius:12px;">
+    <div class="d-flex align-items-center gap-3">
+        <i class="bi <?= $flash['type'] === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill' ?>"
+           style="font-size:1.8rem;color:<?= $flash['type'] === 'success' ? '#22c55e' : '#ef4444' ?>;"></i>
+        <div>
+            <h5 class="alert-heading mb-1" style="font-weight:700;"><?= $flash['type'] === 'success' ? 'Succès' : 'Erreur' ?></h5>
+            <p class="mb-0"><?= htmlspecialchars($flash['message'], ENT_QUOTES, 'UTF-8') ?></p>
+        </div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+</div>
 <?php endif; ?>
 
-<?php if ($teacher_notice): ?>
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header mb-4">
-        <div>
-            <div class="us-kicker mb-1">Planification</div>
-            <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Rendez-vous'), ENT_QUOTES, 'UTF-8') ?></h1>
-            <p class="text-muted mb-0">La réservation en ligne est réservée aux étudiants. Pour un rendez-vous administratif, contactez un bureau.</p>
-        </div>
+<!-- Hero -->
+<div class="us-hero rounded-3 p-5 mb-4 text-center">
+    <h1 class="fw-bold mb-2" style="color:var(--brand)">Réservez votre rendez-vous<br>en quelques secondes</h1>
+    <p class="text-muted mb-4">Choisissez un bureau, sélectionnez une date et évitez les files d'attente.</p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a href="<?= $this->url('/rendezvous/createForm') ?>" class="btn-hero btn-hero-primary">
+            <i class="bi bi-calendar-plus" style="font-size:1.1rem"></i>Réserver maintenant
+        </a>
+        <button class="btn-hero btn-hero-teal" onclick="toggleRdv()" id="btnRdv">
+            <i class="bi bi-clock-history" style="font-size:1.1rem"></i>
+            Mes rendez-vous <i class="bi bi-chevron-down" id="iconRdv"></i>
+        </button>
     </div>
-    <div class="us-card p-4 text-muted">
-        <p class="mb-0">Utilisez les autres entrées du menu selon votre profil.</p>
-    </div>
-<?php else: ?>
+</div>
 
-    <section class="us-rdv-hero mb-4">
-        <div class="us-rdv-hero-inner">
-            <div class="row align-items-center g-4">
-                <div class="col-lg-8">
-                    <div class="us-kicker text-white-50 mb-2">UniServe · Rendez-vous</div>
-                    <h1 class="h2 mb-3">Réservez votre rendez-vous en quelques secondes</h1>
-                    <p class="lead mb-0">Choisissez un bureau, sélectionnez une date et évitez les files d’attente.</p>
-                </div>
-                <div class="col-lg-4 d-flex flex-column flex-sm-row flex-lg-column gap-2 align-items-stretch align-items-lg-end">
-                    <a href="#bureaux-disponibles" class="btn btn-light btn-lg">Réserver maintenant</a>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-light btn-lg dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Rendez-vous récents
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow">
-                            <?php if ($recentSlice === []): ?>
-                                <li><span class="dropdown-item-text text-muted">Aucun rendez-vous pour l’instant.</span></li>
-                            <?php else: ?>
-                                <?php foreach ($recentSlice as $rr): ?>
-                                    <?php
-                                    $rid = (int) ($rr['id'] ?? 0);
-                                    $rst = (string) ($rr['statut'] ?? '');
-                                    $canEdit = $rst === 'reserve';
-                                    ?>
-                                    <li>
-                                        <?php if ($canEdit): ?>
-                                            <a class="dropdown-item" href="<?= $this->url('/rendezvous/editForm/' . $rid) ?>">
-                                                <?= htmlspecialchars((string) ($rr['bureau_nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                                                <span class="d-block small text-muted"><?= htmlspecialchars($fmtCell((string) ($rr['date_debut'] ?? '')), ENT_QUOTES, 'UTF-8') ?></span>
-                                            </a>
-                                        <?php else: ?>
-                                            <a class="dropdown-item" href="<?= $this->url('/rendezvous?focus=' . $rid) ?>#mes-rendez-vous">
-                                                <?= htmlspecialchars((string) ($rr['bureau_nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                                                <span class="d-block small text-muted"><?= htmlspecialchars($statut_labels[$rst] ?? $rst, ENT_QUOTES, 'UTF-8') ?></span>
-                                            </a>
-                                        <?php endif; ?>
-                                    </li>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item fw-semibold" href="#mes-rendez-vous">Voir tous mes rendez-vous</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+<!-- Stats -->
+<div class="stats-front-grid">
+    <div class="stats-front-card"><div class="stats-front-number"><?= $statsTotal ?></div><div class="stats-front-label">Total RDV</div></div>
+    <div class="stats-front-card"><div class="stats-front-number" style="color:#22c55e;"><?= $statsConfirmes ?></div><div class="stats-front-label">Confirmés</div></div>
+    <div class="stats-front-card"><div class="stats-front-number" style="color:#eab308;"><?= $taux ?>%</div><div class="stats-front-label">Taux succès</div></div>
+    <div class="stats-front-card"><div class="stats-front-number" style="color:var(--brand);"><?= $totalBureaux ?></div><div class="stats-front-label">Bureaux actifs</div></div>
+</div>
 
-    <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
-        <div class="col">
-            <div class="card us-rdv-kpi-card us-rdv-kpi-card--total h-100">
-                <div class="card-body py-3">
-                    <div class="us-rdv-kpi-label mb-1">Total RDV</div>
-                    <div class="us-rdv-kpi-value"><?= (int) ($stats['total'] ?? 0) ?></div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="card us-rdv-kpi-card us-rdv-kpi-card--ok h-100">
-                <div class="card-body py-3">
-                    <div class="us-rdv-kpi-label mb-1">Confirmés</div>
-                    <div class="us-rdv-kpi-value"><?= (int) ($stats['confirme'] ?? 0) ?></div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="card us-rdv-kpi-card us-rdv-kpi-card--rate h-100">
-                <div class="card-body py-3">
-                    <div class="us-rdv-kpi-label mb-1">Taux succès</div>
-                    <div class="us-rdv-kpi-value"><?= (int) $hub_taux_succes ?>%</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="card us-rdv-kpi-card us-rdv-kpi-card--bureaux h-100">
-                <div class="card-body py-3">
-                    <div class="us-rdv-kpi-label mb-1">Bureaux actifs</div>
-                    <div class="us-rdv-kpi-value"><?= (int) ($stats['bureaux_actifs'] ?? 0) ?></div>
-                </div>
-            </div>
-        </div>
-    </div>
+<?php
+// Préparer les données bureaux pour la carte (JSON)
+$bureauxMapData = [];
+// Coordonnées fictives de campus — on distribue les bureaux sur un plan réaliste
+$campusCoords = [
+    [36.8190, 10.1660],
+    [36.8195, 10.1668],
+    [36.8185, 10.1672],
+    [36.8200, 10.1655],
+    [36.8182, 10.1650],
+    [36.8198, 10.1675],
+    [36.8188, 10.1680],
+    [36.8205, 10.1663],
+];
+$palettesMap = ['var(--brand)','var(--mint)','#9f7a2f','#4f46e5','#dc2626','#065f46','#c2410c','#7c3aed'];
+foreach ($allBureaux as $idx => $b) {
+    $coords = $campusCoords[$idx % count($campusCoords)];
+    $bureauxMapData[] = [
+        'id'          => $b['id'],
+        'nom'         => $b['nom'],
+        'localisation'=> $b['localisation'],
+        'lat'         => $coords[0] + ($idx * 0.00015),
+        'lng'         => $coords[1] + ($idx * 0.00012),
+        'color'       => $palettesMap[$idx % count($palettesMap)],
+        'bookUrl'     => $this->url('/rendezvous/createForm?bureau_id=' . (int)$b['id']),
+    ];
+}
+$bureauxMapJson = json_encode($bureauxMapData, JSON_UNESCAPED_UNICODE);
+?>
 
-    <section class="us-campus-map-wrap mb-4" aria-labelledby="carte-campus-titre">
-        <div class="us-campus-map-head d-flex flex-wrap justify-content-between align-items-center gap-2">
+<!-- ══ CARTE INTERACTIVE ══ -->
+<div style="background:#fff;border-radius:18px;border:1px solid rgba(11,42,90,0.10);box-shadow:0 2px 14px rgba(11,42,90,0.07);overflow:hidden;margin-bottom:28px;">
+
+    <!-- En-tête carte -->
+    <div style="padding:16px 22px;border-bottom:1px solid rgba(11,42,90,0.07);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--mint));display:grid;place-items:center;color:#fff;font-size:1rem;flex-shrink:0;">
+                <i class="bi bi-map-fill"></i>
+            </div>
             <div>
-                <h2 id="carte-campus-titre" class="h5 mb-0">Carte du campus</h2>
-                <p class="text-muted small mb-0">Cliquez sur un bureau pour réserver</p>
-            </div>
-            <div class="d-flex flex-wrap gap-2 align-items-center">
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="us-map-reset">Vue globale</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#us-map-legend" aria-expanded="false">Légende</button>
-                <div class="btn-group btn-group-sm" role="group" aria-label="Zoom décoratif">
-                    <button type="button" class="btn btn-outline-secondary" id="us-map-zoom-in" title="Zoom +">+</button>
-                    <button type="button" class="btn btn-outline-secondary" id="us-map-zoom-out" title="Zoom −">−</button>
-                </div>
+                <div style="font-weight:800;color:#111827;font-size:.95rem;">Carte du campus</div>
+                <div style="font-size:.75rem;color:var(--text-muted);">Cliquez sur un bureau pour réserver</div>
             </div>
         </div>
-        <div class="collapse px-3 pb-2" id="us-map-legend">
-            <div class="small text-muted d-flex flex-wrap gap-3 py-2">
-                <span><span class="rounded-circle d-inline-block me-1" style="width:0.75rem;height:0.75rem;background:#4f46e5"></span> Catégorie A</span>
-                <span><span class="rounded-circle d-inline-block me-1" style="width:0.75rem;height:0.75rem;background:#0284c7"></span> Catégorie B</span>
-                <span><span class="rounded-circle d-inline-block me-1" style="width:0.75rem;height:0.75rem;background:#0d9488"></span> Catégorie C</span>
-            </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button onclick="mapFitAll()" style="background:rgba(11,42,90,0.07);border:1.5px solid rgba(11,42,90,0.15);border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:700;color:var(--brand);cursor:pointer;display:flex;align-items:center;gap:5px;">
+                <i class="bi bi-arrows-fullscreen"></i>Vue globale
+            </button>
+            <button onclick="toggleMapLegend()" style="background:rgba(11,42,90,0.07);border:1.5px solid rgba(11,42,90,0.15);border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:700;color:var(--brand);cursor:pointer;display:flex;align-items:center;gap:5px;">
+                <i class="bi bi-list-ul"></i>Légende
+            </button>
         </div>
-        <div class="us-campus-map" id="us-campus-map" data-scale="1">
-            <div class="us-campus-map-pins" id="us-campus-map-pins">
-                <?php foreach ($hub_campus_pins as $pin): ?>
-                    <?php
-                    $pid = (int) ($pin['id'] ?? 0);
-                    $tone = (int) ($pin['tone'] ?? 0);
-                    $px = (float) ($pin['x'] ?? 0);
-                    $py = (float) ($pin['y'] ?? 0);
-                    $pnom = (string) ($pin['nom'] ?? '');
-                    ?>
-                    <button type="button"
-                            class="us-map-pin us-map-pin--<?= $tone ?>"
-                            style="left: <?= $px ?>%; top: <?= $py ?>%;"
-                            data-bureau-id="<?= $pid ?>"
-                            title="<?= htmlspecialchars($pnom, ENT_QUOTES, 'UTF-8') ?>"
-                            aria-label="Bureau <?= htmlspecialchars($pnom, ENT_QUOTES, 'UTF-8') ?>">
-                        <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-                    </button>
-                <?php endforeach; ?>
-            </div>
+    </div>
+
+    <!-- Légende (masquée par défaut) -->
+    <div id="mapLegend" style="display:none;padding:14px 22px;border-bottom:1px solid rgba(11,42,90,0.07);background:rgba(11,42,90,0.02);">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <?php foreach ($bureauxMapData as $bm): ?>
+            <button onclick="mapFocusBureau(<?= $bm['id'] ?>)"
+                    style="display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;border:1.5px solid <?= $bm['color'] ?>22;background:<?= $bm['color'] ?>11;cursor:pointer;transition:all .15s;">
+                <span style="width:10px;height:10px;border-radius:50%;background:<?= $bm['color'] ?>;display:inline-block;flex-shrink:0;"></span>
+                <span style="font-size:.76rem;font-weight:700;color:<?= $bm['color'] ?>;"><?= htmlspecialchars($bm['nom']) ?></span>
+            </button>
+            <?php endforeach; ?>
         </div>
-    </section>
+    </div>
 
-    <form method="get" action="<?= $this->url('/rendezvous') ?>" class="us-hub-toolbar p-3 mb-4">
-        <div class="row g-2 align-items-end">
-            <div class="col-lg">
-                <label class="form-label small text-muted mb-1" for="hub-bq">Recherche</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted" aria-hidden="true"></i></span>
-                    <input type="text" class="form-control" id="hub-bq" name="bq" value="<?= htmlspecialchars($hub_bq, ENT_QUOTES, 'UTF-8') ?>" placeholder="Rechercher un bureau par nom ou localisation…">
-                </div>
-            </div>
-            <div class="col-md-auto d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Rechercher</button>
-                <a class="btn btn-outline-danger" href="<?= $this->url('/rendezvous/exportMesPrint') ?>" target="_blank" rel="noopener">
-                    <i class="fa-regular fa-file-pdf me-1"></i>Export PDF
-                </a>
-            </div>
-        </div>
-    </form>
+    <!-- Map -->
+    <div id="campusMap" style="height:420px;width:100%;"></div>
 
-    <section id="bureaux-disponibles" class="mb-2">
-        <h2 class="h4 mb-3">Bureaux disponibles</h2>
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-4">
-            <?php if ($hub_bureaux === []): ?>
-                <div class="col-12 text-center text-muted py-5">Aucun bureau ne correspond à votre recherche.</div>
-            <?php else: ?>
-                <?php foreach ($hub_bureaux as $b): ?>
-                    <?php
-                    $bid = (int) ($b['id'] ?? 0);
-                    $theme = $bid % 6;
-                    $ts = (string) ($b['type_service'] ?? '');
-                    $fa = $bureauIcon($ts);
-                    ?>
-                    <div class="col">
-                        <article class="card us-hub-bureau-card shadow-sm h-100 border-0" id="bureau-card-<?= $bid ?>" data-bureau-id="<?= $bid ?>">
-                            <div class="us-hub-card-top us-hub-card-top--<?= $theme ?>">
-                                <div class="d-flex align-items-start gap-2 min-w-0">
-                                    <span class="fs-4 flex-shrink-0" aria-hidden="true"><i class="fa-solid <?= htmlspecialchars($fa, ENT_QUOTES, 'UTF-8') ?>"></i></span>
-                                    <h3 class="text-truncate"><?= htmlspecialchars((string) ($b['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
-                                </div>
-                                <span class="us-hub-disponible"><i class="fa-solid fa-circle me-1 small" style="opacity:.85"></i>Disponible</span>
-                            </div>
-                            <div class="us-hub-card-body d-flex flex-column">
-                                <div class="mb-2">
-                                    <div class="us-hub-meta-label">Localisation</div>
-                                    <div class="small fw-semibold"><?= htmlspecialchars(trim((string) ($b['localisation'] ?? '')) !== '' ? (string) $b['localisation'] : '—', ENT_QUOTES, 'UTF-8') ?></div>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="us-hub-meta-label">Responsable</div>
-                                    <div class="small text-muted"><?= htmlspecialchars($humanType($ts), ENT_QUOTES, 'UTF-8') ?></div>
-                                </div>
-                                <a class="btn btn-primary w-100 mt-auto" href="<?= $this->url('/rendezvous/createForm?bureau_id=' . $bid) ?>">Prendre rendez-vous</a>
-                            </div>
-                        </article>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-    </section>
+    <!-- Info bar -->
+    <div style="padding:10px 22px;background:rgba(11,42,90,0.02);border-top:1px solid rgba(11,42,90,0.06);display:flex;align-items:center;gap:8px;">
+        <i class="bi bi-info-circle" style="color:#9ca3af;font-size:.85rem;"></i>
+        <span style="font-size:.74rem;color:var(--text-muted);">Cliquez sur un marqueur pour voir les détails et réserver un rendez-vous directement.</span>
+    </div>
+</div>
 
-    <?php if ($hub_bureau_total_pages > 1): ?>
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3 mb-5">
-            <p class="text-muted small mb-0">
-                Page <?= $hub_bpage ?> sur <?= $hub_bureau_total_pages ?> — <?= $hub_bureau_total_filtered ?> bureau(x) au total.
-            </p>
-            <nav aria-label="Pagination bureaux">
-                <ul class="pagination pagination-sm mb-0">
-                    <?php if ($hub_bpage > 1): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="<?= htmlspecialchars($this->url('/rendezvous') . '?' . $hubQuery(['bq' => $hub_bq, 'bpage' => $hub_bpage - 1]), ENT_QUOTES, 'UTF-8') ?>">Préc.</a>
-                        </li>
-                    <?php endif; ?>
-                    <?php for ($i = 1; $i <= $hub_bureau_total_pages; $i++): ?>
-                        <li class="page-item <?= $i === $hub_bpage ? 'active' : '' ?>">
-                            <a class="page-link" href="<?= htmlspecialchars($this->url('/rendezvous') . '?' . $hubQuery(['bq' => $hub_bq, 'bpage' => $i]), ENT_QUOTES, 'UTF-8') ?>"><?= $i ?></a>
-                        </li>
-                    <?php endfor; ?>
-                    <?php if ($hub_bpage < $hub_bureau_total_pages): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="<?= htmlspecialchars($this->url('/rendezvous') . '?' . $hubQuery(['bq' => $hub_bq, 'bpage' => $hub_bpage + 1]), ENT_QUOTES, 'UTF-8') ?>">Suiv.</a>
-                        </li>
-                    <?php endif; ?>
-                </ul>
-            </nav>
-        </div>
-    <?php else: ?>
-        <p class="text-muted small mt-2 mb-5">
-            <?php if ($hub_bureau_total_filtered > 0): ?>
-                <?= $hub_bureau_total_filtered ?> bureau(x) au total.
-            <?php endif; ?>
-        </p>
-    <?php endif; ?>
+<!-- Leaflet CSS + JS (CDN) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <section id="mes-rendez-vous" class="mt-5">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
-            <h2 class="h4 mb-0">Mes rendez-vous</h2>
-        </div>
-        <div class="us-section-card">
-            <div class="card-body p-0">
-                <div class="table-responsive us-table-wrap">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Bureau</th>
-                                <th>Motif</th>
-                                <th>Début</th>
-                                <th>Fin</th>
-                                <th>Statut</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (empty($rdvs)): ?>
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted py-5">Aucun rendez-vous.</td>
-                                </tr>
-                            <?php else: ?>
-                                <?php foreach ($rdvs as $row): ?>
-                                    <?php
-                                    $sid = (int) ($row['id'] ?? 0);
-                                    $st = (string) ($row['statut'] ?? '');
-                                    $label = $statut_labels[$st] ?? $st;
-                                    $tone = match ($st) {
-                                        'reserve' => 'warning',
-                                        'confirme' => 'success',
-                                        'annule' => 'danger',
-                                        'termine' => 'secondary',
-                                        default => 'secondary',
-                                    };
-                                    ?>
-                                    <tr id="rdv-<?= $sid ?>">
-                                        <td>
-                                            <div class="fw-semibold"><?= htmlspecialchars((string) ($row['bureau_nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                            <div class="small text-muted"><?= htmlspecialchars((string) ($row['bureau_localisation'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                        </td>
-                                        <td><?= htmlspecialchars((string) ($row['motif'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td class="small"><?= htmlspecialchars($fmtCell((string) ($row['date_debut'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td class="small"><?= htmlspecialchars($fmtCell((string) ($row['date_fin'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><span class="badge rounded-pill text-bg-<?= htmlspecialchars($tone, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span></td>
-                                        <td class="text-end">
-                                            <?php if ($st === 'reserve'): ?>
-                                                <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/rendezvous/editForm/' . $sid) ?>">Modifier</a>
-                                            <?php endif; ?>
-                                            <?php if ($st === 'reserve' || $st === 'confirme'): ?>
-                                                <form method="post" action="<?= $this->url('/rendezvous/cancel/' . $sid) ?>" class="d-inline" onsubmit="return confirm('Annuler ce rendez-vous ?');">
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm">Annuler</button>
-                                                </form>
-                                            <?php endif; ?>
-                                            <?php if ($st !== 'reserve' && $st !== 'confirme'): ?>
-                                                <span class="text-muted small">—</span>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </section>
+<script>
+(function() {
+    var bureaux = <?= $bureauxMapJson ?>;
+    if (!bureaux.length) return;
 
-    <?php
-    $focusRdvId = isset($_GET['focus']) ? (int) $_GET['focus'] : 0;
-    ?>
-    <?php if ($focusRdvId > 0): ?>
-        <script>
-        (function () {
-            var id = <?= json_encode($focusRdvId, JSON_THROW_ON_ERROR) ?>;
-            var row = document.getElementById('rdv-' + id);
-            if (!row) { return; }
-            row.classList.add('table-warning');
-            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        })();
-        </script>
-    <?php endif; ?>
+    var avgLat = bureaux.reduce(function(s,b){return s+b.lat;},0) / bureaux.length;
+    var avgLng = bureaux.reduce(function(s,b){return s+b.lng;},0) / bureaux.length;
 
-    <script>
-    (function () {
-        var map = document.getElementById('us-campus-map');
-        var pinsWrap = document.getElementById('us-campus-map-pins');
-        if (!map || !pinsWrap) { return; }
+    var map = L.map('campusMap', { zoomControl: true, scrollWheelZoom: false }).setView([avgLat, avgLng], 17);
 
-        function clearActivePins() {
-            pinsWrap.querySelectorAll('.us-map-pin.is-active').forEach(function (p) { p.classList.remove('is-active'); });
-        }
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+        maxZoom: 20
+    }).addTo(map);
 
-        function highlightBureau(id) {
-            clearActivePins();
-            document.querySelectorAll('.us-hub-bureau-card.is-highlight').forEach(function (c) { c.classList.remove('is-highlight'); });
-            var pin = pinsWrap.querySelector('.us-map-pin[data-bureau-id="' + id + '"]');
-            if (pin) { pin.classList.add('is-active'); }
-            var card = document.getElementById('bureau-card-' + id);
-            if (card) {
-                card.classList.add('is-highlight');
-                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
+    var markersMap = {};
+    var boundsArr  = [];
 
-        pinsWrap.addEventListener('click', function (e) {
-            var t = e.target.closest('.us-map-pin');
-            if (!t) { return; }
-            var id = t.getAttribute('data-bureau-id');
-            if (!id) { return; }
-            highlightBureau(id);
+    bureaux.forEach(function(b) {
+        var iconHtml = '<div style="'
+            + 'width:38px;height:38px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);'
+            + 'background:' + b.color + ';border:3px solid #fff;'
+            + 'box-shadow:0 3px 10px rgba(0,0,0,0.25);'
+            + 'display:grid;place-items:center;">'
+            + '<i class="bi bi-building-fill" style="transform:rotate(45deg);color:#fff;font-size:.85rem;"></i>'
+            + '</div>';
+
+        var icon = L.divIcon({
+            html: iconHtml,
+            className: '',
+            iconSize:   [38, 38],
+            iconAnchor: [19, 38],
+            popupAnchor:[0, -42]
         });
 
-        var btnReset = document.getElementById('us-map-reset');
-        if (btnReset) {
-            btnReset.addEventListener('click', function () {
-                clearActivePins();
-                document.querySelectorAll('.us-hub-bureau-card.is-highlight').forEach(function (c) { c.classList.remove('is-highlight'); });
-                map.dataset.scale = '1';
-                pinsWrap.style.transform = 'scale(1)';
-                map.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            });
-        }
+        var marker = L.marker([b.lat, b.lng], { icon: icon });
 
-        var sc = 1;
-        var zIn = document.getElementById('us-map-zoom-in');
-        var zOut = document.getElementById('us-map-zoom-out');
-        function applyZoom() {
-            pinsWrap.style.transform = 'scale(' + sc + ')';
-            map.dataset.scale = String(sc);
-        }
-        if (zIn) {
-            zIn.addEventListener('click', function () {
-                sc = Math.min(1.35, sc + 0.08);
-                applyZoom();
-            });
-        }
-        if (zOut) {
-            zOut.addEventListener('click', function () {
-                sc = Math.max(0.85, sc - 0.08);
-                applyZoom();
-            });
-        }
-    })();
-    </script>
+        var popupHtml = '<div style="min-width:200px;font-family:inherit;">'
+            + '<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">'
+            + '<div style="width:34px;height:34px;border-radius:10px;background:' + b.color + ';display:grid;place-items:center;flex-shrink:0;">'
+            + '<i class="bi bi-building-fill" style="color:#fff;font-size:.85rem;"></i></div>'
+            + '<div><div style="font-weight:800;color:#111827;font-size:.88rem;line-height:1.2;">' + b.nom + '</div>'
+            + '<div style="font-size:.72rem;color:#6b7280;margin-top:2px;">' + b.localisation + '</div></div>'
+            + '</div>'
+            + '<div style="height:1px;background:rgba(0,0,0,0.07);margin-bottom:10px;"></div>'
+            + '<a href="' + b.bookUrl + '" style="'
+            + 'display:flex;align-items:center;justify-content:center;gap:7px;'
+            + 'width:100%;padding:9px;border-radius:9px;'
+            + 'background:linear-gradient(135deg,' + b.color + ',' + b.color + 'cc);'
+            + 'color:#fff;font-size:.8rem;font-weight:700;text-decoration:none;'
+            + 'box-shadow:0 3px 10px rgba(0,0,0,0.15);transition:filter .15s;"'
+            + ' onmouseover="this.style.filter=\'brightness(.88)\'"'
+            + ' onmouseout="this.style.filter=\'none\'">'
+            + '<i class="bi bi-calendar-plus"></i>Réserver un rendez-vous'
+            + '</a>'
+            + '</div>';
 
+        marker.bindPopup(popupHtml, { maxWidth: 240, className: 'campus-popup' });
+        marker.addTo(map);
+        markersMap[b.id] = marker;
+        boundsArr.push([b.lat, b.lng]);
+    });
+
+    window.mapFitAll = function() {
+        if (boundsArr.length) map.fitBounds(boundsArr, { padding: [40, 40] });
+    };
+
+    window.mapFocusBureau = function(id) {
+        var m = markersMap[id];
+        if (!m) return;
+        map.setView(m.getLatLng(), 19);
+        m.openPopup();
+        document.getElementById('mapLegend').style.display = 'none';
+    };
+
+    window.toggleMapLegend = function() {
+        var leg = document.getElementById('mapLegend');
+        leg.style.display = leg.style.display === 'none' ? 'block' : 'none';
+    };
+
+    if (boundsArr.length > 1) map.fitBounds(boundsArr, { padding: [50, 50] });
+})();
+</script>
+
+<style>
+.campus-popup .leaflet-popup-content-wrapper { border-radius: 14px !important; box-shadow: 0 8px 28px rgba(0,0,0,0.16) !important; padding: 0 !important; overflow: hidden; }
+.campus-popup .leaflet-popup-content { margin: 14px !important; }
+.campus-popup .leaflet-popup-tip-container { margin-top: -1px; }
+</style>
+
+<!-- Barre recherche bureaux -->
+<form method="GET" action="<?= $this->url('/rendezvous') ?>">
+    <div style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:25px;border:1px solid rgba(11,42,90,0.10);display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(11,42,90,0.05);">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--mint));display:inline-grid;place-items:center;flex-shrink:0;">
+            <i class="bi bi-search" style="color:#fff;font-size:.9rem;"></i>
+        </div>
+        <input type="text" name="bq" placeholder="Rechercher un bureau par nom ou localisation..."
+               value="<?= htmlspecialchars($hub_bq ?? '') ?>"
+               style="border:none;outline:none;flex:1;font-size:.9rem;font-weight:500;color:#111827;background:transparent;">
+        <?php if (!empty($hub_bq)): ?>
+        <a href="<?= $this->url('/rendezvous') ?>" style="background:rgba(11,42,90,0.07);border-radius:8px;padding:5px 10px;font-size:.78rem;font-weight:600;color:var(--brand);text-decoration:none;">
+            <i class="bi bi-x-lg me-1"></i>Effacer
+        </a>
+        <?php endif; ?>
+        <button type="submit" style="background:linear-gradient(135deg,var(--brand),#1565c0);color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:.82rem;font-weight:700;cursor:pointer;white-space:nowrap;">Rechercher</button>
+        <div style="width:1px;height:24px;background:rgba(11,42,90,0.12);"></div>
+        <a href="<?= $this->url('/rendezvous/exportMesPrint') ?>" target="_blank" style="text-decoration:none;background:#fff;border:1.5px solid rgba(239,68,68,0.35);border-radius:8px;padding:6px 14px;font-size:.8rem;font-weight:700;color:#dc2626;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;">
+            <i class="bi bi-file-pdf"></i>Export mes RDV
+        </a>
+    </div>
+</form>
+
+<!-- ══ BUREAUX ══ -->
+<div class="mb-5">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <h2 class="h5 fw-bold mb-0" style="color:var(--brand)"><i class="bi bi-building me-1"></i>Bureaux disponibles</h2>
+        <span style="background:rgba(11,42,90,0.06);border:1px solid rgba(11,42,90,0.14);border-radius:999px;padding:5px 14px;font-size:.78rem;font-weight:700;color:var(--brand);display:inline-flex;align-items:center;gap:6px;">
+            <i class="bi bi-grid-3x3-gap-fill"></i>
+            <?= $hub_bureau_total_filtered ?? 0 ?> bureau<?= ($hub_bureau_total_filtered ?? 0) > 1 ? 'x' : '' ?> trouvé<?= ($hub_bureau_total_filtered ?? 0) > 1 ? 's' : '' ?>
+        </span>
+    </div>
+
+    <?php if (empty($hub_bureaux)): ?>
+    <div class="us-card p-5 text-center">
+        <i class="bi bi-building fs-1 d-block mb-2 text-muted" style="opacity:.4;"></i>
+        <p class="text-muted mb-0">Aucun bureau ne correspond à votre recherche.</p>
+    </div>
+    <?php else: ?>
+    <div class="row g-4">
+        <?php foreach ($hub_bureaux as $i => $b):
+            $p    = $palettes[(($hub_bpage - 1) * 6 + $i) % count($palettes)];
+            $icon = getBureauIcon($b['nom']);
+        ?>
+        <div class="col-sm-6 col-lg-4">
+            <div class="bureau-card">
+                <div style="height:5px;background:linear-gradient(90deg,<?= $p['bar'] ?>,<?= $p['main'] ?>99);"></div>
+                <div class="bureau-card-header" style="background:<?= $p['soft'] ?>;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bureau-card-icon" style="background:<?= $p['light'] ?>;color:<?= $p['main'] ?>;"><i class="bi <?= $icon ?>"></i></div>
+                        <div class="overflow-hidden flex-grow-1">
+                            <h6 class="fw-bold mb-1 text-truncate" style="color:#111827;font-size:.95rem;" title="<?= htmlspecialchars($b['nom']) ?>"><?= htmlspecialchars($b['nom']) ?></h6>
+                            <span class="disponible-dot" style="background:<?= $p['light'] ?>;color:<?= $p['main'] ?>;border:1px solid <?= $p['main'] ?>28;">
+                                <span style="width:6px;height:6px;border-radius:50%;background:<?= $p['main'] ?>;display:inline-block;"></span>Disponible
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bureau-card-body pt-3">
+                    <div class="bureau-detail-row" style="background:<?= $p['soft'] ?>;">
+                        <div class="bureau-detail-icon" style="background:<?= $p['light'] ?>;color:<?= $p['main'] ?>;"><i class="bi bi-geo-alt-fill"></i></div>
+                        <div>
+                            <div style="font-size:.68rem;font-weight:600;color:<?= $p['main'] ?>;text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px;">Localisation</div>
+                            <div class="bureau-detail-text" title="<?= htmlspecialchars($b['localisation']) ?>"><?= htmlspecialchars($b['localisation']) ?></div>
+                        </div>
+                    </div>
+                    <?php if (!empty($b['responsable'])): ?>
+                    <div class="bureau-detail-row" style="background:<?= $p['soft'] ?>;">
+                        <div class="bureau-detail-icon" style="background:<?= $p['light'] ?>;color:<?= $p['main'] ?>;"><i class="bi bi-person-badge-fill"></i></div>
+                        <div>
+                            <div style="font-size:.68rem;font-weight:600;color:<?= $p['main'] ?>;text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px;">Responsable</div>
+                            <div class="bureau-detail-text"><?= htmlspecialchars($b['responsable']) ?></div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    <a href="<?= $this->url('/rendezvous/createForm?bureau_id=' . (int)$b['id']) ?>" class="bureau-btn" style="background:<?= $p['main'] ?>;color:#fff;">
+                        <i class="bi bi-calendar-plus" style="font-size:1rem;"></i>Prendre rendez-vous
+                    </a>
+                </div>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+
+    <!-- Pagination bureaux -->
+    <?php echo frontPager($hub_bpage, $hub_bureau_total_pages, 'bpage'); ?>
+    <?php if ($hub_bureau_total_pages > 1): ?>
+    <div class="fp-info">Page <strong><?= $hub_bpage ?></strong> sur <strong><?= $hub_bureau_total_pages ?></strong> — <?= $hub_bureau_total_filtered ?> bureau<?= $hub_bureau_total_filtered > 1 ? 'x' : '' ?> au total</div>
+    <?php endif; ?>
+
+    <?php endif; ?>
+</div>
+
+<!-- ══ RENDEZ-VOUS RÉCENTS ══ -->
+<div id="sectionRdv" style="display:none;">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <h2 class="h5 fw-bold mb-0" style="color:var(--brand)"><i class="bi bi-calendar-check me-2"></i>Mes rendez-vous</h2>
+            <span style="background:rgba(11,42,90,0.06);border:1px solid rgba(11,42,90,0.14);border-radius:999px;padding:4px 12px;font-size:.76rem;font-weight:700;color:var(--brand);"><?= $totalR ?> rendez-vous</span>
+        </div>
+        <button onclick="toggleRdv()" style="background:none;border:1px solid #ddd;border-radius:50px;padding:7px 18px;font-size:.83rem;font-weight:600;color:#6b7280;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .18s;">
+            <i class="bi bi-x-lg"></i>Fermer
+        </button>
+    </div>
+
+    <!-- Recherche rdv côté client -->
+    <div style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:22px;border:1px solid rgba(11,42,90,0.10);display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(11,42,90,0.05);">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--mint));display:inline-grid;place-items:center;flex-shrink:0;">
+            <i class="bi bi-search" style="color:#fff;font-size:.9rem;"></i>
+        </div>
+        <input type="text" id="searchRdvNom" oninput="searchRdvByNom()" placeholder="Rechercher dans mes rendez-vous..."
+               style="border:none;outline:none;flex:1;font-size:.9rem;font-weight:500;color:#111827;background:transparent;" autocomplete="off">
+        <button onclick="clearSearchRdv()" id="btnClearRdv"
+                style="display:none;background:rgba(11,42,90,0.07);border:none;border-radius:8px;padding:5px 10px;font-size:.78rem;font-weight:600;color:var(--brand);cursor:pointer;">
+            <i class="bi bi-x-lg me-1"></i>Effacer
+        </button>
+    </div>
+
+    <div id="rdvNoResult" style="display:none;" class="text-center py-4 mb-4">
+        <div style="background:#fff;border-radius:16px;padding:30px;border:1px dashed rgba(11,42,90,0.15);">
+            <i class="bi bi-search" style="font-size:2rem;color:var(--brand);opacity:.3;display:block;margin-bottom:10px;"></i>
+            <div style="font-weight:700;color:#374151;margin-bottom:4px;">Aucun résultat</div>
+            <div style="font-size:.83rem;color:#9ca3af;">Aucun rendez-vous ne correspond à "<span id="searchTermDisplay"></span>".</div>
+        </div>
+    </div>
+
+    <?php if (empty($rdvs)): ?>
+    <div class="us-card p-5 text-center text-muted mb-5">
+        <i class="bi bi-calendar-x fs-1 d-block mb-2 opacity-50"></i>Vous n'avez aucun rendez-vous.
+    </div>
+    <?php else: ?>
+    <div class="row g-4 mb-2" id="rdvGrid">
+        <?php foreach ($pagedRdv as $i => $row):
+            $statut = strtolower($row['statut'] ?? 'reserve');
+            $sc     = $statusConfig[$statut] ?? $statusConfig['reserve'];
+            $sp     = $statusPalettes[$statut] ?? $statusPalettes['reserve'];
+        ?>
+        <div class="col-sm-6 col-lg-4 rdv-item" data-nom="<?= strtolower(htmlspecialchars($row['bureau_nom'] ?? '') . ' ' . htmlspecialchars($row['motif'] ?? '')) ?>">
+            <div class="rdv-card" style="background:<?= $sp['light'] ?>;border:2px solid <?= $sp['bar'] ?>;">
+                <div style="height:6px;background:linear-gradient(90deg,<?= $sp['bar'] ?>,<?= $sp['main'] ?>);"></div>
+                <div class="rdv-card-header" style="background:<?= $sp['light'] ?>;">
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <span class="rdv-status-badge" style="background:<?= $sc['bg'] ?>;color:<?= $sc['color'] ?>;border-color:<?= $sc['border'] ?>;">
+                            <i class="bi <?= $sc['icon'] ?>" style="font-size:.8rem;"></i><?= $sc['label'] ?>
+                        </span>
+                        <div style="width:36px;height:36px;border-radius:10px;display:inline-grid;place-items:center;background:<?= $sp['bar'] ?>22;color:<?= $sp['main'] ?>;font-size:1rem;flex-shrink:0;">
+                            <i class="bi bi-building-fill"></i>
+                        </div>
+                    </div>
+                    <div class="fw-bold mt-2" style="color:<?= $sp['main'] ?>;font-size:.97rem;"><?= htmlspecialchars($row['bureau_nom'] ?? 'N/A') ?></div>
+                </div>
+                <div class="rdv-card-body pt-3">
+                    <div class="rdv-detail-row" style="background:<?= $sp['bar'] ?>18;">
+                        <div class="rdv-detail-icon" style="background:<?= $sp['bar'] ?>33;color:<?= $sp['main'] ?>;"><i class="bi bi-chat-left-text-fill"></i></div>
+                        <div>
+                            <div style="font-size:.66rem;font-weight:600;color:<?= $sp['main'] ?>;text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px;">Sujet</div>
+                            <div class="rdv-detail-text" title="<?= htmlspecialchars($row['motif'] ?? '') ?>"><?= htmlspecialchars($row['motif'] ?? 'Aucun motif') ?></div>
+                        </div>
+                    </div>
+                    <div class="rdv-detail-row" style="background:<?= $sp['bar'] ?>18;">
+                        <div class="rdv-detail-icon" style="background:<?= $sp['bar'] ?>33;color:<?= $sp['main'] ?>;"><i class="bi bi-calendar-event-fill"></i></div>
+                        <div>
+                            <div style="font-size:.66rem;font-weight:600;color:<?= $sp['main'] ?>;text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px;">Date &amp; Heure</div>
+                            <div class="rdv-detail-text">
+                                <?= date('d/m/Y H:i', strtotime($row['date_debut'])) ?>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 d-flex gap-2 justify-content-end">
+                        <?php if ($statut === 'reserve'): ?>
+                        <a href="<?= $this->url('/rendezvous/editForm/' . $row['id']) ?>" class="btn btn-sm" style="background:<?= $sp['bar'] ?>;color:#fff;font-weight:600;"><i class="bi bi-pencil"></i> Modifier</a>
+                        <form action="<?= $this->url('/rendezvous/cancel/' . $row['id']) ?>" method="POST" class="d-inline" onsubmit="return confirm('Confirmer l\'annulation ?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" style="font-weight:600;"><i class="bi bi-x"></i> Annuler</button>
+                        </form>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+
+    <!-- Pagination RDV -->
+    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:30px;">
+        <?php echo frontPager($pageR, $totalPagesR, 'rpage'); ?>
+        <?php if ($totalPagesR > 1): ?>
+        <div class="fp-info">Page <strong><?= $pageR ?></strong> sur <strong><?= $totalPagesR ?></strong> — <?= $totalR ?> rendez-vous au total</div>
+        <?php endif; ?>
+    </div>
+
+    <?php endif; ?>
+</div>
+
+<script>
+// Ouvrir automatiquement UNIQUEMENT si on pagine spécifiquement les rdv
+<?php if (isset($_GET['rpage'])): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    var s = document.getElementById('sectionRdv');
+    s.style.display = 'block';
+    setTimeout(function(){ s.scrollIntoView({behavior:'smooth',block:'start'}); }, 100);
+});
 <?php endif; ?>
+
+function toggleRdv() {
+    var section = document.getElementById('sectionRdv');
+    var open = section.style.display === 'none';
+    section.style.display = open ? 'block' : 'none';
+    if (open) {
+        section.classList.remove('anim-fade'); void section.offsetWidth; section.classList.add('anim-fade');
+        setTimeout(function(){ section.scrollIntoView({behavior:'smooth',block:'start'}); }, 50);
+        setTimeout(function(){ var s=document.getElementById('searchRdvNom'); if(s) s.focus(); }, 350);
+        document.getElementById('btnRdv').innerHTML = '<i class="bi bi-clock-history" style="font-size:1.1rem"></i> Masquer les rendez-vous <i class="bi bi-chevron-up" id="iconRdv"></i>';
+    } else {
+        clearSearchRdv();
+        document.getElementById('btnRdv').innerHTML = '<i class="bi bi-clock-history" style="font-size:1.1rem"></i> Mes rendez-vous <i class="bi bi-chevron-down" id="iconRdv"></i>';
+    }
+}
+
+function searchRdvByNom() {
+    var term  = document.getElementById('searchRdvNom').value.trim().toLowerCase();
+    var items = document.querySelectorAll('.rdv-item');
+    var visible = 0;
+    document.getElementById('btnClearRdv').style.display = term ? 'block' : 'none';
+    items.forEach(function(item) {
+        var match = term === '' || (item.getAttribute('data-nom') || '').includes(term);
+        item.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+    document.getElementById('rdvNoResult').style.display = (!visible && term) ? 'block' : 'none';
+    if (document.getElementById('searchTermDisplay')) document.getElementById('searchTermDisplay').innerText = term;
+}
+
+function clearSearchRdv() {
+    var input = document.getElementById('searchRdvNom');
+    if (input) { input.value=''; searchRdvByNom(); input.focus(); }
+}
+</script>

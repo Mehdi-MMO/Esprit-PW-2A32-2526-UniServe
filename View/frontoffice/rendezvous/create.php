@@ -16,103 +16,7 @@ $bureauxList    = array_map(fn($b) => [
 ], $bureaux);
 $bureauxJson = json_encode($bureauxList, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 ?>
-<style>
-/* ── Book form ── */
-.book-wrap { max-width:640px;margin:0 auto; }
 
-.book-header { display:flex;align-items:center;gap:14px;margin-bottom:28px; }
-.book-header-icon {
-    width:52px;height:52px;border-radius:15px;flex-shrink:0;
-    background:linear-gradient(135deg,#0b2a5a,#1565c0);
-    display:grid;place-items:center;color:#fff;font-size:1.3rem;
-    box-shadow:0 5px 16px rgba(11,42,90,.24);
-}
-.book-header-title { font-size:1.2rem;font-weight:800;color:var(--brand,#0b2a5a);margin-bottom:2px; }
-.book-header-sub   { font-size:.8rem;color:var(--text-muted,#6b7280); }
-
-/* Steps indicator */
-.book-steps { display:flex;align-items:center;gap:0;margin-bottom:28px; }
-.book-step  { display:flex;align-items:center;gap:8px;flex:1; }
-.book-step-num {
-    width:28px;height:28px;border-radius:50%;flex-shrink:0;
-    display:grid;place-items:center;font-size:.72rem;font-weight:800;
-    border:2px solid;transition:all .2s;
-}
-.book-step-num.done   { background:var(--brand,#0b2a5a);color:#fff;border-color:var(--brand,#0b2a5a); }
-.book-step-num.active { background:#fff;color:var(--brand,#0b2a5a);border-color:var(--brand,#0b2a5a); }
-.book-step-num.idle   { background:#fff;color:var(--text-muted,#6b7280);border-color:var(--border,#e5e7eb); }
-.book-step-lbl        { font-size:.72rem;font-weight:700; }
-.book-step-lbl.active { color:var(--brand,#0b2a5a); }
-.book-step-lbl.idle   { color:var(--text-muted,#6b7280); }
-.book-step-line { flex:1;height:2px;background:var(--border,#e5e7eb);margin:0 6px;border-radius:2px; }
-.book-step-line.done { background:var(--brand,#0b2a5a); }
-
-/* Card */
-.book-card {
-    background:#fff;border-radius:18px;
-    border:1px solid var(--border,#e5e7eb);
-    box-shadow:0 2px 12px rgba(11,42,90,.07);
-    overflow:hidden;
-}
-.book-card-bar  { height:4px;background:linear-gradient(90deg,#0b2a5a,#3ecfb2); }
-.book-card-body { padding:28px; }
-
-/* Section headers */
-.book-section {
-    display:flex;align-items:center;gap:10px;
-    padding:14px 0 10px;border-bottom:1px solid var(--border,#e5e7eb);
-    margin-bottom:18px;
-}
-.book-section-num {
-    width:24px;height:24px;border-radius:7px;flex-shrink:0;
-    background:var(--brand,#0b2a5a);color:#fff;
-    display:grid;place-items:center;font-size:.68rem;font-weight:800;
-}
-.book-section-title { font-size:.78rem;font-weight:800;color:var(--brand,#0b2a5a);text-transform:uppercase;letter-spacing:.06em; }
-
-/* Labels */
-.book-label {
-    display:flex;align-items:center;gap:6px;
-    font-size:.73rem;font-weight:700;
-    color:var(--brand,#0b2a5a);text-transform:uppercase;letter-spacing:.05em;
-    margin-bottom:7px;
-}
-.book-label i { opacity:.75;font-size:.8rem; }
-
-/* Hint text */
-.book-hint { display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text-muted,#6b7280);margin-top:5px; }
-.book-hint i { font-size:.7rem; }
-
-/* Summary card */
-.book-summary {
-    background:linear-gradient(135deg,rgba(11,42,90,.04),rgba(62,207,178,.04));
-    border:1px solid rgba(11,42,90,.10);
-    border-radius:12px;padding:14px 16px;margin-bottom:24px;
-    display:none;
-}
-.book-summary.show         { display:block; }
-.book-summary-title        { font-size:.72rem;font-weight:800;color:var(--brand,#0b2a5a);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px; }
-.book-summary-row          { display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--text-muted,#6b7280);margin-bottom:6px; }
-.book-summary-row:last-child { margin-bottom:0; }
-.book-summary-icon { width:22px;height:22px;border-radius:6px;background:rgba(11,42,90,.07);color:var(--brand,#0b2a5a);display:grid;place-items:center;font-size:.65rem;flex-shrink:0; }
-.book-summary-val  { font-weight:600;color:var(--text,#111827); }
-
-/* Divider */
-.book-divider { height:1px;background:var(--border,#e5e7eb);margin:22px 0; }
-
-/* Actions */
-.book-actions { display:flex;align-items:center;gap:12px; }
-.book-submit {
-    display:inline-flex;align-items:center;gap:8px;
-    background:linear-gradient(135deg,#0b2a5a,#1565c0);
-    color:#fff;border:none;padding:12px 28px;border-radius:999px;
-    font-size:.9rem;font-weight:700;cursor:pointer;
-    box-shadow:0 4px 14px rgba(11,42,90,.22);
-    transition:all .18s;
-}
-.book-submit:hover { transform:translateY(-2px);box-shadow:0 8px 20px rgba(11,42,90,.28); }
-@keyframes ai-spin { to { transform:rotate(360deg); } }
-</style>
 
 <div class="book-wrap">
 
@@ -224,10 +128,10 @@ $bureauxJson = json_encode($bureauxList, JSON_UNESCAPED_UNICODE | JSON_INVALID_U
                     <!-- Indicateur suggestion IA -->
                     <div id="ai-indicator" style="display:none;margin-top:7px;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:linear-gradient(135deg,rgba(11,42,90,0.05),rgba(62,207,178,0.06));border:1px solid rgba(11,42,90,0.10);">
                         <div id="ai-spinner" style="display:none;">
-                            <div style="width:16px;height:16px;border:2px solid rgba(11,42,90,0.15);border-top-color:#0b2a5a;border-radius:50%;animation:ai-spin .7s linear infinite;flex-shrink:0;"></div>
+                            <div style="width:16px;height:16px;border:2px solid rgba(11,42,90,0.15);border-top-color:var(--brand);border-radius:50%;animation:ai-spin .7s linear infinite;flex-shrink:0;"></div>
                         </div>
-                        <i id="ai-icon" class="bi bi-stars" style="color:#0b2a5a;font-size:.9rem;display:none;"></i>
-                        <span id="ai-text" style="font-size:.78rem;font-weight:600;color:#0b2a5a;"></span>
+                        <i id="ai-icon" class="bi bi-stars" style="color:var(--brand);font-size:.9rem;display:none;"></i>
+                        <span id="ai-text" style="font-size:.78rem;font-weight:600;color:var(--brand);"></span>
                     </div>
                 </div>
 
