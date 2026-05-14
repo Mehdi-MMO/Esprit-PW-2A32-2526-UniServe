@@ -44,6 +44,7 @@ class DemandeDocument
                        d.demandee_le, d.validee_le, d.livree_le,
                        td.nom AS type_nom,
                        CONCAT(etu.prenom, " ", etu.nom) AS etudiant_nom,
+                       etu.photo_profil AS etudiant_photo,
                        etu.email AS etudiant_email,
                        CONCAT(vp.prenom, " ", vp.nom) AS valide_par_nom
                 FROM demandes_document d

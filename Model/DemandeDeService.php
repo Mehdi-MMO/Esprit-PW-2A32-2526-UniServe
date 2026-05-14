@@ -30,6 +30,7 @@ class DemandeDeService
                        cat.nom AS categorie_nom,
                        CONCAT(etu.prenom, " ", etu.nom) AS etudiant_nom,
                        etu.email AS etudiant_email,
+                       etu.photo_profil AS etudiant_photo,
                        CONCAT(asg.prenom, " ", asg.nom) AS assigne_nom
                 FROM demandes_service d
                 INNER JOIN utilisateurs etu ON etu.id = d.etudiant_id

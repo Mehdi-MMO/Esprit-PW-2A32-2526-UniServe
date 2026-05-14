@@ -24,7 +24,7 @@ class ChatbotController extends Controller
                 'evenements_manage' => ['label' => 'Clubs & événements (gestion)', 'path' => '/evenements/manage'],
                 'documents' => ['label' => 'Documents (scolarité)', 'path' => '/documents'],
                 'bureaux' => ['label' => 'Bureaux', 'path' => '/rendezvous?tab=bureaux'],
-                'certifications_manage' => ['label' => 'Certifications (parcours)', 'path' => '/certifications/manage'],
+                'certifications_manage' => ['label' => 'Certifications', 'path' => '/certifications/manage'],
             ]);
         }
 

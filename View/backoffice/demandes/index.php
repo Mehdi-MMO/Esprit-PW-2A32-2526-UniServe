@@ -16,148 +16,205 @@ if (isset($_SESSION['flash'])) {
 }
 ?>
 
-<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header mb-4">
-    <div>
-        <div class="us-kicker mb-1">Administration</div>
-        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Demandes de service'), ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="text-muted mb-0">Traitement des demandes (étudiants et enseignants) par catégorie.</p>
+<div class="back-page-header">
+    <div class="back-page-header-left">
+        <div class="back-page-icon"><i class="bi bi-journal-text"></i></div>
+        <div>
+            <div class="back-page-title"><?= htmlspecialchars((string) ($title ?? 'Demandes de service'), ENT_QUOTES, 'UTF-8') ?></div>
+            <div class="back-page-sub">Traitement des demandes (étudiants et enseignants) par catégorie.</div>
+        </div>
     </div>
 </div>
 
 <?php if ($flash !== null): ?>
     <?php if (($flash['type'] ?? '') === 'success'): ?>
-        <?= renderSuccessAlert((string) ($flash['message'] ?? '')) ?>
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert" style="border-left:4px solid #22c55e;border-radius:12px;">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-check-circle-fill" style="font-size:1.5rem;color:#22c55e;"></i>
+                <div><?= htmlspecialchars((string) ($flash['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+            </div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
     <?php elseif (($flash['type'] ?? '') === 'warning'): ?>
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <?= htmlspecialchars((string) ($flash['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert" style="border-left:4px solid #eab308;border-radius:12px;">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size:1.5rem;color:#eab308;"></i>
+                <div><?= htmlspecialchars((string) ($flash['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+            </div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
         </div>
     <?php else: ?>
-        <?= renderErrorAlert((string) ($flash['message'] ?? '')) ?>
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert" style="border-left:4px solid #ef4444;border-radius:12px;">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-x-circle-fill" style="font-size:1.5rem;color:#ef4444;"></i>
+                <div><?= htmlspecialchars((string) ($flash['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+            </div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
     <?php endif; ?>
 <?php endif; ?>
 
-<?php
-$statCards = [
-    ['title' => 'Total', 'value' => $stats['total'] ?? 0, 'color' => 'primary', 'icon' => 'fa-solid fa-inbox'],
-    ['title' => 'En attente', 'value' => $stats['en_attente'] ?? 0, 'color' => 'warning', 'icon' => 'fa-solid fa-hourglass-half'],
-    ['title' => 'En cours', 'value' => $stats['en_cours'] ?? 0, 'color' => 'info', 'icon' => 'fa-solid fa-spinner'],
-    ['title' => 'Traitées', 'value' => $stats['traite'] ?? 0, 'color' => 'success', 'icon' => 'fa-solid fa-circle-check'],
-    ['title' => 'Rejetées', 'value' => $stats['rejete'] ?? 0, 'color' => 'danger', 'icon' => 'fa-solid fa-circle-xmark'],
-];
-echo '<div class="mb-4">' . renderStatGrid($statCards) . '</div>';
-?>
-
-<div class="us-section-card mb-4">
-    <div class="card-body p-3">
-        <form method="get" action="<?= $this->url('/demandes') ?>" class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label small text-muted mb-1" for="bq">Recherche</label>
-                <input type="text" class="form-control" id="bq" name="q" value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>" placeholder="Titre, étudiant, catégorie…">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label small text-muted mb-1" for="bst">Statut</label>
-                <select class="form-select" id="bst" name="statut">
-                    <option value="">Tous</option>
-                    <?php foreach ($statut_labels as $k => $lab): ?>
-                        <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>" <?= $statut_filter === $k ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="col-md-5 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Filtrer</button>
-                <a href="<?= $this->url('/demandes') ?>" class="btn btn-outline-secondary">Réinitialiser</a>
-            </div>
-        </form>
-    </div>
+<div class="back-stats-row mb-4">
+    <span class="back-stat-pill" style="background:#e0f2fe;color:#0369a1;border-color:#bae6fd;">
+        <i class="bi bi-inbox-fill"></i><?= $stats['total'] ?? 0 ?> Total
+    </span>
+    <span class="back-stat-pill" style="background:#fef9c3;color:#854d0e;border-color:#fde047;">
+        <i class="bi bi-hourglass-split"></i><?= $stats['en_attente'] ?? 0 ?> En attente
+    </span>
+    <span class="back-stat-pill" style="background:#e0e7ff;color:#4338ca;border-color:#c7d2fe;">
+        <i class="bi bi-arrow-repeat"></i><?= $stats['en_cours'] ?? 0 ?> En cours
+    </span>
+    <span class="back-stat-pill" style="background:#dcfce7;color:#166534;border-color:#86efac;">
+        <i class="bi bi-check-circle-fill"></i><?= $stats['traite'] ?? 0 ?> Traitées
+    </span>
+    <span class="back-stat-pill" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5;">
+        <i class="bi bi-x-circle-fill"></i><?= $stats['rejete'] ?? 0 ?> Rejetées
+    </span>
 </div>
 
-<div class="us-section-card">
-    <div class="card-body p-0">
-        <div class="table-responsive us-table-wrap">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
+<form method="get" action="<?= $this->url('/demandes') ?>" class="mb-4 d-flex flex-wrap gap-2 align-items-center">
+    <input type="text" class="form-control" name="q" value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>" placeholder="Titre, étudiant, catégorie..." style="max-width:300px; border-radius:10px; font-size:.9rem; font-weight:600;">
+    <select class="form-select" name="statut" style="max-width:200px; border-radius:10px; font-size:.9rem; font-weight:600;">
+        <option value="">Tous les statuts</option>
+        <?php foreach ($statut_labels as $k => $lab): ?>
+            <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>" <?= $statut_filter === $k ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
+        <?php endforeach; ?>
+    </select>
+    <button type="submit" class="btn btn-primary" style="border-radius:10px; font-weight:600;"><i class="bi bi-search me-1"></i> Filtrer</button>
+    <?php if ($q !== '' || $statut_filter !== ''): ?>
+        <a href="<?= $this->url('/demandes') ?>" class="btn btn-sm btn-outline-secondary" style="border-radius:8px;">Réinitialiser</a>
+    <?php endif; ?>
+</form>
+
+<div class="back-table-wrap">
+    <table class="back-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Étudiant</th>
+                <th>Catégorie</th>
+                <th>Titre</th>
+                <th>Pièces</th>
+                <th>Statut</th>
+                <th>Soumise</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (empty($demandes)): ?>
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-5">Aucune demande.</td>
+                </tr>
+            <?php else: ?>
+                <?php
+                $badgeStyles = [
+                    'en_attente'   => ['bg'=>'#fef9c3','color'=>'#854d0e','border'=>'#fde047'],
+                    'en_cours'     => ['bg'=>'#e0e7ff','color'=>'#4338ca','border'=>'#c7d2fe'],
+                    'traite'       => ['bg'=>'#dcfce7','color'=>'#166534','border'=>'#86efac'],
+                    'rejete'       => ['bg'=>'#fee2e2','color'=>'#991b1b','border'=>'#fca5a5'],
+                ];
+                ?>
+                <?php foreach ($demandes as $row): ?>
+                    <?php
+                    $sid = (int) ($row['id'] ?? 0);
+                    $st = (string) ($row['statut'] ?? '');
+                    $label = $statut_labels[$st] ?? $st;
+                    $bs = $badgeStyles[$st] ?? ['bg'=>'#f3f4f6','color'=>'#4b5563','border'=>'#e5e7eb'];
+                    $photoUrl = null;
+                    if (function_exists('profile_photo_public_url')) {
+                        // Warning: photo might not be fetched in the query.
+                        // We will just use the initials if not.
+                        $photoUrl = profile_photo_public_url((string) ($row['etudiant_photo'] ?? ''), $this);
+                    }
+                    $nom = $row['etudiant_nom'] ?? 'Inconnu';
+                    $initials = strtoupper(mb_substr($nom, 0, 1));
+                    if (str_contains($nom, ' ')) {
+                        $parts = explode(' ', $nom);
+                        $initials = strtoupper(mb_substr($parts[0], 0, 1) . mb_substr($parts[count($parts)-1], 0, 1));
+                    }
+                    ?>
                     <tr>
-                        <th>ID</th>
-                        <th>Étudiant</th>
-                        <th>Catégorie</th>
-                        <th>Titre</th>
-                        <th>Pièces</th>
-                        <th>Statut</th>
-                        <th>Soumise</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($demandes)): ?>
-                        <tr>
-                            <td colspan="8" class="text-center text-muted py-5">Aucune demande.</td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($demandes as $row): ?>
+                        <td class="text-muted small fw-bold">#<?= $sid ?></td>
+                        <td>
+                            <div class="back-student-cell">
+                                <?php if ($photoUrl !== null && $row['etudiant_photo'] ?? '' !== ''): ?>
+                                    <img src="<?= htmlspecialchars($photoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Avatar" class="back-avatar" style="object-fit: cover; border-radius: 50%;">
+                                <?php else: ?>
+                                    <div class="back-avatar"><?= $initials ?></div>
+                                <?php endif; ?>
+                                <div>
+                                    <div class="back-student-name"><?= htmlspecialchars((string) ($row['etudiant_nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                    <div class="small text-muted" style="font-size:0.75rem;"><?= htmlspecialchars((string) ($row['etudiant_email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="small fw-semibold text-secondary"><?= htmlspecialchars((string) ($row['categorie_nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td class="fw-semibold" style="color:var(--brand);"><?= htmlspecialchars((string) ($row['titre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td class="small">
                             <?php
-                            $sid = (int) ($row['id'] ?? 0);
-                            $st = (string) ($row['statut'] ?? '');
-                            $label = $statut_labels[$st] ?? $st;
+                            $pList = $pieces_by_demande[$sid] ?? [];
                             ?>
-                            <tr>
-                                <td class="text-muted small">#<?= $sid ?></td>
-                                <td>
-                                    <div class="fw-semibold"><?= htmlspecialchars((string) ($row['etudiant_nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                    <div class="small text-muted"><?= htmlspecialchars((string) ($row['etudiant_email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                </td>
-                                <td class="small"><?= htmlspecialchars((string) ($row['categorie_nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td><?= htmlspecialchars((string) ($row['titre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="small">
-                                    <?php
-                                    $pList = $pieces_by_demande[$sid] ?? [];
-                                    ?>
-                                    <?php if ($pList === []): ?>
-                                        <span class="text-muted">—</span>
-                                    <?php else: ?>
-                                        <?php foreach ($pList as $pj): ?>
-                                            <?php $pid = (int) ($pj['id'] ?? 0); ?>
-                                            <div class="mb-1">
-                                                <a href="<?= $this->url('/demandes/downloadPiece/' . $pid) ?>"><?= htmlspecialchars((string) ($pj['nom_fichier'] ?? ''), ENT_QUOTES, 'UTF-8') ?></a>
-                                                <form method="post" action="<?= $this->url('/demandes/deletePiece/' . $pid) ?>" class="d-inline ms-1" onsubmit="return confirm('Supprimer cette pièce ?');">
-                                                    <button type="submit" class="btn btn-link btn-sm text-danger p-0 align-baseline" title="Supprimer">×</button>
-                                                </form>
-                                            </div>
+                            <?php if ($pList === []): ?>
+                                <span class="text-muted">—</span>
+                            <?php else: ?>
+                                <div class="d-flex flex-column gap-1">
+                                <?php foreach ($pList as $pj): ?>
+                                    <?php $pid = (int) ($pj['id'] ?? 0); ?>
+                                    <div class="d-flex align-items-center gap-1 bg-light rounded px-2 py-1" style="width: max-content;">
+                                        <i class="bi bi-paperclip text-muted"></i>
+                                        <a href="<?= $this->url('/demandes/downloadPiece/' . $pid) ?>" class="text-decoration-none small text-truncate" style="max-width:120px;" title="<?= htmlspecialchars((string) ($pj['nom_fichier'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= htmlspecialchars((string) ($pj['nom_fichier'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                        </a>
+                                        <form method="post" action="<?= $this->url('/demandes/deletePiece/' . $pid) ?>" class="m-0 ms-1" onsubmit="return confirm('Supprimer cette pièce ?');">
+                                            <button type="submit" class="btn btn-link btn-sm text-danger p-0 border-0 lh-1" title="Supprimer"><i class="bi bi-x-circle-fill"></i></button>
+                                        </form>
+                                    </div>
+                                <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <span class="badge" style="background:<?= $bs['bg'] ?>;color:<?= $bs['color'] ?>;border:1px solid <?= $bs['border'] ?>;border-radius:6px;padding:5px 8px;">
+                                <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
+                            </span>
+                        </td>
+                        <td class="small text-muted fw-medium">
+                            <i class="bi bi-clock me-1"></i><?= htmlspecialchars((string) ($row['soumise_le'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column gap-2 align-items-end">
+                                <form method="post" action="<?= $this->url('/demandes/updateStatut/' . $sid) ?>" class="d-flex gap-1 align-items-center">
+                                    <select name="statut" class="form-select form-select-sm" style="width: 130px; font-weight:600; font-size:0.8rem; border-radius:6px;">
+                                        <?php foreach ($statut_labels as $k => $lab): ?>
+                                            <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>" <?= $st === $k ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
                                         <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </td>
-                                <td><span class="badge text-bg-secondary"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span></td>
-                                <td class="small text-muted"><?= htmlspecialchars((string) ($row['soumise_le'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="text-end">
-                                    <form method="post" action="<?= $this->url('/demandes/updateStatut/' . $sid) ?>" class="d-flex flex-wrap gap-1 justify-content-end align-items-center mb-2">
-                                        <select name="statut" class="form-select form-select-sm" style="width: auto; min-width: 9rem;">
-                                            <?php foreach ($statut_labels as $k => $lab): ?>
-                                                <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>" <?= $st === $k ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <button type="submit" class="btn btn-sm btn-primary">Statut</button>
-                                    </form>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm" style="background:var(--brand);color:#fff;border-radius:6px;" title="Mettre à jour"><i class="bi bi-check2"></i></button>
+                                </form>
+                                <div class="d-flex gap-1 justify-content-end w-100">
                                     <?php if ($demande_staff_ai_check_enabled): ?>
-                                        <div class="d-flex justify-content-end mb-2">
-                                            <button type="button"
-                                                class="btn btn-sm btn-outline-secondary us-demande-staff-ai-check"
-                                                data-check-url="<?= htmlspecialchars($this->url('/demandes/aiStaffCheck/' . $sid), ENT_QUOTES, 'UTF-8') ?>"
-                                                data-demande-label="<?= htmlspecialchars('#' . $sid . ' — ' . (string) ($row['titre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                                                <i class="fa-solid fa-robot me-1" aria-hidden="true"></i>Vérification IA
-                                            </button>
-                                        </div>
+                                        <button type="button"
+                                            class="btn btn-sm btn-outline-primary us-demande-staff-ai-check d-flex align-items-center justify-content-center"
+                                            style="border-radius:6px; flex:1;"
+                                            data-check-url="<?= htmlspecialchars($this->url('/demandes/aiStaffCheck/' . $sid), ENT_QUOTES, 'UTF-8') ?>"
+                                            data-demande-label="<?= htmlspecialchars('#' . $sid . ' — ' . (string) ($row['titre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                            title="Assistant IA">
+                                            <i class="bi bi-robot" aria-hidden="true"></i> IA
+                                        </button>
                                     <?php endif; ?>
-                                    <form method="post" action="<?= $this->url('/demandes/adminDelete/' . $sid) ?>" onsubmit="return confirm('Supprimer définitivement cette demande ?');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                                    <form method="post" action="<?= $this->url('/demandes/adminDelete/' . $sid) ?>" class="m-0" style="flex:1;" onsubmit="return confirm('Supprimer définitivement cette demande ?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger w-100 d-flex align-items-center justify-content-center" style="border-radius:6px;" title="Supprimer">
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </button>
                                     </form>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </tbody>
+    </table>
 </div>
 
 <?php if ($demande_staff_ai_check_enabled): ?>

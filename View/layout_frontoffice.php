@@ -173,23 +173,7 @@
             </div>
         </div>
     </nav>
-    <?php
-    // #region agent log
-    @file_put_contents(
-        dirname(__DIR__) . DIRECTORY_SEPARATOR . 'debug-0d44c0.log',
-        json_encode([
-            'sessionId' => '0d44c0',
-            'runId' => 'post-abut',
-            'hypothesisId' => 'H-FO',
-            'location' => 'layout_frontoffice.php:afterNav',
-            'message' => 'front nav render marker',
-            'data' => ['containerAbutted' => true],
-            'timestamp' => (int) round(microtime(true) * 1000),
-        ], JSON_UNESCAPED_UNICODE) . "\n",
-        FILE_APPEND | LOCK_EX
-    );
-    // #endregion
-    ?>
+
 
     <main id="contenu-principal" class="container-fluid us-main-front px-3 px-sm-4 px-xl-5 mt-5 pt-4 pb-5">
         <?= $content ?>
@@ -217,25 +201,6 @@
     <?php if (isset($_SESSION['user']['id'])): ?>
         <script src="<?= $this->asset('/View/shared/js/notifications.js') ?>"></script>
     <?php endif; ?>
-    <script>
-    // #region agent log
-    (function () {
-        var endpoint = 'http://127.0.0.1:7546/ingest/be76f790-1465-45d3-88ba-1c2c0e433a93';
-        var c = document.querySelector('.us-topbar .navbar > .container');
-        if (!c) return;
-        var kids = [];
-        for (var i = 0; i < c.childNodes.length; i++) {
-            var n = c.childNodes[i];
-            if (n.nodeType === 3) {
-                var t = String(n.textContent || '');
-                kids.push({ t: 3, len: t.length, preview: t.slice(0, 40) });
-            } else {
-                kids.push({ t: n.nodeType, name: n.nodeName });
-            }
-        }
-        fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '0d44c0' }, body: JSON.stringify({ sessionId: '0d44c0', runId: 'post-abut', hypothesisId: 'H-FO-DOM', location: 'layout_frontoffice:inline', message: 'navbar container childNodes', data: { kids: kids }, timestamp: Date.now() }) }).catch(function () {});
-    })();
-    // #endregion
-    </script>
+
 </body>
 </html>

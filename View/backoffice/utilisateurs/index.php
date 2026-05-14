@@ -40,52 +40,39 @@ $baseQuery = http_build_query($baseParams);
 $utilisateursUrl = $this->url('/utilisateurs');
 ?>
 
-<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header">
-    <div>
-        <div class="us-kicker mb-1">Administration</div>
-        <h1 class="h3 mb-1"><?= htmlspecialchars((string) ($title ?? 'Utilisateurs'), ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="text-muted mb-0">
-            <span id="users-results-label">
+<div class="back-page-header">
+    <div class="back-page-header-left">
+        <div class="back-page-icon"><i class="bi bi-people-fill"></i></div>
+        <div>
+            <div class="back-page-title"><?= htmlspecialchars((string) ($title ?? 'Utilisateurs'), ENT_QUOTES, 'UTF-8') ?></div>
+            <div class="back-page-sub" id="users-results-label">
                 <?= $total > 0 ? 'Résultats: ' . (int) $total : 'Gestion des comptes utilisateurs.' ?>
-            </span>
-        </p>
+            </div>
+        </div>
     </div>
-
-    <a href="<?= $this->url('/utilisateurs/create') ?>" class="btn btn-primary btn-sm">
-        <i class="bi bi-plus-lg me-1"></i>Nouveau
-    </a>
+    <div class="d-flex gap-2">
+        <a href="<?= $this->url('/utilisateurs/create') ?>" class="btn btn-primary btn-sm" style="border-radius:10px; font-weight:600;">
+            <i class="bi bi-plus-lg me-1"></i>Nouveau
+        </a>
+    </div>
 </div>
 
-<div class="us-surface-muted px-3 py-2 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-    <div class="small text-muted">Registre des comptes institutionnels</div>
-    <div class="small"><strong><?= (int) $total ?></strong> compte(s)</div>
-</div>
-
-<div class="row g-2 mb-3">
-    <div class="col-md-6 col-xl-3">
-        <div class="us-stat-card">
-            <div class="us-stat-label">Total comptes</div>
-            <div class="us-stat-value"><?= (int) $statsTotal ?></div>
-        </div>
-    </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="us-stat-card">
-            <div class="us-stat-label">Comptes actifs</div>
-            <div class="us-stat-value"><?= (int) $statsActif ?></div>
-        </div>
-    </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="us-stat-card">
-            <div class="us-stat-label">Comptes inactifs</div>
-            <div class="us-stat-value"><?= (int) $statsInactif ?></div>
-        </div>
-    </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="us-stat-card">
-            <div class="us-stat-label">Admin / Staff</div>
-            <div class="us-stat-value"><?= (int) $statsAdmin ?> / <?= (int) $statsStaff ?></div>
-        </div>
-    </div>
+<div class="back-stats-row mb-4">
+    <span class="back-stat-pill" style="background:#f3f4f6;color:#374151;border-color:#e5e7eb;">
+        <i class="bi bi-people-fill"></i><?= (int) $statsTotal ?> Total
+    </span>
+    <span class="back-stat-pill" style="background:#dcfce7;color:#166534;border-color:#86efac;">
+        <i class="bi bi-check-circle-fill"></i><?= (int) $statsActif ?> Actifs
+    </span>
+    <span class="back-stat-pill" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5;">
+        <i class="bi bi-x-circle-fill"></i><?= (int) $statsInactif ?> Inactifs
+    </span>
+    <span class="back-stat-pill" style="background:#e0e7ff;color:#4338ca;border-color:#c7d2fe;">
+        <i class="bi bi-shield-lock-fill"></i><?= (int) $statsAdmin ?> Admins
+    </span>
+    <span class="back-stat-pill" style="background:#e0f2fe;color:#0369a1;border-color:#bae6fd;">
+        <i class="bi bi-person-workspace"></i><?= (int) $statsStaff ?> Staffs
+    </span>
 </div>
 
 <script>
@@ -185,55 +172,36 @@ $utilisateursUrl = $this->url('/utilisateurs');
             </div>
         <?php endif; ?>
 
-        <form id="utilisateurs-filters" method="get" action="<?= $this->url('/utilisateurs') ?>" class="row g-2 align-items-end mb-3 us-filter-shell us-users-toolbar">
-            <div class="col-lg-4">
-                <label class="form-label text-muted small mb-1" for="q">Recherche</label>
-                <input
-                    type="text"
-                    class="form-control"
-                    id="q"
-                    name="q"
-                    placeholder="Nom, prénom, email..."
-                    value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>"
-                >
-            </div>
-
-            <div class="col-lg-2">
-                <label class="form-label text-muted small mb-1" for="role">Rôle</label>
-                <select class="form-select" id="role" name="role">
-                    <option value="" <?= $role === '' ? 'selected' : '' ?>>Tous</option>
-                    <option value="etudiant" <?= $role === 'etudiant' ? 'selected' : '' ?>>Étudiant</option>
-                    <option value="enseignant" <?= $role === 'enseignant' ? 'selected' : '' ?>>Enseignant</option>
-                    <option value="staff" <?= $role === 'staff' ? 'selected' : '' ?>>Staff</option>
-                    <option value="admin" <?= $role === 'admin' ? 'selected' : '' ?>>Admin</option>
-                </select>
-            </div>
-
-            <div class="col-lg-2">
-                <label class="form-label text-muted small mb-1" for="statut_compte">Statut</label>
-                <select class="form-select" id="statut_compte" name="statut_compte">
-                    <option value="" <?= $statutCompte === '' ? 'selected' : '' ?>>Tous</option>
-                    <option value="actif" <?= $statutCompte === 'actif' ? 'selected' : '' ?>>Actif</option>
-                    <option value="inactif" <?= $statutCompte === 'inactif' ? 'selected' : '' ?>>Inactif</option>
-                </select>
-            </div>
-
-            <div class="col-lg-2">
-                <label class="form-label text-muted small mb-1" for="per_page">Par page</label>
-                <select class="form-select" id="per_page" name="per_page" onchange="this.form.submit()">
-                    <option value="10" <?= $perPage === 10 ? 'selected' : '' ?>>10</option>
-                    <option value="25" <?= $perPage === 25 ? 'selected' : '' ?>>25</option>
-                </select>
-            </div>
-
-            <div class="col-lg-2 d-flex gap-2">
-                <button type="submit" class="btn btn-primary w-100">Filtrer</button>
-                <a href="<?= $this->url('/utilisateurs') ?>" class="btn btn-outline-secondary w-100" data-reset-filters="1">Réinitialiser</a>
-            </div>
+        <form id="utilisateurs-filters" method="get" action="<?= $this->url('/utilisateurs') ?>" class="mb-4 d-flex flex-wrap gap-2 align-items-center">
+            <input type="text" class="form-control" id="q" name="q" placeholder="Nom, prénom, email..." value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>" style="max-width:250px; border-radius:10px; font-size:.9rem; font-weight:600;">
+            
+            <select class="form-select" id="role" name="role" style="max-width:150px; border-radius:10px; font-size:.9rem; font-weight:600;">
+                <option value="" <?= $role === '' ? 'selected' : '' ?>>Tous rôles</option>
+                <option value="etudiant" <?= $role === 'etudiant' ? 'selected' : '' ?>>Étudiant</option>
+                <option value="enseignant" <?= $role === 'enseignant' ? 'selected' : '' ?>>Enseignant</option>
+                <option value="staff" <?= $role === 'staff' ? 'selected' : '' ?>>Staff</option>
+                <option value="admin" <?= $role === 'admin' ? 'selected' : '' ?>>Admin</option>
+            </select>
+            
+            <select class="form-select" id="statut_compte" name="statut_compte" style="max-width:150px; border-radius:10px; font-size:.9rem; font-weight:600;">
+                <option value="" <?= $statutCompte === '' ? 'selected' : '' ?>>Tous statuts</option>
+                <option value="actif" <?= $statutCompte === 'actif' ? 'selected' : '' ?>>Actif</option>
+                <option value="inactif" <?= $statutCompte === 'inactif' ? 'selected' : '' ?>>Inactif</option>
+            </select>
+            
+            <select class="form-select" id="per_page" name="per_page" onchange="this.form.submit()" style="max-width:100px; border-radius:10px; font-size:.9rem; font-weight:600;">
+                <option value="10" <?= $perPage === 10 ? 'selected' : '' ?>>10 / pg</option>
+                <option value="25" <?= $perPage === 25 ? 'selected' : '' ?>>25 / pg</option>
+            </select>
+            
+            <button type="submit" class="btn btn-primary" style="border-radius:10px; font-weight:600;"><i class="bi bi-search me-1"></i> Filtrer</button>
+            <?php if ($q !== '' || $role !== '' || $statutCompte !== ''): ?>
+                <button type="button" data-reset-filters="1" class="btn btn-outline-secondary" style="border-radius:8px;">Réinitialiser</button>
+            <?php endif; ?>
         </form>
 
-        <div class="table-responsive us-table-wrap">
-            <table class="table table-hover align-middle mb-0 us-users-table">
+        <div class="back-table-wrap">
+            <table class="back-table">
                 <thead>
                     <tr>
                         <th>Nom</th>
@@ -254,46 +222,59 @@ $utilisateursUrl = $this->url('/utilisateurs');
                         <?php foreach ($users as $u): ?>
                             <tr>
                                 <td>
-                                    <div class="fw-semibold us-user-name">
-                                        <?= htmlspecialchars((string) ($u['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                                        <?= htmlspecialchars((string) ($u['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                    <div class="back-student-cell">
+                                        <div class="back-avatar"><?= mb_substr($u['prenom'] ?? 'U', 0, 1) ?><?= mb_substr($u['nom'] ?? '', 0, 1) ?></div>
+                                        <div>
+                                            <div class="back-student-name">
+                                                <?= htmlspecialchars((string) ($u['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                                <?= htmlspecialchars((string) ($u['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                            </div>
+                                            <div class="text-muted small" style="font-size:0.75rem;"><?= htmlspecialchars((string) ($u['departement'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                        </div>
                                     </div>
-                                    <div class="text-muted small us-user-meta"><?= htmlspecialchars((string) ($u['departement'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
                                 </td>
                                 <td><?= htmlspecialchars((string) ($u['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td>
-                                    <span class="us-role-chip">
-                                        <?= htmlspecialchars(ucfirst((string) ($u['role'] ?? '')), ENT_QUOTES, 'UTF-8') ?>
+                                    <?php 
+                                        $roleLabel = htmlspecialchars(ucfirst((string) ($u['role'] ?? '')), ENT_QUOTES, 'UTF-8');
+                                        $rBg = '#f3f4f6'; $rColor = '#4b5563'; $rBorder = '#e5e7eb';
+                                        if ($roleLabel === 'Admin') { $rBg = '#fee2e2'; $rColor = '#991b1b'; $rBorder = '#fca5a5'; }
+                                        if ($roleLabel === 'Staff') { $rBg = '#e0f2fe'; $rColor = '#0369a1'; $rBorder = '#bae6fd'; }
+                                    ?>
+                                    <span class="badge" style="background:<?= $rBg ?>;color:<?= $rColor ?>;border:1px solid <?= $rBorder ?>;border-radius:6px;padding:5px 8px;">
+                                        <?= $roleLabel ?>
                                     </span>
                                 </td>
-                                <td><?= htmlspecialchars((string) ($u['matricule'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="fw-semibold text-secondary"><?= htmlspecialchars((string) ($u['matricule'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td><?= htmlspecialchars((string) ($u['telephone'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td>
                                     <?php
                                     $statut = (string) ($u['statut_compte'] ?? '');
-                                    $badgeClass = $statut === 'actif' ? 'actif' : 'inactif';
+                                    $sBg = $statut === 'actif' ? '#dcfce7' : '#fee2e2';
+                                    $sColor = $statut === 'actif' ? '#166534' : '#991b1b';
+                                    $sBorder = $statut === 'actif' ? '#86efac' : '#fca5a5';
                                     ?>
-                                    <span class="us-status-chip <?= $badgeClass ?>">
+                                    <span class="badge" style="background:<?= $sBg ?>;color:<?= $sColor ?>;border:1px solid <?= $sBorder ?>;border-radius:6px;padding:5px 8px;">
                                         <?= htmlspecialchars(ucfirst($statut), ENT_QUOTES, 'UTF-8') ?>
                                     </span>
                                 </td>
                                 <td class="text-end">
-                                    <div class="us-action-group">
-                                        <a class="btn btn-outline-primary btn-sm" href="<?= $this->url('/utilisateurs/edit/' . (int) ($u['id'] ?? 0)) ?>">
-                                            <i class="bi bi-pencil me-1"></i>Modifier
+                                    <div class="d-flex flex-column gap-1 justify-content-end align-items-end">
+                                        <a class="btn btn-outline-primary btn-sm d-flex align-items-center justify-content-center" href="<?= $this->url('/utilisateurs/edit/' . (int) ($u['id'] ?? 0)) ?>" style="border-radius:6px; width:32px; height:32px;" title="Modifier">
+                                            <i class="bi bi-pencil"></i>
                                         </a>
                                     <?php
                                     $userId = (int) ($u['id'] ?? 0);
                                     $isSingleAdmin = $singleAdminId !== null && $userId === (int) $singleAdminId;
                                     ?>
                                     <?php if ($isSingleAdmin): ?>
-                                        <button class="btn btn-outline-danger btn-sm" type="button" disabled title="Suppression bloquée (admin unique)">
-                                            <i class="bi bi-trash me-1"></i>Supprimer
+                                        <button class="btn btn-outline-danger btn-sm d-flex align-items-center justify-content-center" type="button" disabled title="Suppression bloquée (admin unique)" style="border-radius:6px; width:32px; height:32px;">
+                                            <i class="bi bi-trash3-fill"></i>
                                         </button>
                                     <?php else: ?>
-                                        <form method="post" action="<?= $this->url('/utilisateurs/delete/' . $userId) ?>" class="d-inline">
-                                            <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Supprimer cet utilisateur ?');">
-                                                <i class="bi bi-trash me-1"></i>Supprimer
+                                        <form method="post" action="<?= $this->url('/utilisateurs/delete/' . $userId) ?>" class="m-0 d-inline">
+                                            <button class="btn btn-outline-danger btn-sm d-flex align-items-center justify-content-center" type="submit" onclick="return confirm('Supprimer cet utilisateur ?');" style="border-radius:6px; width:32px; height:32px;" title="Supprimer">
+                                                <i class="bi bi-trash3-fill"></i>
                                             </button>
                                         </form>
                                     <?php endif; ?>

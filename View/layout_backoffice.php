@@ -55,17 +55,36 @@
                    href="<?= $this->url('/rendezvous') ?>"
                    <?= $rdvModuleActive ? 'aria-current="page"' : '' ?>><i class="bi bi-calendar-check me-2"></i>Rendez-vous</a>
             </div>
-            <a class="nav-link <?= $pathStartsWith('certifications') ? 'active' : '' ?>" href="<?= $this->url('/certifications/manage') ?>"><i class="bi bi-mortarboard me-2"></i>Certifications (parcours)</a>
+            <a class="nav-link <?= $pathStartsWith('certifications') ? 'active' : '' ?>" href="<?= $this->url('/certifications/manage') ?>"><i class="bi bi-mortarboard me-2"></i>Certifications</a>
         </nav>
     </aside>
 
     <header class="top-header ms-sidebar d-flex flex-wrap justify-content-between align-items-center px-3 px-md-4 py-3 border-bottom bg-white">
-        <div class="min-w-0 flex-grow-1 me-2">
-            <div class="us-kicker mb-1">Back office</div>
-            <span class="fw-semibold text-truncate d-inline-block mw-100">
-                <?= htmlspecialchars((string) ($_SESSION['user']['prenom'] ?? 'Utilisateur'), ENT_QUOTES, 'UTF-8') ?>
-                <?= htmlspecialchars((string) ($_SESSION['user']['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-            </span>
+        <div class="min-w-0 flex-grow-1 me-2 d-flex align-items-center gap-3">
+            <?php
+                require_once __DIR__ . '/shared/helpers.php';
+                $navPhotoUrl = null;
+                $navAvatarInitial = 'U';
+                if (isset($_SESSION['user']['id'])) {
+                    $navPhotoUrl = profile_photo_public_url((string) ($_SESSION['user']['photo_profil'] ?? ''), $this);
+                    $navAvatarInitial = profile_avatar_initial(
+                        (string) ($_SESSION['user']['prenom'] ?? ''),
+                        (string) ($_SESSION['user']['nom'] ?? '')
+                    );
+                }
+            ?>
+            <?php if ($navPhotoUrl !== null): ?>
+                <img src="<?= htmlspecialchars($navPhotoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="rounded-circle" width="40" height="40" style="object-fit:cover;" decoding="async">
+            <?php else: ?>
+                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:40px;height:40px;background:var(--brand);color:#fff;font-size:1.1rem;" aria-hidden="true"><?= htmlspecialchars($navAvatarInitial, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <div>
+                <div class="us-kicker mb-1">Back office</div>
+                <span class="fw-semibold text-truncate d-inline-block mw-100">
+                    <?= htmlspecialchars((string) ($_SESSION['user']['prenom'] ?? 'Utilisateur'), ENT_QUOTES, 'UTF-8') ?>
+                    <?= htmlspecialchars((string) ($_SESSION['user']['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                </span>
+            </div>
         </div>
         <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
             <?php if (isset($_SESSION['user']['id'])): ?>

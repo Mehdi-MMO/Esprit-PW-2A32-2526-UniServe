@@ -133,7 +133,7 @@ class RendezVous
                        r.reserve_le, r.annule_le,
                        b.nom AS bureau_nom, b.localisation AS bureau_localisation,
                        u.prenom AS etudiant_prenom, u.nom AS etudiant_nom_seul,
-                       CONCAT(u.prenom, " ", u.nom) AS etudiant_nom, u.email AS etudiant_email
+                       CONCAT(u.prenom, " ", u.nom) AS etudiant_nom, u.email AS etudiant_email, u.photo_profil AS etudiant_photo
                 FROM rendez_vous r
                 INNER JOIN utilisateurs u ON u.id = r.etudiant_id
                 INNER JOIN bureaux b ON b.id = r.bureau_id

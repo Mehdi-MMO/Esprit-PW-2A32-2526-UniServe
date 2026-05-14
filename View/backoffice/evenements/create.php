@@ -135,7 +135,7 @@ $validationRules = $validationRules ?? [];
                         ''
                     );
                     ?>
-                    <p class="text-muted small mb-0 mt-1">Stripe (<code>STRIPE_SECRET_KEY</code> dans <code>.env</code>) requis si le prix est supérieur à 0.</p>
+                    <p class="text-muted small mb-0 mt-1">La configuration de paiement Stripe est requise si le prix est supérieur à 0.</p>
                 </div>
 
                 <div class="col-12">

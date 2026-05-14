@@ -95,7 +95,7 @@ $hasMapAddress = $mapAddressRaw !== '' && !preg_match('/^(à|a)\s*d[ée]finir\.?
 
                 <?php if ($ticket_price > 0 && !$stripe_ready && $baseCanRegister): ?>
                     <div class="alert alert-warning py-2 small mb-3" role="alert">
-                        Paiement indisponible : Stripe n’est pas configuré (<code>STRIPE_SECRET_KEY</code>). Contactez l’administration ou choisissez un événement gratuit.
+                        Paiement indisponible temporairement. Contactez l’administration ou choisissez un événement gratuit.
                     </div>
                 <?php endif; ?>
 

@@ -32,11 +32,13 @@ $hasUsersData = array_sum($usersRoleData) > 0;
 $hasLoginData = array_sum($loginCounts) > 0;
 ?>
 
-<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 us-page-header">
-    <div>
-        <div class="us-kicker mb-1">Pilotage</div>
-        <h1 class="h3 mb-1">Tableau de bord administratif</h1>
-        <p class="text-muted mb-0">Vue consolidée des comptes, demandes et activité.</p>
+<div class="back-page-header mb-4">
+    <div class="back-page-header-left">
+        <div class="back-page-icon"><i class="bi bi-speedometer2"></i></div>
+        <div>
+            <div class="back-page-title">Tableau de bord administratif</div>
+            <div class="back-page-sub">Vue consolidée des comptes, demandes et activité.</div>
+        </div>
     </div>
 </div>
 

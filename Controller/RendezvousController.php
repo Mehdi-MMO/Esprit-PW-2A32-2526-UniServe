@@ -220,7 +220,7 @@ class RendezvousController extends Controller
                 'title' => 'Rendez-vous',
                 'tab' => $tab,
                 'rdvs' => $rdvs,
-                'dashboard_stats' => $dashboardStats,
+                'stats' => $dashboardStats,
                 'nb_rdvs' => $nbRdvs,
                 'nb_bureaux' => $nbBureaux,
                 'nb_bureaux_filtered' => $nbBureauxFiltered,
