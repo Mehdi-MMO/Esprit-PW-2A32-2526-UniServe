@@ -23,7 +23,7 @@
     $clubsEventsNavActive = $pathStartsWith('evenements');
     $demandesQueueActive = $pathStartsWith('demandes');
     $typesDemandesActive = $pathStartsWith('services');
-    $documentsScolariteActive = $pathStartsWith('documents');
+    $certifActive = $pathStartsWith('certifications');
     $notifCount = 0;
     if (isset($_SESSION['user']['id'])) {
         try {
@@ -55,9 +55,6 @@
                    href="<?= $this->url('/rendezvous') ?>"
                    <?= $rdvModuleActive ? 'aria-current="page"' : '' ?>><i class="bi bi-calendar-check me-2"></i>Rendez-vous</a>
             </div>
-            <a class="nav-link <?= $documentsScolariteActive ? 'active' : '' ?>"
-               href="<?= $this->url('/documents') ?>"
-               <?= $documentsScolariteActive ? 'aria-current="page"' : '' ?>><i class="bi bi-file-earmark-text me-2"></i>Documents (scolarité)</a>
             <a class="nav-link <?= $pathStartsWith('certifications') ? 'active' : '' ?>" href="<?= $this->url('/certifications/manage') ?>"><i class="bi bi-mortarboard me-2"></i>Certifications (parcours)</a>
         </nav>
     </aside>

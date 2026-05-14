@@ -66,31 +66,13 @@
                     <li class="nav-item"><a class="nav-link <?= $pathStartsWith('frontoffice') ? 'active' : '' ?>" href="<?= $this->url('/frontoffice/dashboard') ?>" title="Tableau de bord">Accueil</a></li>
                     <li class="nav-item"><a class="nav-link <?= ($pathStartsWith('demandes') || $pathStartsWith('services')) ? 'active' : '' ?>" href="<?= $this->url('/demandes') ?>" title="Demandes de service : vos dossiers, nouvelle demande, et catalogue des types"><span class="d-xl-none">Demandes</span><span class="d-none d-xl-inline">Mes demandes</span></a></li>
                     <li class="nav-item"><a class="nav-link <?= $pathStartsWith('rendezvous') ? 'active' : '' ?>" href="<?= $this->url('/rendezvous') ?>" title="Prendre rendez-vous avec un bureau"><span class="d-xl-none">RDV</span><span class="d-none d-xl-inline">Rendez-vous</span></a></li>
-                    <?php
-                    $documentsNavActive = $pathStartsWith('documents');
-                    $certificationsNavActive = $pathStartsWith('certifications');
-                    $documentsGroupActive = $documentsNavActive || $certificationsNavActive;
-                    ?>
-                    <li class="nav-item dropdown us-nav-documents">
-                        <a class="nav-link dropdown-toggle<?= $documentsGroupActive ? ' active' : '' ?>"
-                           href="#"
-                           id="usNavDocuments"
-                           role="button"
-                           data-bs-toggle="dropdown"
-                           data-bs-auto-close="true"
-                           aria-expanded="false"
-                           aria-haspopup="true"
-                           title="Cours et certifications (DOCAC)">
-                            <span class="d-xl-none">Docs</span><span class="d-none d-xl-inline">Documents</span>
+                    <?php $certificationsNavActive = $pathStartsWith('certifications'); ?>
+                    <li class="nav-item">
+                        <a class="nav-link <?= $certificationsNavActive ? 'active' : '' ?>"
+                           href="<?= $this->url('/certifications') ?>"
+                           title="Cours & Certifications">
+                            <span class="d-xl-none">Certifs</span><span class="d-none d-xl-inline">Certifications</span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end border-0 shadow" aria-labelledby="usNavDocuments">
-                            <li>
-                                <a class="dropdown-item<?= $certificationsNavActive ? ' active' : '' ?>" href="<?= htmlspecialchars($this->url('/certifications') . '#us-parcours-cours', ENT_QUOTES, 'UTF-8') ?>">Cours</a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item<?= $certificationsNavActive ? ' active' : '' ?>" href="<?= htmlspecialchars($this->url('/certifications') . '#us-parcours-certificats', ENT_QUOTES, 'UTF-8') ?>">Certifications</a>
-                            </li>
-                        </ul>
                     </li>
                     <li class="nav-item dropdown us-nav-clubs-events">
                         <a class="nav-link dropdown-toggle<?= $clubsEventsNavActive ? ' active' : '' ?>"

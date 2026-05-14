@@ -439,3 +439,30 @@ CREATE TABLE `quizzes` (
 /*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40111 SET SQL_NOTES=IFNULL(@OLD_SQL_NOTES, 1) */;
+
+-- ---------------------------------------------------------------------------
+-- DOCAC Seed Data
+-- ---------------------------------------------------------------------------
+
+INSERT INTO `cours` (`id`, `titre`, `description`, `formateur`, `contenu`, `image_path`, `fichiers_json`, `cree_le`) VALUES
+(1, 'Développement Web Full-Stack', 'Maîtrisez HTML, CSS, JavaScript, PHP et MySQL pour créer des applications web complètes.', 'Mrs Wi', 'Ce cours couvre l\'ensemble de la stack web moderne :\n\n1. HTML5 & CSS3 : structure sémantique, Flexbox, Grid\n2. JavaScript ES6+ : DOM, Fetch API, Promises\n3. PHP 8 : OOP, MVC, PDO\n4. MySQL : modélisation, requêtes avancées, transactions\n5. Projet final : application CRUD complète\n\nPré-requis : bases de la programmation.', NULL, '[]', NOW()),
+(2, 'Cybersécurité Fondamentale', 'Introduction aux concepts essentiels de la sécurité informatique et des réseaux.', 'Admin UniServe', 'Programme :\n\n1. Menaces & vulnérabilités (OWASP Top 10)\n2. Cryptographie : symétrique, asymétrique, hachage\n3. Authentification & gestion des accès\n4. Sécurité réseau : firewall, VPN, IDS/IPS\n5. Tests de pénétration : méthodologie\n6. Conformité : RGPD, ISO 27001\n\nOutils utilisés : Wireshark, Metasploit, Burp Suite.', NULL, '[]', NOW()),
+(3, 'Intelligence Artificielle & Machine Learning', 'Concepts fondamentaux de l\'IA, du ML supervisé et non supervisé, et des réseaux de neurones.', 'Mrs Wi', 'Contenu détaillé :\n\n1. Introduction à l\'IA : histoire et enjeux\n2. Machine Learning supervisé : régression, classification\n3. ML non supervisé : clustering, réduction de dimension\n4. Deep Learning : CNN, RNN, Transformers\n5. Outils : Python, scikit-learn, TensorFlow, PyTorch\n6. Projet : modèle de classification d\'images\n\nNiveau : intermédiaire.', NULL, '[]', NOW()),
+(4, 'Gestion de Projet Agile', 'Scrum, Kanban et méthodes agiles pour mener vos projets informatiques avec succès.', 'Admin UniServe', 'Modules :\n\n1. Manifeste Agile & valeurs\n2. Scrum : rôles, cérémonies, artefacts\n3. Kanban : flux, WIP limits\n4. User Stories & backlog grooming\n5. Estimation : Planning Poker, points\n6. Outils : Jira, Trello, GitHub Projects\n\nAtelier pratique inclus.', NULL, '[]', NOW());
+
+INSERT INTO `certificats` (`id`, `nom_certificat`, `date_obtention`, `organisation`, `fichier_path`, `titre_cours`, `cree_le`) VALUES
+(1, 'Certification Full-Stack Developer', '2026-06-15', 'UniServe', NULL, 'Développement Web Full-Stack', NOW()),
+(2, 'Certified Cybersecurity Analyst', '2026-07-01', 'UniServe', NULL, 'Cybersécurité Fondamentale', NOW()),
+(3, 'AI & ML Professional Certificate', '2026-08-20', 'UniServe', NULL, 'Intelligence Artificielle & Machine Learning', NOW()),
+(4, 'Agile Project Manager', '2026-09-10', 'UniServe', NULL, 'Gestion de Projet Agile', NOW());
+
+INSERT INTO `demandes_certification` (`id`, `utilisateur_id`, `nom_certificat`, `titre_cours`, `organisation`, `date_souhaitee`, `heure_preferee`, `notes`, `fichier_path`, `statut`, `commentaire_admin`, `soumise_le`, `traitee_le`) VALUES
+(1, 2, 'Certification Full-Stack Developer', 'Développement Web Full-Stack', 'UniServe', '2026-06-15', '10:00', 'Je suis prêt pour la certification.', NULL, 'accepte', 'Excellent dossier, certification validée.', '2026-05-01 09:00:00', '2026-05-10 14:00:00'),
+(2, 2, 'Certified Cybersecurity Analyst', 'Cybersécurité Fondamentale', 'UniServe', '2026-07-01', '14:00', 'Terminé le module complet.', NULL, 'quiz_envoye', NULL, '2026-05-05 10:30:00', NULL),
+(3, 2, 'AI & ML Professional Certificate', 'Intelligence Artificielle & Machine Learning', 'UniServe', '2026-08-20', '09:00', 'Très intéressé par l\'IA appliquée.', NULL, 'en_attente', NULL, '2026-05-10 11:00:00', NULL),
+(4, 2, 'Agile Project Manager', 'Gestion de Projet Agile', 'UniServe', '2026-09-10', '11:00', NULL, NULL, 'refuse', 'Dossier incomplet — merci de le compléter.', '2026-05-08 08:00:00', '2026-05-12 09:00:00');
+
+INSERT INTO `quizzes` (`id`, `demande_id`, `cours_titre`, `questions_json`, `statut`, `score`, `passe_le`, `cree_le`) VALUES
+(1, 2, 'Cybersécurité Fondamentale',
+'[{"question":"Quel est le principal objectif de la cryptographie asymétrique ?","options":["Chiffrer avec une paire de clés publique\\/privée","Accélérer les connexions réseau","Compresser les fichiers","Détecter les intrusions"],"correct":0},{"question":"Parmi ces attaques, laquelle cible principalement les applications web selon l\'OWASP ?","options":["Injection SQL","Déni de service distribué","Phishing","Ransomware"],"correct":0},{"question":"Qu\'est-ce qu\'un firewall de type stateful ?","options":["Il inspecte l\'état des connexions réseau","Il bloque uniquement les ports","Il analyse le contenu des emails","Il chiffre le trafic"],"correct":0},{"question":"Quel protocole est utilisé pour sécuriser les échanges HTTP ?","options":["TLS\\/SSL","FTP","SMTP","UDP"],"correct":0},{"question":"Que signifie RGPD ?","options":["Règlement Général sur la Protection des Données","Réseau de Gestion des Protocoles Distribués","Registre Global des Politiques de Données","Rien de tout cela"],"correct":0}]',
+'en_attente', NULL, NULL, NOW());

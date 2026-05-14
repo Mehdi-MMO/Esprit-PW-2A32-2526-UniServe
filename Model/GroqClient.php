@@ -17,9 +17,10 @@ class GroqClient
      */
     public static function postChatCompletions(string $apiKey, array $requestBody, int $timeoutSeconds = 25): array
     {
-        $body = json_encode($requestBody, JSON_UNESCAPED_UNICODE);
+        $body = json_encode($requestBody, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
         if (!is_string($body)) {
-            return [0, '', 'JSON encode error'];
+            error_log('GroqClient: json_encode failed — ' . json_last_error_msg());
+            return [0, '', 'JSON encode error: ' . json_last_error_msg()];
         }
 
         $apiKey = trim($apiKey);

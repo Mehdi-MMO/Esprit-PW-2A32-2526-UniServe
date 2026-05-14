@@ -1,181 +1,69 @@
 <?php
-
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Model/DocacCours.php';
-require_once __DIR__ . '/../Model/DocacCertificat.php';
-require_once __DIR__ . '/../Model/DocacQuiz.php';
-require_once __DIR__ . '/../Model/DocacDemandeCertification.php';
-require_once __DIR__ . '/../Model/DocacQuizAiService.php';
-require_once __DIR__ . '/../Model/DocacSchema.php';
-require_once __DIR__ . '/../Model/NotificationModel.php';
-require_once __DIR__ . '/../Model/Model.php';
-require_once __DIR__ . '/../Model/AppUploads.php';
-
+/**
+ * CertificationsController
+ *
+ * Front-office (students): /certifications/index  — view courses, certs, submit quiz demande, pass quiz
+ * Back-office (admin):     /certifications/manage — full CRUD + quiz IA via BackofficeDocumentsController
+ *
+ * This controller handles the student-facing routes only.
+ * Admin CRUD is delegated to BackofficeDocumentsController (manage route is its index action).
+ */
 class CertificationsController extends Controller
 {
-    private function isPost(): bool
-    {
-        return strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST';
-    }
-
-    private function docacSchemaReady(): bool
-    {
-        static $cache = null;
-        if ($cache !== null) {
-            return $cache;
-        }
-
-        try {
-            DocacSchema::ensureTables();
-            $statement = (new Model())->query("SHOW TABLES LIKE 'demandes_certification'");
-            $cache = (bool) $statement->fetch();
-        } catch (Throwable $e) {
-            $cache = false;
-        }
-
-        return $cache;
-    }
-
-    private function requireDocacOrSetup(): bool
-    {
-        if ($this->docacSchemaReady()) {
-            return true;
-        }
-
-        $this->render('certifications/setup', [
-            'title' => 'Certifications — configuration MySQL',
-        ], 'landing');
-
-        return false;
-    }
-
-    private function setCertFlash(string $type, string $message): void
-    {
-        $_SESSION['certifications_flash'] = ['type' => $type, 'message' => $message];
-    }
-
-    private function popCertFlash(): ?array
-    {
-        if (!isset($_SESSION['certifications_flash'])) {
-            return null;
-        }
-
-        $f = $_SESSION['certifications_flash'];
-        unset($_SESSION['certifications_flash']);
-
-        return is_array($f) ? $f : null;
-    }
-
-    private function projectRoot(): string
-    {
-        return dirname(__DIR__);
-    }
-
-    private function uploadDir(string $sub): string
-    {
-        return AppUploads::sub($sub);
-    }
-
-    private function currentUserId(): int
-    {
-        return (int) ($_SESSION['user']['id'] ?? 0);
-    }
-
-    private function isStaffOrAdmin(): bool
-    {
-        return in_array((string) ($_SESSION['user']['role'] ?? ''), ['staff', 'admin'], true);
-    }
-
-    private function isStudentLike(): bool
-    {
-        return in_array((string) ($_SESSION['user']['role'] ?? ''), ['etudiant', 'enseignant'], true);
-    }
-
-    private function safeBasename(string $name): string
-    {
-        $name = str_replace(['..', '/', '\\'], '', $name);
-
-        return basename($name);
-    }
+    // ── Default entry point ───────────────────────────────────────
 
     public function landing(): void
     {
-        $this->index();
+        $role = (string) ($_SESSION['user']['role'] ?? '');
+        if (in_array($role, ['admin', 'staff'], true)) {
+            $this->redirect('/certifications/manage');
+        } else {
+            $this->redirect('/certifications/index');
+        }
     }
 
-    /**
-     * Student / teacher hub (DOCAC front).
-     */
+    // ── Student front index ───────────────────────────────────────
+
     public function index(): void
     {
-        $this->requireLogin();
-        if (!$this->requireDocacOrSetup()) {
-            return;
-        }
+        $demModel  = new DemandeCertification();
+        $quizModel = new Quiz();
+        $demandes  = $demModel->getAll();
 
-        if ($this->isStaffOrAdmin()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        if (!$this->isStudentLike()) {
-            $this->redirectByUserRole((string) ($_SESSION['user']['role'] ?? ''));
-            return;
-        }
-
-        $coursModel = new DocacCours();
-        $certModel = new DocacCertificat();
-        $demModel = new DocacDemandeCertification();
-        $quizModel = new DocacQuiz();
-
-        $uid = $this->currentUserId();
-        $demandes = $demModel->getAllByUser($uid);
+        // Attach quiz to each demande for the "Quiz à passer" section
         foreach ($demandes as &$d) {
-            $d['quiz'] = $quizModel->getByDemandeId((int) ($d['id'] ?? 0));
+            $quiz      = $quizModel->getByDemandeId((int) $d['id']);
+            $d['quiz'] = $quiz;
         }
         unset($d);
 
-        $quizNotif = $_SESSION['notif_quiz'] ?? null;
-        unset($_SESSION['notif_quiz']);
-
-        $this->render('certifications/student_index', [
-            'title' => 'Certifications & cours',
-            'cours' => $coursModel->getAllCours(),
-            'certificats' => $certModel->getAllCertificats(),
-            'demandes' => $demandes,
-            'quiz_notif' => is_array($quizNotif) ? $quizNotif : null,
-            'flash' => $this->popCertFlash(),
-        ], 'frontoffice');
+        $this->render('certifications/index', [
+            'title'       => 'Mes Certifications',
+            'cours'       => (new Cours())->getAllCours(),
+            'certificats' => (new Certificat())->getAllCertificats(),
+            'demandes'    => $demandes,
+        ]);
     }
 
-    /**
-     * Staff backoffice (DOCAC BackofficeDocuments).
-     */
+    // ── Admin backoffice manage ───────────────────────────────────
+
     public function manage(): void
     {
-        $this->requireLogin();
-        $this->requireRole(['staff', 'admin']);
-
-        if (!$this->requireDocacOrSetup()) {
-            return;
-        }
-
-        set_time_limit(120);
-
-        $demModel = new DocacDemandeCertification();
-        $quizModel = new DocacQuiz();
-        $demandes = $demModel->getAll();
+        $demModel  = new DemandeCertification();
+        $quizModel = new Quiz();
+        $demandes  = $demModel->getAll();
 
         foreach ($demandes as &$d) {
-            $quiz = $quizModel->getByDemandeId((int) ($d['id'] ?? 0));
+            $quiz      = $quizModel->getByDemandeId((int) $d['id']);
             $d['quiz'] = $quiz;
-            if ($quiz && in_array((string) ($quiz['statut'] ?? ''), ['accepte', 'refuse'], true)) {
-                if ((string) ($d['statut'] ?? '') === 'quiz_envoye') {
+            if ($quiz && in_array($quiz['statut'], ['accepte', 'refuse'], true)) {
+                if ($d['statut'] === 'quiz_envoye') {
                     $demModel->updateStatut(
                         (int) $d['id'],
-                        (string) $quiz['statut'],
-                        'Quiz passé — score : ' . (int) ($quiz['score'] ?? 0) . '/5'
+                        $quiz['statut'],
+                        'Quiz passé — score : ' . $quiz['score'] . '/5'
                     );
                     $d['statut'] = $quiz['statut'];
                 }
@@ -184,484 +72,76 @@ class CertificationsController extends Controller
         unset($d);
 
         $this->render('certifications/manage', [
-            'title' => 'Certifications (admin)',
-            'cours' => (new DocacCours())->getAllCours(),
-            'certificats' => (new DocacCertificat())->getAllCertificats(),
-            'demandes' => $demandes,
+            'title'         => 'Gestion des Certifications',
+            'cours'         => (new Cours())->getAllCours(),
+            'certificats'   => (new Certificat())->getAllCertificats(),
+            'demandes'      => $demandes,
             'nb_en_attente' => $demModel->countByStatut('en_attente'),
-            'flash' => $this->popCertFlash(),
-        ], 'backoffice');
+        ]);
     }
 
-    public function envoyerQuiz(): void
-    {
-        $this->requireLogin();
-        $this->requireRole(['staff', 'admin']);
-
-        if (!$this->docacSchemaReady()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        if (!$this->isPost()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        set_time_limit(300);
-        ini_set('max_execution_time', '300');
-
-        $id = (int) ($_POST['id'] ?? 0);
-        $demModel = new DocacDemandeCertification();
-        $demande = $demModel->getById($id);
-        if ($demande === null) {
-            $this->setCertFlash('danger', 'Demande introuvable.');
-            $this->redirect('/certifications/manage#demandes');
-            return;
-        }
-
-        $coursTitre = (string) ($demande['titre_cours'] ?? $demande['nom_certificat'] ?? '');
-        $cours = (new DocacCours())->getCoursParTitre($coursTitre);
-        if ($cours === null) {
-            $this->setCertFlash(
-                'danger',
-                'Aucun cours en base avec le titre « ' . $coursTitre . ' ». Créez un cours avec exactement ce titre (ou corrigez la demande).'
-            );
-            $this->redirect('/certifications/manage#demandes');
-            return;
-        }
-
-        $description = trim((string) ($cours['description'] ?? ''));
-        $contenu = trim((string) ($cours['contenu'] ?? ''));
-        $fichiers = !empty($cours['fichiers']) && is_array($cours['fichiers'])
-            ? $cours['fichiers']
-            : [];
-
-        $ai = new DocacQuizAiService();
-        $pdfFiles = $ai->collectPdfSnippets($fichiers);
-        $questions = $ai->generateFiveQuestions(
-            $coursTitre,
-            $description,
-            $contenu,
-            (string) ($demande['nom_certificat'] ?? ''),
-            $pdfFiles,
-            [
-                'id' => $id,
-                'statut' => (string) ($demande['statut'] ?? ''),
-                'date_souhaitee' => (string) ($demande['date_souhaitee'] ?? ''),
-                'organisation' => (string) ($demande['organisation'] ?? ''),
-            ]
-        );
-
-        (new DocacQuiz())->create($id, $coursTitre, $questions);
-        $demModel->markQuizEnvoye($id);
-
-        $uid = (int) ($demande['utilisateur_id'] ?? 0);
-        if ($uid > 0) {
-            (new NotificationModel())->create(
-                $uid,
-                'Un quiz de certification est disponible pour votre demande « ' . (string) ($demande['nom_certificat'] ?? '') . ' ».',
-                '/certifications'
-            );
-        }
-
-        $this->setCertFlash('success', 'Quiz généré et envoyé à l’étudiant.');
-        $this->redirect('/certifications/manage#demandes');
-    }
-
-    public function accepterDemande(): void
-    {
-        $this->requireLogin();
-        $this->requireRole(['staff', 'admin']);
-        if (!$this->docacSchemaReady()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        if (!$this->isPost()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        $id = (int) ($_POST['id'] ?? 0);
-        $commentaire = trim((string) ($_POST['commentaire'] ?? ''));
-        if ($id > 0) {
-            $demModel = new DocacDemandeCertification();
-            $demModel->updateStatut($id, 'accepte', $commentaire);
-            $demande = $demModel->getById($id);
-            $uid = (int) ($demande['utilisateur_id'] ?? 0);
-            if ($uid > 0) {
-                (new NotificationModel())->create(
-                    $uid,
-                    'Votre demande de certification « ' . (string) ($demande['nom_certificat'] ?? '') . ' » a été acceptée.',
-                    '/certifications'
-                );
-            }
-            $this->setCertFlash('success', 'Demande acceptée.');
-        }
-
-        $this->redirect('/certifications/manage#demandes');
-    }
-
-    public function refuserDemande(): void
-    {
-        $this->requireLogin();
-        $this->requireRole(['staff', 'admin']);
-        if (!$this->docacSchemaReady()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        if (!$this->isPost()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        $id = (int) ($_POST['id'] ?? 0);
-        $commentaire = trim((string) ($_POST['commentaire'] ?? ''));
-        if ($id > 0) {
-            $demModel = new DocacDemandeCertification();
-            $demModel->updateStatut($id, 'refuse', $commentaire);
-            $demande = $demModel->getById($id);
-            $uid = (int) ($demande['utilisateur_id'] ?? 0);
-            if ($uid > 0) {
-                (new NotificationModel())->create(
-                    $uid,
-                    'Votre demande de certification « ' . (string) ($demande['nom_certificat'] ?? '') . ' » a été refusée.',
-                    '/certifications'
-                );
-            }
-            $this->setCertFlash('success', 'Demande refusée.');
-        }
-
-        $this->redirect('/certifications/manage#demandes');
-    }
-
-    public function storeCours(): void
-    {
-        $this->requireLogin();
-        if (!$this->isStaffOrAdmin()) {
-            $this->setCertFlash('warning', 'La gestion des cours (création / modification) est réservée au personnel dans le back-office.');
-            $this->redirect('/certifications');
-            return;
-        }
-
-        if (!$this->docacSchemaReady()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        if (!$this->isPost()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        $titreNew = trim((string) ($_POST['titre'] ?? ''));
-        if ($titreNew === '') {
-            $this->setCertFlash('danger', 'Le titre du cours est obligatoire.');
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        $coursModel = new DocacCours();
-        if ($coursModel->coursExiste($titreNew)) {
-            $this->setCertFlash('danger', 'Un cours avec ce titre existe déjà. Choisissez un autre titre.');
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        $imagePath = $this->uploadCoursImage();
-        $fichiers = $this->uploadCoursFichiers();
-        $coursModel->createCours($_POST, $imagePath, $fichiers);
-        $this->setCertFlash('success', 'Cours enregistré.');
-
-        $this->redirect('/certifications/manage');
-    }
-
-    public function editCours(): void
-    {
-        $this->requireLogin();
-        if (!$this->isStaffOrAdmin()) {
-            $this->setCertFlash('warning', 'La gestion des cours est réservée au personnel dans le back-office.');
-            $this->redirect('/certifications');
-            return;
-        }
-
-        if (!$this->docacSchemaReady()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        if (!$this->isPost()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        $oldTitre = trim((string) ($_POST['old_titre'] ?? ''));
-        if ($oldTitre === '') {
-            $this->setCertFlash('danger', 'Cours introuvable (titre d’origine manquant).');
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        $imagePath = $this->uploadCoursImage();
-        $newFiles = $this->uploadCoursFichiers();
-        $existing = [];
-        if (!empty($_POST['fichiers_existants'])) {
-            $existing = json_decode((string) $_POST['fichiers_existants'], true) ?: [];
-        }
-        if (!is_array($existing)) {
-            $existing = [];
-        }
-        $fichiers = array_merge($existing, $newFiles);
-
-        $ok = (new DocacCours())->updateCours($_POST, $oldTitre, $imagePath, $fichiers);
-        $this->setCertFlash($ok ? 'success' : 'danger', $ok ? 'Cours mis à jour.' : 'Mise à jour impossible (vérifiez le titre).');
-
-        $this->redirect('/certifications/manage');
-    }
-
-    public function deleteCours(): void
-    {
-        $this->requireLogin();
-        if (!$this->isStaffOrAdmin()) {
-            $this->setCertFlash('warning', 'La suppression des cours est réservée au personnel.');
-            $this->redirect('/certifications');
-            return;
-        }
-
-        if (!$this->docacSchemaReady()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        if (!$this->isPost()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        $titre = trim((string) ($_POST['titre'] ?? ''));
-        if ($titre !== '') {
-            $ok = (new DocacCours())->deleteCours($titre);
-            $this->setCertFlash($ok ? 'success' : 'danger', $ok ? 'Cours supprimé.' : 'Suppression impossible.');
-        }
-
-        $this->redirect('/certifications/manage');
-    }
-
-    public function storeCertificat(): void
-    {
-        $this->requireLogin();
-        if (!$this->isStaffOrAdmin()) {
-            $this->setCertFlash('warning', 'La gestion du catalogue de certificats est réservée au personnel.');
-            $this->redirect('/certifications');
-            return;
-        }
-
-        if (!$this->docacSchemaReady()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        if (!$this->isPost()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        $nom = trim((string) ($_POST['nom_certificat'] ?? ''));
-        if ($nom === '') {
-            $this->setCertFlash('danger', 'Le nom du certificat est obligatoire.');
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        $titreCours = (string) ($_POST['titre_cours'] ?? '');
-        $fileName = $this->uploadCertificatFile();
-        (new DocacCertificat())->addCertificat(
-            $nom,
-            (string) ($_POST['date_obtention'] ?? ''),
-            (string) ($_POST['organisation'] ?? ''),
-            $fileName,
-            $titreCours
-        );
-        $this->setCertFlash('success', 'Certificat enregistré.');
-
-        $this->redirect('/certifications/manage');
-    }
-
-    public function editCertificat(): void
-    {
-        $this->requireLogin();
-        if (!$this->isStaffOrAdmin()) {
-            $this->setCertFlash('warning', 'La modification du catalogue de certificats est réservée au personnel.');
-            $this->redirect('/certifications');
-            return;
-        }
-
-        if (!$this->docacSchemaReady()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        if (!$this->isPost()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        $id = (int) ($_POST['id'] ?? 0);
-        $titreCours = (string) ($_POST['titre_cours'] ?? '');
-        $fileName = '';
-        if (isset($_FILES['certif_file']) && (int) ($_FILES['certif_file']['error'] ?? 1) === 0) {
-            $fileName = $this->uploadCertificatFile();
-        }
-
-        $ok = (new DocacCertificat())->updateCertificat(
-            $id,
-            (string) ($_POST['nom_certificat'] ?? ''),
-            (string) ($_POST['date_obtention'] ?? ''),
-            (string) ($_POST['organisation'] ?? ''),
-            $fileName,
-            $titreCours
-        );
-        $this->setCertFlash($ok ? 'success' : 'danger', $ok ? 'Certificat mis à jour.' : 'Mise à jour impossible.');
-
-        $this->redirect('/certifications/manage');
-    }
-
-    public function deleteCertificat(): void
-    {
-        $this->requireLogin();
-        if (!$this->isStaffOrAdmin()) {
-            $this->setCertFlash('warning', 'La suppression du catalogue de certificats est réservée au personnel.');
-            $this->redirect('/certifications');
-            return;
-        }
-
-        if (!$this->docacSchemaReady()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        if (!$this->isPost()) {
-            $this->redirect('/certifications/manage');
-            return;
-        }
-
-        $id = (int) ($_POST['id'] ?? 0);
-        if ($id > 0) {
-            $ok = (new DocacCertificat())->deleteCertificat($id);
-            $this->setCertFlash($ok ? 'success' : 'danger', $ok ? 'Certificat supprimé.' : 'Suppression impossible.');
-        }
-
-        $this->redirect('/certifications/manage');
-    }
+    // ── Demande de certification (student submits) ────────────────
 
     public function demanderCertification(): void
     {
-        $this->requireLogin();
-        if (!$this->isStudentLike()) {
-            $this->redirectByUserRole((string) ($_SESSION['user']['role'] ?? ''));
-
-            return;
-        }
-
-        if (!$this->docacSchemaReady()) {
-            $this->redirect('/certifications');
-            return;
-        }
-
-        if (!$this->isPost()) {
-            $this->redirect('/certifications');
-            return;
-        }
-
-        $nom = trim((string) ($_POST['nom_certificat'] ?? ''));
-        $date = trim((string) ($_POST['date_souhaitee'] ?? $_POST['date_obtention'] ?? ''));
-        if ($nom === '' || $date === '') {
-            $this->setCertFlash('danger', 'Certificat visé et date souhaitée sont obligatoires.');
-            $this->redirect('/certifications');
-            return;
-        }
-
-        $titreCours = trim((string) ($_POST['titre_cours'] ?? ''));
-        if ($titreCours === '') {
-            $this->setCertFlash('danger', 'Choisissez le cours du catalogue lié à votre demande (requis pour le quiz DOCAC).');
-            $this->redirect('/certifications#us-parcours-demande');
-            return;
-        }
-
-        if (!(new DocacCours())->coursExiste($titreCours)) {
-            $this->setCertFlash('danger', 'Le cours sélectionné n’existe pas dans le catalogue. Rechargez la page et choisissez un cours valide.');
-            $this->redirect('/certifications#us-parcours-demande');
-            return;
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/certifications/index');
         }
 
         $fileName = '';
-        if (isset($_FILES['certif_file']) && (int) ($_FILES['certif_file']['error'] ?? 1) === 0) {
-            $fileName = $this->uploadCertificatFile();
+        if (isset($_FILES['certif_file']) && $_FILES['certif_file']['error'] === 0) {
+            $fileName = $this->uploadCertifFile();
         }
 
-        (new DocacDemandeCertification())->store($this->currentUserId(), [
-            'nom_certificat' => $nom,
-            'titre_cours' => $titreCours,
-            'organisation' => trim((string) ($_POST['organisation'] ?? 'UniServe')),
-            'date_souhaitee' => $date,
-            'heure_preferee' => trim((string) ($_POST['heure_preferee'] ?? '')),
-            'notes' => trim((string) ($_POST['notes'] ?? '')),
-            'fichier_path' => $fileName !== '' ? $fileName : null,
+        // Use session user_id if logged in, else default to demo student id 2
+        $userId = (int) ($_SESSION['user']['id'] ?? 2);
+
+        (new DemandeCertification())->storeWithUser([
+            'utilisateur_id' => $userId,
+            'nom_certificat' => trim($_POST['nom_certificat'] ?? ''),
+            'titre_cours'    => trim($_POST['titre_cours']    ?? ''),
+            'organisation'   => trim($_POST['organisation']   ?? 'UniServe'),
+            'date_souhaitee' => trim($_POST['date_obtention'] ?? ''),
+            'heure_preferee' => trim($_POST['heure_preferee'] ?? ''),
+            'notes'          => trim($_POST['notes']          ?? ''),
+            'fichier_path'   => $fileName,
         ]);
 
-        $this->setCertFlash('success', 'Demande enregistrée.');
-        $this->redirect('/certifications');
+        $this->redirect('/certifications/index?success=1');
     }
+
+    // ── Student: passer le quiz ───────────────────────────────────
 
     public function passerQuiz(): void
     {
-        $this->requireLogin();
-        if (!$this->isStudentLike()) {
-            $this->redirectByUserRole((string) ($_SESSION['user']['role'] ?? ''));
-
-            return;
-        }
-
-        if (!$this->docacSchemaReady()) {
-            $this->redirect('/certifications');
-            return;
-        }
-
-        if (!$this->isPost()) {
-            $this->redirect('/certifications');
-            return;
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/certifications/index');
         }
 
         $quizId = (int) ($_POST['quiz_id'] ?? 0);
-        $quizModel = new DocacQuiz();
-        $quiz = $quizModel->getById($quizId);
-        if ($quiz === null || (string) ($quiz['statut'] ?? '') !== 'en_attente') {
-            $this->setCertFlash('danger', 'Quiz invalide ou déjà complété.');
-            $this->redirect('/certifications');
-            return;
+        if ($quizId <= 0) {
+            $this->redirect('/certifications/index');
         }
 
-        $demande = (new DocacDemandeCertification())->getById((int) ($quiz['demande_id'] ?? 0));
-        if ($demande === null || (int) ($demande['utilisateur_id'] ?? 0) !== $this->currentUserId()) {
-            $this->setCertFlash('danger', 'Accès refusé à ce quiz.');
-            $this->redirect('/certifications');
-            return;
+        $quizModel = new Quiz();
+        $quiz      = $quizModel->getById($quizId);
+
+        if (!$quiz || $quiz['statut'] !== 'en_attente') {
+            $this->redirect('/certifications/index');
         }
 
+        // Compute score
         $questions = $quiz['questions'] ?? [];
-        $score = 0;
+        $score     = 0;
         foreach ($questions as $i => $q) {
-            $userAnswer = isset($_POST['answer_' . $i]) ? (int) $_POST['answer_' . $i] : -1;
-            if ($userAnswer === (int) ($q['correct'] ?? -1)) {
-                $score++;
-            }
+            $answer = isset($_POST["answer_{$i}"]) ? (int) $_POST["answer_{$i}"] : -1;
+            if ($answer === (int) ($q['correct'] ?? -1)) $score++;
         }
 
         $quizModel->submit($quizId, $score);
+
         $statut = $score >= 3 ? 'accepte' : 'refuse';
-        (new DocacDemandeCertification())->updateStatut(
+        (new DemandeCertification())->updateStatut(
             (int) $quiz['demande_id'],
             $statut,
             'Quiz passé — score : ' . $score . '/5'
@@ -669,112 +149,193 @@ class CertificationsController extends Controller
 
         $_SESSION['notif_quiz'] = [
             'statut' => $statut,
-            'score' => $score,
-            'cours' => (string) ($quiz['cours_titre'] ?? ''),
+            'score'  => $score,
+            'cours'  => $quiz['cours_titre'] ?? '',
         ];
 
-        $this->redirect('/certifications');
+        $this->redirect('/certifications/index');
     }
 
-    /**
-     * Secure download: type = cours|cert|demande
-     */
-    public function download(string $type, string $filename): void
+    // ── Admin: envoyer Quiz IA (Groq) ─────────────────────────────
+
+    public function envoyerQuiz(): void
     {
-        $this->requireLogin();
+        set_time_limit(120);
 
-        if (!$this->docacSchemaReady()) {
-            http_response_code(503);
-            exit('Service indisponible.');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/certifications/manage');
         }
 
-        $filename = $this->safeBasename($filename);
-        if ($filename === '' || $filename === '.' || $filename === '..') {
-            http_response_code(404);
-            exit('Fichier invalide.');
+        $id      = (int) ($_POST['id'] ?? 0);
+        $demande = (new DemandeCertification())->getById($id);
+
+        if (!$demande) {
+            $this->redirect('/certifications/manage');
         }
 
-        $sub = match ($type) {
-            'cours' => 'cours',
-            'cert' => 'certifications',
-            'demande' => 'certifications',
-            default => '',
-        };
-        if ($sub === '') {
-            http_response_code(404);
-            exit('Type invalide.');
-        }
+        $coursTitre  = $demande['titre_cours'] ?? $demande['nom_certificat'];
+        $cours       = (new Cours())->getCoursParTitre($coursTitre);
+        $description = trim($cours['description'] ?? '');
+        $contenu     = trim($cours['contenu']     ?? '');
 
-        $path = $this->uploadDir($sub) . '/' . $filename;
-        if (!is_file($path)) {
-            http_response_code(404);
-            exit('Introuvable.');
-        }
+        $fichiers = !empty($cours['fichiers'])
+            ? $cours['fichiers']
+            : (!empty($cours['fichiers_json'])
+                ? (json_decode($cours['fichiers_json'], true) ?? [])
+                : []);
 
-        if ($type === 'cert' && !$this->isStaffOrAdmin()) {
-            http_response_code(403);
-            exit('Accès refusé.');
-        }
+        $pdfFiles  = $this->getPdfFilesForAPI($fichiers);
+        $questions = $this->generateQuizWithGroq(
+            $coursTitre, $description, $contenu, $demande['nom_certificat'], $pdfFiles
+        );
 
-        if ($type === 'demande' && !$this->isStaffOrAdmin()) {
-            $demModel = new DocacDemandeCertification();
-            $allowed = false;
-            foreach ($demModel->getAllByUser($this->currentUserId()) as $d) {
-                if ((string) ($d['fichier_path'] ?? '') === $filename) {
-                    $allowed = true;
-                    break;
-                }
+        (new Quiz())->create($id, $coursTitre, $questions);
+        (new DemandeCertification())->markQuizEnvoye($id);
+
+        $this->redirect('/certifications/manage#demandes');
+    }
+
+    // ── Admin: accepter / refuser demande ─────────────────────────
+
+    public function accepterDemande(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id          = (int) ($_POST['id'] ?? 0);
+            $commentaire = trim($_POST['commentaire'] ?? '');
+            if ($id > 0) {
+                $demModel = new DemandeCertification();
+                $demModel->updateStatut($id, 'accepte', $commentaire);
+                $demande = $demModel->getById($id);
+                $_SESSION['notif_etudiant'] = ['type' => 'accepte', 'cert' => $demande['nom_certificat'] ?? ''];
             }
-            if (!$allowed) {
-                http_response_code(403);
-                exit('Accès refusé.');
+        }
+        $this->redirect('/certifications/manage#demandes');
+    }
+
+    public function refuserDemande(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id          = (int) ($_POST['id'] ?? 0);
+            $commentaire = trim($_POST['commentaire'] ?? '');
+            if ($id > 0) {
+                $demModel = new DemandeCertification();
+                $demModel->updateStatut($id, 'refuse', $commentaire);
+                $demande = $demModel->getById($id);
+                $_SESSION['notif_etudiant'] = ['type' => 'refuse', 'cert' => $demande['nom_certificat'] ?? ''];
             }
         }
+        $this->redirect('/certifications/manage#demandes');
+    }
 
-        $mime = mime_content_type($path) ?: 'application/octet-stream';
-        header('Content-Type: ' . $mime);
-        header('Content-Disposition: inline; filename="' . $filename . '"');
-        header('Content-Length: ' . (string) filesize($path));
-        readfile($path);
-        exit;
+    // ── Admin: CRUD Cours ─────────────────────────────────────────
+
+    public function storeCours(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $imagePath = $this->uploadCoursImage();
+            $fichiers  = $this->uploadCoursFichiers();
+            (new Cours())->createCours($_POST, $imagePath, $fichiers);
+        }
+        $this->redirect('/certifications/manage');
+    }
+
+    public function editCours(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $oldTitre  = $_POST['old_titre'] ?? '';
+            $imagePath = $this->uploadCoursImage();
+            $newFiles  = $this->uploadCoursFichiers();
+            $existing  = [];
+            if (!empty($_POST['fichiers_existants'])) {
+                $existing = json_decode($_POST['fichiers_existants'], true) ?? [];
+            }
+            $fichiers = array_merge($existing, $newFiles);
+            (new Cours())->updateCours($_POST, $oldTitre, $imagePath, $fichiers);
+        }
+        $this->redirect('/certifications/manage');
+    }
+
+    public function deleteCours(): void
+    {
+        $titre = trim($_POST['titre'] ?? '');
+        if (!empty($titre)) (new Cours())->deleteCours($titre);
+        $this->redirect('/certifications/manage');
+    }
+
+    // ── Admin: CRUD Certificats ───────────────────────────────────
+
+    public function storeCertificat(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $titreCours = $_POST['titre_cours'] ?? '';
+            $fileName   = $this->uploadCertifFile();
+            (new Certificat())->addCertificat(
+                $_POST['nom_certificat'], $_POST['date_obtention'],
+                $_POST['organisation'], $fileName, $titreCours
+            );
+        }
+        $this->redirect('/certifications/manage');
+    }
+
+    public function editCertificat(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id         = (int) ($_POST['id'] ?? 0);
+            $titreCours = $_POST['titre_cours'] ?? '';
+            $fileName   = '';
+            if (isset($_FILES['certif_file']) && $_FILES['certif_file']['error'] === 0) {
+                $fileName = $this->uploadCertifFile();
+            }
+            (new Certificat())->updateCertificat(
+                $id, $_POST['nom_certificat'], $_POST['date_obtention'],
+                $_POST['organisation'], $fileName, $titreCours
+            );
+        }
+        $this->redirect('/certifications/manage');
+    }
+
+    public function deleteCertificat(): void
+    {
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id > 0) (new Certificat())->deleteCertificat($id);
+        $this->redirect('/certifications/manage');
+    }
+
+    // ── Upload helpers ────────────────────────────────────────────
+
+    private function uploadCertifFile(): string
+    {
+        if (!isset($_FILES['certif_file']) || $_FILES['certif_file']['error'] !== 0) return '';
+        $uploadDir    = 'public/uploads/certificats/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+        $fileType     = mime_content_type($_FILES['certif_file']['tmp_name']);
+        if (!in_array($fileType, $allowedTypes, true)) return '';
+        if ($_FILES['certif_file']['size'] > 5 * 1024 * 1024) return '';
+        $fileName   = time() . '_' . bin2hex(random_bytes(4)) . '_' . basename($_FILES['certif_file']['name']);
+        $targetPath = $uploadDir . $fileName;
+        return move_uploaded_file($_FILES['certif_file']['tmp_name'], $targetPath) ? $fileName : '';
     }
 
     private function uploadCoursImage(): string
     {
-        if (!isset($_FILES['cours_image']) || (int) ($_FILES['cours_image']['error'] ?? 1) !== 0) {
-            return '';
-        }
-
-        $uploadDir = $this->uploadDir('cours');
-        $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        $tmp = (string) ($_FILES['cours_image']['tmp_name'] ?? '');
-        $fileType = $tmp !== '' ? (string) (mime_content_type($tmp) ?: '') : '';
-        if (!in_array($fileType, $allowed, true)) {
-            return '';
-        }
-        if ((int) ($_FILES['cours_image']['size'] ?? 0) > 5 * 1024 * 1024) {
-            return '';
-        }
-
-        $ext = pathinfo((string) ($_FILES['cours_image']['name'] ?? ''), PATHINFO_EXTENSION);
+        if (!isset($_FILES['cours_image']) || $_FILES['cours_image']['error'] !== 0) return '';
+        $uploadDir = 'public/uploads/cours/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+        $allowed   = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $fileType  = mime_content_type($_FILES['cours_image']['tmp_name']);
+        if (!in_array($fileType, $allowed, true)) return '';
+        if ($_FILES['cours_image']['size'] > 5 * 1024 * 1024) return '';
+        $ext      = pathinfo($_FILES['cours_image']['name'], PATHINFO_EXTENSION);
         $fileName = time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-        if (move_uploaded_file($tmp, $uploadDir . '/' . $fileName)) {
-            return $fileName;
-        }
-
-        return '';
+        return move_uploaded_file($_FILES['cours_image']['tmp_name'], $uploadDir . $fileName) ? $fileName : '';
     }
 
-    /**
-     * @return list<array{nom: string, path: string}>
-     */
     private function uploadCoursFichiers(): array
     {
-        if (!isset($_FILES['cours_fichiers']['name']) || !is_array($_FILES['cours_fichiers']['name'])) {
-            return [];
-        }
-
-        $uploadDir = $this->uploadDir('cours');
+        if (!isset($_FILES['cours_fichiers']) || empty($_FILES['cours_fichiers']['name'][0])) return [];
+        $uploadDir = 'public/uploads/cours/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
         $allowed = [
             'application/pdf', 'image/jpeg', 'image/png',
             'application/msword',
@@ -783,51 +344,169 @@ class CertificationsController extends Controller
             'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         ];
         $result = [];
-        $count = count($_FILES['cours_fichiers']['name']);
+        $count  = count($_FILES['cours_fichiers']['name']);
         for ($i = 0; $i < $count; $i++) {
-            if ((int) ($_FILES['cours_fichiers']['error'][$i] ?? 1) !== 0) {
-                continue;
-            }
-            if ((int) ($_FILES['cours_fichiers']['size'][$i] ?? 0) > 20 * 1024 * 1024) {
-                continue;
-            }
-            $tmpName = (string) ($_FILES['cours_fichiers']['tmp_name'][$i] ?? '');
-            $origName = basename((string) ($_FILES['cours_fichiers']['name'][$i] ?? ''));
-            $mt = $tmpName !== '' ? (string) (mime_content_type($tmpName) ?: '') : '';
-            if (!in_array($mt, $allowed, true)) {
-                continue;
-            }
+            if ($_FILES['cours_fichiers']['error'][$i] !== 0) continue;
+            if ($_FILES['cours_fichiers']['size'][$i] > 20 * 1024 * 1024) continue;
+            $tmpName  = $_FILES['cours_fichiers']['tmp_name'][$i];
+            $origName = basename($_FILES['cours_fichiers']['name'][$i]);
+            if (!in_array(mime_content_type($tmpName), $allowed, true)) continue;
             $fileName = time() . '_' . bin2hex(random_bytes(4)) . '_' . $origName;
-            if (move_uploaded_file($tmpName, $uploadDir . '/' . $fileName)) {
+            if (move_uploaded_file($tmpName, $uploadDir . $fileName)) {
                 $result[] = ['nom' => $origName, 'path' => $fileName];
             }
         }
-
         return $result;
     }
 
-    private function uploadCertificatFile(): string
+    // ── PDF text extraction ───────────────────────────────────────
+
+    private function getPdfFilesForAPI(array $fichiers): array
     {
-        if (!isset($_FILES['certif_file']) || (int) ($_FILES['certif_file']['error'] ?? 1) !== 0) {
-            return '';
+        $pdfs    = [];
+        $baseDir = 'public/uploads/cours/';
+        foreach ($fichiers as $f) {
+            $path = $baseDir . ($f['path'] ?? '');
+            $ext  = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+            if (!file_exists($path)) continue;
+            $text = '';
+            if ($ext === 'pdf') {
+                $text = $this->extractPdfText($path);
+            } elseif (in_array($ext, ['txt', 'md'], true)) {
+                $text = @file_get_contents($path) ?: '';
+            }
+            if (!empty($text)) {
+                $pdfs[] = ['name' => $f['nom'] ?? basename($path), 'text' => substr($text, 0, 3000)];
+            }
+            if (count($pdfs) >= 3) break;
+        }
+        return $pdfs;
+    }
+
+    private function extractPdfText(string $path): string
+    {
+        $escaped = escapeshellarg($path);
+        $out     = @shell_exec("pdftotext {$escaped} - 2>/dev/null");
+        if (!empty($out) && strlen(trim($out)) > 30) return trim(substr($out, 0, 5000));
+        foreach (['C:\\poppler\\Library\\bin\\pdftotext.exe', 'C:\\poppler\\bin\\pdftotext.exe'] as $p) {
+            if (file_exists($p)) {
+                $out = @shell_exec('"' . $p . '" ' . $escaped . ' -');
+                if (!empty($out) && strlen(trim($out)) > 30) return trim(substr($out, 0, 5000));
+            }
+        }
+        $content = @file_get_contents($path);
+        if (!$content) return '';
+        $text = '';
+        if (preg_match_all('/stream\s*(.*?)\s*endstream/s', $content, $streams)) {
+            foreach ($streams[1] as $stream) {
+                $decoded = @gzuncompress($stream);
+                $data    = $decoded !== false ? $decoded : $stream;
+                if (preg_match_all('/BT\s*(.*?)\s*ET/s', $data, $m)) {
+                    foreach ($m[1] as $block) {
+                        if (preg_match_all('/\(([^)]{1,500})\)\s*Tj/s', $block, $s)) {
+                            foreach ($s[1] as $str) {
+                                $clean = preg_replace('/[^ -~\xC0-\xFF]/', ' ', $str);
+                                if (strlen(trim($clean)) > 2) $text .= trim($clean) . ' ';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (strlen(trim($text)) < 50) {
+            preg_match_all('/[a-zA-Z\xC0-\xFF][a-zA-Z\xC0-\xFF0-9\s\.,\:\;\-\+\=]{15,}/', $content, $m2);
+            $text = implode(' ', array_slice($m2[0], 0, 200));
+        }
+        return trim(substr(preg_replace('/\s+/', ' ', $text), 0, 5000));
+    }
+
+    // ── Groq quiz generation ──────────────────────────────────────
+
+    private function generateQuizWithGroq(
+        string $coursTitre,
+        string $description,
+        string $contenu,
+        string $nomCertif,
+        array  $pdfFiles = []
+    ): array {
+        $apiKey = defined('GROQ_QUIZ_API_KEY') ? GROQ_QUIZ_API_KEY : (string) (getenv('GROQ_API_KEY') ?: '');
+        $model  = defined('GROQ_QUIZ_MODEL')   ? GROQ_QUIZ_MODEL  : (string) (getenv('GROQ_MODEL') ?: 'llama-3.3-70b-versatile');
+
+        if (empty($apiKey)) {
+            error_log('CertificationsController::generateQuizWithGroq — GROQ_API_KEY not set');
+            return $this->fallbackQuestions($coursTitre);
         }
 
-        $uploadDir = $this->uploadDir('certifications');
-        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-        $tmp = (string) ($_FILES['certif_file']['tmp_name'] ?? '');
-        $fileType = $tmp !== '' ? (string) (mime_content_type($tmp) ?: '') : '';
-        if (!in_array($fileType, $allowedTypes, true)) {
-            return '';
-        }
-        if ((int) ($_FILES['certif_file']['size'] ?? 0) > 5 * 1024 * 1024) {
-            return '';
+        // Sanitize all inputs to valid UTF-8 to prevent json_encode failures
+        $utf8 = fn(string $s): string => mb_convert_encoding($s, 'UTF-8', 'UTF-8');
+        $coursTitre  = $utf8($coursTitre);
+        $description = $utf8($description);
+        $contenu     = $utf8($contenu);
+        $nomCertif   = $utf8($nomCertif);
+
+        $context = '';
+        if (!empty($description)) $context .= "DESCRIPTION : {$description}\n\n";
+        if (!empty($contenu))     $context .= "CONTENU DU COURS :\n{$contenu}\n\n";
+        foreach ($pdfFiles as $pdf) {
+            if (!empty($pdf['text'])) $context .= "=== DOCUMENT : {$utf8($pdf['name'])} ===\n{$utf8($pdf['text'])}\n\n";
         }
 
-        $fileName = time() . '_' . bin2hex(random_bytes(4)) . '_' . basename((string) ($_FILES['certif_file']['name'] ?? ''));
-        if (move_uploaded_file($tmp, $uploadDir . '/' . $fileName)) {
-            return $fileName;
+        $userPrompt  = "Génère exactement 5 questions QCM en français.\n\n";
+        $userPrompt .= "COURS : {$coursTitre}\nCERTIFICAT VISÉ : {$nomCertif}\n\n";
+        if (!empty($context)) {
+            $userPrompt .= "CONTENU :\n{$context}";
+            $userPrompt .= "RÈGLE : Chaque question DOIT porter sur un élément PRÉCIS du contenu ci-dessus.\n\n";
+        }
+        $userPrompt .= "STYLE : Questions précises (faits, valeurs, commandes, définitions). 4 options, 1 seule correcte.\n\n";
+        $userPrompt .= 'Réponds UNIQUEMENT avec ce JSON (sans markdown) : [{"question":"...","options":["A","B","C","D"],"correct":0},{"question":"...","options":["A","B","C","D"],"correct":1},{"question":"...","options":["A","B","C","D"],"correct":2},{"question":"...","options":["A","B","C","D"],"correct":0},{"question":"...","options":["A","B","C","D"],"correct":3}]';
+
+        [$httpCode, $rawBody, $curlErr] = GroqClient::postChatCompletions($apiKey, [
+            'model'       => $model,
+            'messages'    => [
+                ['role' => 'system', 'content' => 'Tu es un formateur expert. Génère uniquement du JSON valide, sans texte autour.'],
+                ['role' => 'user',   'content' => $userPrompt],
+            ],
+            'temperature' => 0.3,
+            'max_tokens'  => 2000,
+        ], 60);
+
+        if (!empty($curlErr)) {
+            error_log("Groq connection failed: {$curlErr}");
+            return $this->fallbackQuestions($coursTitre);
+        }
+        if ($httpCode === 200 && $rawBody) {
+            $data = json_decode($rawBody, true);
+            $raw  = trim(preg_replace('/```json|```/', '', $data['choices'][0]['message']['content'] ?? ''));
+            if (preg_match('/\[.*\]/s', $raw, $m)) $raw = $m[0];
+            $questions = json_decode($raw, true);
+            if (is_array($questions) && count($questions) >= 5) return array_slice($questions, 0, 5);
+            if (is_array($questions) && count($questions) > 0) {
+                return array_slice(array_merge($questions, $this->fallbackQuestions($coursTitre)), 0, 5);
+            }
         }
 
-        return '';
+        error_log("Groq quiz failed HTTP:{$httpCode}");
+        return $this->fallbackQuestions($coursTitre);
+    }
+
+    private function fallbackQuestions(string $coursTitre): array
+    {
+        return [
+            ['question' => "Quelle est la principale technologie enseignée dans \"{$coursTitre}\" ?",
+             'options'  => ['La technologie principale du domaine', 'La bureautique standard', 'La gestion RH', 'La comptabilité'],
+             'correct'  => 0],
+            ['question' => "Quel concept est fondamental pour réussir la certification de ce cours ?",
+             'options'  => ['Les bases théoriques et pratiques du domaine', 'La rédaction de rapports', 'La communication commerciale', 'La gestion budgétaire'],
+             'correct'  => 0],
+            ['question' => "Quelle compétence clé ce cours développe-t-il en priorité ?",
+             'options'  => ['Maîtrise des outils et protocoles du domaine', 'Expression artistique', 'Comptabilité analytique', 'Droit du travail'],
+             'correct'  => 0],
+            ['question' => "Comment sont évalués les acquis dans ce type de certification ?",
+             'options'  => ['QCM technique + cas pratiques', 'Entretien oral uniquement', 'Portfolio artistique', 'Aucune évaluation'],
+             'correct'  => 0],
+            ['question' => "Quel niveau de maîtrise est requis pour valider cette certification ?",
+             'options'  => ['Compréhension et application des concepts clés', 'Notions très basiques', 'Aucune connaissance', 'Niveau expert mondial uniquement'],
+             'correct'  => 0],
+        ];
     }
 }

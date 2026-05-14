@@ -1,37 +1,5 @@
-# Parallel git worktrees or local branch copies (optional dev convenience)
-worktrees/
-
-# Old optional upstream clone path (remove folder locally if still present)
-modules/
-
-# Local copies of per-team module trees / experiments — not part of MVC runtime
-THEMODULES/
-
-DOCAC_MODULE/
-RDV_MODULE/
-
-# Obsolete split-SQL folder (canonical dump is db/uniserve_full.sql only)
-database/
-
-# Obsolete ad-hoc SQL dump filename (superseded by uniserve_full.sql)
-with data.sql
-
-# Local DB credentials (copy from .env.example)
 .env
-
-# Local debug session logs
 debug-*.log
-
-# Legacy root folders (old calendar-brief cache paths; app uses Model/storage/ now)
-var/
-storage/
-
-# Git filter-branch / rewrite leftovers (should never be committed)
-.git-rewrite/
-
-# Runtime data under Model (AI brief JSON cache)
 Model/storage/
-
-# Runtime uploads (demandes pièces jointes, DOCAC fichiers, photos de profil)
 Model/uploads/
-
+THEMODULES/
